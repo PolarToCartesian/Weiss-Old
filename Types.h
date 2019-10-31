@@ -72,7 +72,7 @@ std::array<T, S1> operator/(const std::array<T, S1>& a, const std::array<T, S2>&
 // Printing
 
 template <typename T, size_t S>
-std::ostream& operator<<(std::ostream& stream, std::array<T, S>& v) {
+std::ostream& operator<<(std::ostream& stream, const std::array<T, S>& v) {
 	stream << '(';
 
 	for (auto it = v.begin(); it != v.end() - 1; it++)
