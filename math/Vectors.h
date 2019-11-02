@@ -17,6 +17,8 @@ typedef std::array<float,    4> Vec4f;
 typedef std::array<uint16_t, 4> Vec4u;
 typedef std::array<int16_t,  4> Vec4i;
 
+typedef Vec4f Color;
+
 // Operator |+=|-=|*=|/=|
 
 template <typename T, size_t S, typename T2>

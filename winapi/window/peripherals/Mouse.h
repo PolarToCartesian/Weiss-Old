@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../Types.h"
+#include "../../../math/Vectors.h"
 #include "PeripheralDevice.h"
 
 #include <windowsx.h>

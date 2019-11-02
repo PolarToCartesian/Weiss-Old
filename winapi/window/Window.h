@@ -1,9 +1,12 @@
 #pragma once
 
-#include "devices/Mouse.h"
-#include "devices/Keyboard.h"
+#include "peripherals/Mouse.h"
+#include "../graphics/Graphics.h"
+#include "peripherals/Keyboard.h"
 
 #include <vector>
+#include <memory>
+#include <functional>
 #include <Windowsx.h>
 
 LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
@@ -16,17 +19,21 @@ class Window
         HWND m_handle;
         HINSTANCE m_hinstance;
 
+        Graphics* m_pGraphics = nullptr;
+
         Vec2u m_position{0, 0};
         Vec2u m_dimensions{0, 0};
 
         bool m_isRunning = false;
+
+        std::function<void(const Vec2u)> m_onResizeFunctor = [](const Vec2u dim) {};
 
     public:
         Mouse mouse;
         Keyboard keyboard;
 
     public:
-        Window(const uint16_t width, const uint16_t height, const char *title, HINSTANCE hInstance)
+        Window(const uint16_t width, const uint16_t height, const char *title, const bool isResizable, HINSTANCE hInstance)
         {
             this->m_dimensions = {width, height};
             this->m_hinstance  = hInstance;
@@ -45,23 +52,31 @@ class Window
 
             if (RegisterClassA(&wc))
             {
-                this->m_handle = CreateWindowA("WNDCLASSA", title, WS_OVERLAPPEDWINDOW, 0, 0, width, height, NULL, NULL, hInstance, NULL);
+                const DWORD windowStyle = isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+
+                this->m_handle = CreateWindowA("WNDCLASSA", title, windowStyle, 0, 0, width, height, NULL, NULL, hInstance, NULL);
+
+                this->m_pGraphics = new Graphics(this->m_handle);
 
                 ShowWindow(this->m_handle, SW_SHOW);
                 UpdateWindow(this->m_handle);
 
-                this->m_isRunning = true;
+                this->m_isRunning = this->m_pGraphics->wasDirectX3DSuccessful;
             }
         }
 
+        // Misc
+        void onResize(const std::function<void(const Vec2u)>& functor) { this->m_onResizeFunctor = functor; }
+
         // Getters
-        inline uint16_t getWidth()           const { return this->m_dimensions[0]; }
-        inline uint16_t getHeight()          const { return this->m_dimensions[1]; }
-        inline Vec2u    getDimensions()      const { return this->m_dimensions;    }
-        inline bool     isRunning()          const { return this->m_isRunning;     }
-        inline uint16_t getWindowPositionX() const { return this->m_position[0];   }
-        inline uint16_t getWindowPositionY() const { return this->m_position[1];   }
-        inline Vec2u    getWindowPosition()  const { return this->m_position;      }
+        inline uint16_t  getWidth()           const { return this->m_dimensions[0]; }
+        inline uint16_t  getHeight()          const { return this->m_dimensions[1]; }
+        inline Vec2u     getDimensions()      const { return this->m_dimensions;    }
+        inline bool      isRunning()          const { return this->m_isRunning;     }
+        inline uint16_t  getWindowPositionX() const { return this->m_position[0];   }
+        inline uint16_t  getWindowPositionY() const { return this->m_position[1];   }
+        inline Vec2u     getWindowPosition()  const { return this->m_position;      }
+			   Graphics& getGraphics()        const { return *(this->m_pGraphics);  }
 
         // Setters
         inline void setWidth(const uint16_t width)   { this->setSize(width, this->m_dimensions[1]);  }
@@ -107,15 +122,29 @@ class Window
             this->keyboard.__onWindowUpdateEnd();
         }
 
+		void render()
+		{
+			m_pGraphics->present();
+		}
+
         LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
         {
             switch (msg)
             {
                 case WM_MOVE:
-                    this->m_position   = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                    this->m_position   = {
+						static_cast<uint16_t>(GET_X_LPARAM(lParam)), 
+						static_cast<uint16_t>(GET_Y_LPARAM(lParam))
+					};
+
                     return 0;
                 case WM_SIZE:
-                    this->m_dimensions = {GET_X_LPARAM(lParam), GET_Y_LPARAM(lParam)};
+                    this->m_dimensions = {
+						static_cast<uint16_t>(GET_X_LPARAM(lParam)),
+						static_cast<uint16_t>(GET_Y_LPARAM(lParam))
+					};
+
+                    this->m_onResizeFunctor(this->m_dimensions);
                     return 0;
                 case WM_DESTROY:
                     this->destroy();
@@ -143,9 +172,9 @@ namespace WindowHandler
 {
     std::vector<Window> windows;
 
-    Window& createWindow(const uint16_t width, const uint16_t height, const char* title, HINSTANCE hInstance)
+    Window& createWindow(const uint16_t width, const uint16_t height, const char* title, const bool isResizable, HINSTANCE hInstance)
     {
-        windows.emplace_back(width, height, title, hInstance);
+        windows.emplace_back(width, height, title, isResizable, hInstance);
 
         return windows[windows.size() - 1];
     }
