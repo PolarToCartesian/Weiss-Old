@@ -21,16 +21,15 @@ class Window
 
         Graphics* m_pGraphics = nullptr;
 
+		Mouse m_mouse;
+		Keyboard m_keyboard;
+
         Vec2u m_position{0, 0};
         Vec2u m_dimensions{0, 0};
 
         bool m_isRunning = false;
 
         std::function<void(const Vec2u)> m_onResizeFunctor = [](const Vec2u dim) {};
-
-    public:
-        Mouse mouse;
-        Keyboard keyboard;
 
     public:
         Window(const uint16_t width, const uint16_t height, const char *title, const bool isResizable, HINSTANCE hInstance)
@@ -61,7 +60,7 @@ class Window
                 ShowWindow(this->m_handle, SW_SHOW);
                 UpdateWindow(this->m_handle);
 
-                this->m_isRunning = this->m_pGraphics->wasDirectX3DSuccessful;
+                this->m_isRunning = this->m_pGraphics->wasDirectX3DInitSuccessful;
             }
         }
 
@@ -76,6 +75,8 @@ class Window
         inline uint16_t  getWindowPositionX() const { return this->m_position[0];   }
         inline uint16_t  getWindowPositionY() const { return this->m_position[1];   }
         inline Vec2u     getWindowPosition()  const { return this->m_position;      }
+			   Keyboard& getKeyboard()              { return this->m_keyboard; }
+			   Mouse&    getMouse()                 { return this->m_mouse;         }
 			   Graphics& getGraphics()        const { return *(this->m_pGraphics);  }
 
         // Setters
@@ -98,17 +99,13 @@ class Window
             SetWindowPos(this->m_handle, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOOWNERZORDER);
         }
 
-        void setTitle(const char* title)
-        {
-            SetWindowTextA(this->m_handle, title);
-        }
+        void setTitle(const char* title) { SetWindowTextA(this->m_handle, title); }
         
         // MESSAGE HANDLING
         void update()
         {
-            std::cout << "--------------------------------------------\n";
-            this->mouse.__onWindowUpdateBegin();
-            this->keyboard.__onWindowUpdateBegin();
+            this->m_mouse.__onWindowUpdateBegin();
+            this->m_keyboard.__onWindowUpdateBegin();
 
             MSG msg;
 
@@ -118,8 +115,8 @@ class Window
                 DispatchMessage(&msg);
             }
 
-            this->mouse.__onWindowUpdateEnd();
-            this->keyboard.__onWindowUpdateEnd();
+            this->m_mouse.__onWindowUpdateEnd();
+            this->m_keyboard.__onWindowUpdateEnd();
         }
 
 		void render()
@@ -152,8 +149,8 @@ class Window
             }
 
             // Dispatch Message To Peripheral Devices
-            if (this->mouse.__handleMessage(msg, wParam, lParam)) return 0;
-            if (this->keyboard.__handleMessage(msg, wParam, lParam)) return 0;
+            if (this->m_mouse.__handleMessage(msg, wParam, lParam)) return 0;
+            if (this->m_keyboard.__handleMessage(msg, wParam, lParam)) return 0;
 
             // Otherwise Let Windows Handle The Message
             return DefWindowProc(this->m_handle, msg, wParam, lParam);
