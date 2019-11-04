@@ -1,5 +1,6 @@
 #pragma once
 
+#include "meshes/Mesh.h"
 #include "../../math/Vectors.h"
 
 #include <wrl.h>
@@ -10,9 +11,6 @@
 
 class Graphics {
 	public:
-		bool wasDirectX3DInitSuccessful = false;
-
-	private:
 		Microsoft::WRL::ComPtr<ID3D11Device> m_pDevice;
 		Microsoft::WRL::ComPtr<IDXGISwapChain> m_pSwapChain;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_pDeviceContext;
@@ -23,10 +21,14 @@ class Graphics {
 
 		void createRenderTarget();
 
+		void createViewport();
+
     public:
         Graphics(HWND windowHandle);
 
 		void fill(const Color& color);
+
+		void renderMesh(const Mesh& mesh);
 
 		void present();
 };

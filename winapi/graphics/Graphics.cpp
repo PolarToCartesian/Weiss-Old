@@ -18,7 +18,7 @@ void Graphics::createDeviceAndSwapChain(HWND windowHandle) {
 	scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	scd.Flags = 0;
 
-	this->wasDirectX3DInitSuccessful = S_OK == D3D11CreateDeviceAndSwapChain(
+	H_ERROR(D3D11CreateDeviceAndSwapChain(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
@@ -31,26 +31,34 @@ void Graphics::createDeviceAndSwapChain(HWND windowHandle) {
 		&m_pDevice,
 		nullptr,
 		&m_pDeviceContext
-	);
+	));
 }
 
 void Graphics::createRenderTarget()
 {
-	if (this->wasDirectX3DInitSuccessful)
-	{
-		Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
+	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
 
-		this->wasDirectX3DInitSuccessful = S_OK == this->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer);
+	H_ERROR(this->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer));
+	H_ERROR(this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget));
+}
 
-		if (this->wasDirectX3DInitSuccessful)
-			this->wasDirectX3DInitSuccessful = S_OK == this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget);
-	}
+void Graphics::createViewport()
+{
+	D3D11_VIEWPORT vp;
+	vp.Width = 1920;
+	vp.Height = 1080;
+	vp.MinDepth = 0;
+	vp.MaxDepth = 1;
+	vp.TopLeftX = 0;
+	vp.TopLeftY = 0;
+	this->m_pDeviceContext->RSSetViewports(1u, &vp);
 }
 
 Graphics::Graphics(HWND windowHandle)
 {
 	this->createDeviceAndSwapChain(windowHandle);
 	this->createRenderTarget();
+	this->createViewport();
 }
 
 void Graphics::fill(const Color& color)
@@ -58,8 +66,21 @@ void Graphics::fill(const Color& color)
 	this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&color);
 }
 
+void Graphics::renderMesh(const Mesh& mesh)
+{
+	mesh.vb.Bind();
+	mesh.ib.Bind();
+	mesh.ps.Bind();
+	mesh.vs.Bind();
+
+	this->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+	this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), nullptr);
+
+	this->m_pDeviceContext->DrawIndexed((UINT)std::size(mesh.ib.indices), 0u, 0u);
+}
+
 void Graphics::present()
 {
-	if (this->wasDirectX3DInitSuccessful)
-		this->m_pSwapChain->Present(1u, 0u);
+	H_ERROR(this->m_pSwapChain->Present(1u, 0u));
 }

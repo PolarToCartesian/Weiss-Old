@@ -4,5 +4,6 @@
 
 struct Vertex
 {
-	std::array<float, 3> position;
+	float x;
+	float y;
 };

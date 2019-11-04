@@ -60,7 +60,7 @@ class Window
                 ShowWindow(this->m_handle, SW_SHOW);
                 UpdateWindow(this->m_handle);
 
-                this->m_isRunning = this->m_pGraphics->wasDirectX3DInitSuccessful;
+                this->m_isRunning = true;
             }
         }
 

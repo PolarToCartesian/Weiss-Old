@@ -14,10 +14,10 @@ ConstantBuffer::ConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDevi
 
 	D3D11_SUBRESOURCE_DATA csd = {};
 	csd.pSysMem = &obj;
-	this->pDeviceRef->CreateBuffer(&cbd, &csd, &this->m_pBuffer);
+	H_ERROR(this->pDeviceRef->CreateBuffer(&cbd, &csd, &this->m_pConstantBuffer));
 }
 
-void ConstantBuffer::Bind()
+void ConstantBuffer::Bind() const noexcept
 {
-	this->m_pDeviceContextRef->VSSetConstantBuffers(0u, 1u, this->m_pBuffer.GetAddressOf());
+	this->m_pDeviceContextRef->VSSetConstantBuffers(0u, 1u, this->m_pConstantBuffer.GetAddressOf());
 }

@@ -1,6 +1,8 @@
 #include "VertexBuffer.h"
 
-VertexBuffer::VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef, const std::vector<Vertex>& vertices)
+VertexBuffer::VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, 
+								 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef, 
+						   const std::vector<Vertex>& vertices)
 	: m_pDeviceContextRef(pDeviceContextRef), nVertices(vertices.size())
 {
 	D3D11_BUFFER_DESC bd = {};
@@ -12,14 +14,14 @@ VertexBuffer::VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRe
 	bd.StructureByteStride = sizeof(Vertex);
 
 	D3D11_SUBRESOURCE_DATA sd = {};
-	sd.pSysMem = &vertices[0];
-	pDeviceRef->CreateBuffer(&bd, &sd, &this->m_pBuffer);
+	sd.pSysMem = vertices.data();
+	H_ERROR(pDeviceRef->CreateBuffer(&bd, &sd, &this->m_pVertexBuffer));
 }
 
-void VertexBuffer::Bind()
+void VertexBuffer::Bind() const noexcept
 {
 	const UINT stride = sizeof(Vertex);
 	const UINT offset = 0u;
 
-	this->m_pDeviceContextRef->IASetVertexBuffers(0u, 1u, this->m_pBuffer.GetAddressOf(), &stride, &offset);
+	this->m_pDeviceContextRef->IASetVertexBuffers(0u, 1u, this->m_pVertexBuffer.GetAddressOf(), &stride, &offset);
 }
