@@ -31,9 +31,9 @@ bool Mouse::__handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		case WM_MOUSEMOVE:
 			{
-				this->m_deltaPosition += Vec2i{
-					static_cast<int16_t>(static_cast<int16_t>(GET_X_LPARAM(lParam)) - static_cast<int16_t>(this->m_position[0])),
-					static_cast<int16_t>(static_cast<int16_t>(GET_Y_LPARAM(lParam)) - static_cast<int16_t>(this->m_position[1]))
+				this->m_deltaPosition = Vec2i{
+					static_cast<int16_t>(this->m_deltaPosition[0] + static_cast<int16_t>(GET_X_LPARAM(lParam)) - static_cast<int16_t>(this->m_position[0])),
+					static_cast<int16_t>(this->m_deltaPosition[1] + static_cast<int16_t>(GET_Y_LPARAM(lParam)) - static_cast<int16_t>(this->m_position[1]))
 				};
 
 				this->m_position = { (uint16_t)GET_X_LPARAM(lParam), (uint16_t)GET_Y_LPARAM(lParam) };
