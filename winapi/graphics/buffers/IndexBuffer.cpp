@@ -1,7 +1,6 @@
 #include "IndexBuffer.h"
 
-IndexBuffer::IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef, const std::vector<unsigned short>& indices)
-	: m_pDeviceContextRef(pDeviceContextRef)
+IndexBuffer::IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, const std::vector<unsigned short>& indices)
 {
 	this->indices = indices;
 
@@ -10,7 +9,7 @@ IndexBuffer::IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 	ibd.Usage = D3D11_USAGE_DEFAULT;
 	ibd.CPUAccessFlags = 0u;
 	ibd.MiscFlags = 0u;
-	ibd.ByteWidth = sizeof(unsigned short) * this->indices.size();
+	ibd.ByteWidth = static_cast<UINT>(sizeof(unsigned short) * this->indices.size());
 	ibd.StructureByteStride = sizeof(unsigned short);
 
 	D3D11_SUBRESOURCE_DATA isd = {};
@@ -18,7 +17,7 @@ IndexBuffer::IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 	H_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer));
 }
 
-void IndexBuffer::Bind() const noexcept
+void IndexBuffer::Bind(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef) const noexcept
 {
-	this->m_pDeviceContextRef->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0u);
+	pDeviceContextRef->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R16_UINT, 0u);
 }

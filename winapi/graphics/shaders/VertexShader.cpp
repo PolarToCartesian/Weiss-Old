@@ -1,10 +1,8 @@
 #include "VertexShader.h"
 
 VertexShader::VertexShader(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, 
-								 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
 						   const std::vector<D3D11_INPUT_ELEMENT_DESC>& ieds,
 						   const LPCWSTR filename)
-	: m_pDeviceContextRef(pDeviceContextRef)
 {
 	Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
 	D3DReadFileToBlob(filename, &pBlob);
@@ -18,8 +16,8 @@ VertexShader::VertexShader(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRe
 	));
 }
 
-void VertexShader::Bind() const noexcept
+void VertexShader::Bind(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef) const noexcept
 {
-	this->m_pDeviceContextRef->IASetInputLayout(this->m_pInputLayout.Get());
-	this->m_pDeviceContextRef->VSSetShader(this->m_pVertexShader.Get(), nullptr, 0u);
+	pDeviceContextRef->IASetInputLayout(this->m_pInputLayout.Get());
+	pDeviceContextRef->VSSetShader(this->m_pVertexShader.Get(), nullptr, 0u);
 }

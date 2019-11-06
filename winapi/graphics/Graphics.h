@@ -12,8 +12,10 @@
 class Graphics {
 	public:
 		Microsoft::WRL::ComPtr<ID3D11Device> m_pDevice;
-		Microsoft::WRL::ComPtr<IDXGISwapChain> m_pSwapChain;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_pDeviceContext;
+
+	private:
+		Microsoft::WRL::ComPtr<IDXGISwapChain> m_pSwapChain;
 		Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_pRenderTarget;
 
 	private:
@@ -25,6 +27,12 @@ class Graphics {
 
     public:
         Graphics(HWND windowHandle);
+
+		Mesh createMesh(const std::vector<Vertex>& vertices,
+						const std::vector<unsigned short>& indices,
+						const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
+						const wchar_t* vertexShaderFilename,
+						const wchar_t* pixelShaderFilename);
 
 		void fill(const Color& color);
 

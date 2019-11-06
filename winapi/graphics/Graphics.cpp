@@ -51,6 +51,7 @@ void Graphics::createViewport()
 	vp.MaxDepth = 1;
 	vp.TopLeftX = 0;
 	vp.TopLeftY = 0;
+
 	this->m_pDeviceContext->RSSetViewports(1u, &vp);
 }
 
@@ -61,6 +62,20 @@ Graphics::Graphics(HWND windowHandle)
 	this->createViewport();
 }
 
+Mesh Graphics::createMesh(const std::vector<Vertex>& vertices,
+						  const std::vector<unsigned short>& indices,
+						  const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
+						  const wchar_t* vertexShaderFilename,
+						  const wchar_t* pixelShaderFilename)
+{
+	return Mesh{
+		VertexBuffer(this->m_pDevice, vertices),
+		IndexBuffer(this->m_pDevice, indices),
+		VertexShader(this->m_pDevice, ieds, vertexShaderFilename),
+		PixelShader(this->m_pDevice, pixelShaderFilename),
+	};
+}
+
 void Graphics::fill(const Color& color)
 {
 	this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&color);
@@ -68,10 +83,7 @@ void Graphics::fill(const Color& color)
 
 void Graphics::renderMesh(const Mesh& mesh)
 {
-	mesh.vb.Bind();
-	mesh.ib.Bind();
-	mesh.ps.Bind();
-	mesh.vs.Bind();
+	mesh.Bind(this->m_pDeviceContext);
 
 	this->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
