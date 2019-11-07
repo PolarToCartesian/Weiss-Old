@@ -1,8 +1,9 @@
 #include "VertexBuffer.h"
 
 VertexBuffer::VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, 
+						   Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
 						   const std::vector<Vertex>& vertices)
-	: nVertices(vertices.size())
+	: nVertices(vertices.size()), m_pDeviceContextRef(pDeviceContextRef)
 {
 	D3D11_BUFFER_DESC bd = {};
 	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -17,10 +18,10 @@ VertexBuffer::VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRe
 	H_ERROR(pDeviceRef->CreateBuffer(&bd, &sd, &this->m_pVertexBuffer));
 }
 
-void VertexBuffer::Bind(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef) const noexcept
+void VertexBuffer::Bind() const noexcept
 {
 	const UINT stride = sizeof(Vertex);
 	const UINT offset = 0u;
 
-	pDeviceContextRef->IASetVertexBuffers(0u, 1u, this->m_pVertexBuffer.GetAddressOf(), &stride, &offset);
+	this->m_pDeviceContextRef->IASetVertexBuffers(0u, 1u, this->m_pVertexBuffer.GetAddressOf(), &stride, &offset);
 }

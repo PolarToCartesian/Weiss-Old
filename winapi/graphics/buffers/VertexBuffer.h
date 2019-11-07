@@ -12,10 +12,12 @@ class VertexBuffer {
 		size_t nVertices;
 
 		Microsoft::WRL::ComPtr<ID3D11Buffer> m_pVertexBuffer;
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef;
 
 	public:
-		VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, 
+		VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
+					 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef,
 					 const std::vector<Vertex>& vertices);
 
-		void Bind(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef) const noexcept;
+		void Bind() const noexcept;
 };

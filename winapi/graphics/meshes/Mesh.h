@@ -2,6 +2,7 @@
 
 #include "../buffers/IndexBuffer.h"
 #include "../buffers/VertexBuffer.h"
+#include "../buffers/ConstantBuffer.h"
 
 #include "../shaders/PixelShader.h"
 #include "../shaders/VertexShader.h"
@@ -15,11 +16,16 @@ struct Mesh {
 	VertexShader vs;
 	PixelShader ps;
 
-	void Bind(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContext) const
+	std::optional<ConstantBuffer> cb;
+
+	void Bind() const
 	{
-		vb.Bind(pDeviceContext);
-		ib.Bind(pDeviceContext);
-		ps.Bind(pDeviceContext);
-		vs.Bind(pDeviceContext);
+		vb.Bind();
+		ib.Bind();
+		ps.Bind();
+		vs.Bind();
+
+		if (cb.has_value())
+			cb.value().Bind();
 	}
 };

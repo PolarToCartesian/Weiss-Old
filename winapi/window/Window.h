@@ -27,7 +27,8 @@ class Window
         Vec2u m_position{0, 0};
         Vec2u m_dimensions{0, 0};
 
-        bool m_isRunning = false;
+        bool m_isRunning   = false;
+		bool m_isMinimized = false;
 
         std::function<void(const Vec2u)> m_onResizeFunctor = [](const Vec2u dim) {};
 
@@ -121,7 +122,8 @@ class Window
 
 		void render()
 		{
-			m_pGraphics->present();
+			if (!this->m_isMinimized)
+				m_pGraphics->present();
 		}
 
         LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
@@ -142,6 +144,9 @@ class Window
 					};
 
                     this->m_onResizeFunctor(this->m_dimensions);
+
+					this->m_isMinimized = (this->m_dimensions[0] == 0 && this->m_dimensions[1] == 0);
+
                     return 0;
                 case WM_DESTROY:
                     this->destroy();

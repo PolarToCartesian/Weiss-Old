@@ -66,14 +66,26 @@ Mesh Graphics::createMesh(const std::vector<Vertex>& vertices,
 						  const std::vector<unsigned short>& indices,
 						  const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
 						  const wchar_t* vertexShaderFilename,
-						  const wchar_t* pixelShaderFilename)
+						  const wchar_t* pixelShaderFilename,
+						  const std::optional<UINT>& objSize)
 {
-	return Mesh{
-		VertexBuffer(this->m_pDevice, vertices),
-		IndexBuffer(this->m_pDevice, indices),
-		VertexShader(this->m_pDevice, ieds, vertexShaderFilename),
-		PixelShader(this->m_pDevice, pixelShaderFilename),
-	};
+	if (objSize.has_value())
+	{
+		return Mesh{
+			VertexBuffer  (this->m_pDevice, this->m_pDeviceContext, vertices),
+			IndexBuffer   (this->m_pDevice, this->m_pDeviceContext, indices),
+			VertexShader  (this->m_pDevice, this->m_pDeviceContext, ieds, vertexShaderFilename),
+			PixelShader   (this->m_pDevice, this->m_pDeviceContext, pixelShaderFilename),
+			ConstantBuffer(this->m_pDevice, this->m_pDeviceContext, objSize.value())
+		};
+	} else {
+		return Mesh{
+			VertexBuffer(this->m_pDevice, this->m_pDeviceContext, vertices),
+			IndexBuffer (this->m_pDevice, this->m_pDeviceContext, indices),
+			VertexShader(this->m_pDevice, this->m_pDeviceContext, ieds, vertexShaderFilename),
+			PixelShader (this->m_pDevice, this->m_pDeviceContext, pixelShaderFilename),
+		};
+	}
 }
 
 void Graphics::fill(const Color& color)
@@ -83,13 +95,13 @@ void Graphics::fill(const Color& color)
 
 void Graphics::renderMesh(const Mesh& mesh)
 {
-	mesh.Bind(this->m_pDeviceContext);
+	mesh.Bind();
 
 	this->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), nullptr);
 
-	this->m_pDeviceContext->DrawIndexed((UINT)std::size(mesh.ib.indices), 0u, 0u);
+	this->m_pDeviceContext->DrawIndexed(mesh.ib.getSize(), 0u, 0u);
 }
 
 void Graphics::present()

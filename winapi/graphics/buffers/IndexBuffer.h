@@ -10,12 +10,14 @@
 class IndexBuffer {
 	private:
 		Microsoft::WRL::ComPtr<ID3D11Buffer> m_pIndexBuffer;
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef;
 		
-	public:
-		std::vector<unsigned short> indices;
+		UINT m_nBytes;
 
 	public:
-		IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, const std::vector<unsigned short>& indices);
+		IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef, const std::vector<unsigned short>& indices);
 
-		void Bind(Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef) const noexcept;
+		UINT getSize() const;
+
+		void Bind() const noexcept;
 };

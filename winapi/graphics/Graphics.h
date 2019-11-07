@@ -32,7 +32,8 @@ class Graphics {
 						const std::vector<unsigned short>& indices,
 						const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
 						const wchar_t* vertexShaderFilename,
-						const wchar_t* pixelShaderFilename);
+						const wchar_t* pixelShaderFilename,
+						const std::optional<UINT>& objSize);
 
 		void fill(const Color& color);
 
