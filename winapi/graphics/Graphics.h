@@ -26,6 +26,7 @@ class Graphics {
 		void createViewport();
 
     public:
+		Graphics() {};
         Graphics(HWND windowHandle);
 
 		Mesh createMesh(const std::vector<Vertex>& vertices,
@@ -33,11 +34,11 @@ class Graphics {
 						const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
 						const wchar_t* vertexShaderFilename,
 						const wchar_t* pixelShaderFilename,
-						const std::optional<UINT>& objSize);
+						const std::vector<std::pair<ConstantBufferShaderBinding, UINT>>& constantBuffers);
 
 		void fill(const Color& color);
 
 		void renderMesh(const Mesh& mesh);
 
-		void present();
+		void render();
 };

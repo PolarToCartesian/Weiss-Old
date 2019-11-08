@@ -67,25 +67,20 @@ Mesh Graphics::createMesh(const std::vector<Vertex>& vertices,
 						  const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
 						  const wchar_t* vertexShaderFilename,
 						  const wchar_t* pixelShaderFilename,
-						  const std::optional<UINT>& objSize)
+						  const std::vector<std::pair<ConstantBufferShaderBinding, UINT>>& constantBuffers)
 {
-	if (objSize.has_value())
-	{
-		return Mesh{
-			VertexBuffer  (this->m_pDevice, this->m_pDeviceContext, vertices),
-			IndexBuffer   (this->m_pDevice, this->m_pDeviceContext, indices),
-			VertexShader  (this->m_pDevice, this->m_pDeviceContext, ieds, vertexShaderFilename),
-			PixelShader   (this->m_pDevice, this->m_pDeviceContext, pixelShaderFilename),
-			ConstantBuffer(this->m_pDevice, this->m_pDeviceContext, objSize.value())
-		};
-	} else {
-		return Mesh{
-			VertexBuffer(this->m_pDevice, this->m_pDeviceContext, vertices),
-			IndexBuffer (this->m_pDevice, this->m_pDeviceContext, indices),
-			VertexShader(this->m_pDevice, this->m_pDeviceContext, ieds, vertexShaderFilename),
-			PixelShader (this->m_pDevice, this->m_pDeviceContext, pixelShaderFilename),
-		};
-	}
+	Mesh mesh {
+		VertexBuffer  (this->m_pDevice, this->m_pDeviceContext, vertices),
+		IndexBuffer   (this->m_pDevice, this->m_pDeviceContext, indices),
+		VertexShader  (this->m_pDevice, this->m_pDeviceContext, ieds, vertexShaderFilename),
+		PixelShader   (this->m_pDevice, this->m_pDeviceContext, pixelShaderFilename),
+		{}
+	};
+
+	for (const std::pair<ConstantBufferShaderBinding, UINT>& cb : constantBuffers)
+		mesh.cbs.emplace_back(this->m_pDevice, this->m_pDeviceContext, cb.first, cb.second);
+
+	return mesh;
 }
 
 void Graphics::fill(const Color& color)
@@ -104,7 +99,7 @@ void Graphics::renderMesh(const Mesh& mesh)
 	this->m_pDeviceContext->DrawIndexed(mesh.ib.getSize(), 0u, 0u);
 }
 
-void Graphics::present()
+void Graphics::render()
 {
 	H_ERROR(this->m_pSwapChain->Present(1u, 0u));
 }

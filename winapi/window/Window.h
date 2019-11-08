@@ -19,8 +19,6 @@ class Window
         HWND m_handle;
         HINSTANCE m_hinstance;
 
-        Graphics* m_pGraphics = nullptr;
-
 		Mouse m_mouse;
 		Keyboard m_keyboard;
 
@@ -56,8 +54,6 @@ class Window
 
                 this->m_handle = CreateWindowA("WNDCLASSA", title, windowStyle, 0, 0, width, height, NULL, NULL, hInstance, NULL);
 
-                this->m_pGraphics = new Graphics(this->m_handle);
-
                 ShowWindow(this->m_handle, SW_SHOW);
                 UpdateWindow(this->m_handle);
 
@@ -67,6 +63,8 @@ class Window
 
         // Misc
         void onResize(const std::function<void(const Vec2u)>& functor) { this->m_onResizeFunctor = functor; }
+
+		Graphics createGraphics() { return Graphics(this->m_handle); }
 
         // Getters
         inline uint16_t  getWidth()           const { return this->m_dimensions[0]; }
@@ -78,7 +76,6 @@ class Window
         inline Vec2u     getWindowPosition()  const { return this->m_position;      }
 			   Keyboard& getKeyboard()              { return this->m_keyboard; }
 			   Mouse&    getMouse()                 { return this->m_mouse;         }
-			   Graphics& getGraphics()        const { return *(this->m_pGraphics);  }
 
         // Setters
         inline void setWidth(const uint16_t width)   { this->setSize(width, this->m_dimensions[1]);  }
@@ -101,7 +98,7 @@ class Window
         }
 
         void setTitle(const char* title) { SetWindowTextA(this->m_handle, title); }
-        
+
         // MESSAGE HANDLING
         void update()
         {
@@ -119,12 +116,6 @@ class Window
             this->m_mouse.__onWindowUpdateEnd();
             this->m_keyboard.__onWindowUpdateEnd();
         }
-
-		void render()
-		{
-			if (!this->m_isMinimized)
-				m_pGraphics->present();
-		}
 
         LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
         {

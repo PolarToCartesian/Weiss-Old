@@ -7,7 +7,7 @@
 #include "../shaders/PixelShader.h"
 #include "../shaders/VertexShader.h"
 
-#include <optional>
+#include <DirectXMath.h>
 
 struct Mesh {
 	VertexBuffer vb;
@@ -16,8 +16,8 @@ struct Mesh {
 	VertexShader vs;
 	PixelShader ps;
 
-	std::optional<ConstantBuffer> cb;
-
+	std::vector<ConstantBuffer> cbs;
+	
 	void Bind() const
 	{
 		vb.Bind();
@@ -25,7 +25,7 @@ struct Mesh {
 		ps.Bind();
 		vs.Bind();
 
-		if (cb.has_value())
-			cb.value().Bind();
+		for (const ConstantBuffer& cb : cbs)
+			cb.Bind();
 	}
 };
