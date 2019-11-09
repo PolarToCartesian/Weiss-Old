@@ -19,15 +19,15 @@ class Mouse : PeripheralDevice
 
         bool m_wasCursorMovedDuringUpdate = false;
 
-        std::function<void(const Vec2u)> m_onLeftButtonUpFunctor    = [](const Vec2u pos) {};
-        std::function<void(const Vec2u)> m_onLeftButtonDownFunctor  = [](const Vec2u pos) {};
+        std::vector<std::function<void(const Vec2u)>> m_onLeftButtonUpFunctors;
+		std::vector<std::function<void(const Vec2u)>> m_onLeftButtonDownFunctors;
         
-        std::function<void(const Vec2u)> m_onRightButtonUpFunctor   = [](const Vec2u pos) {};
-        std::function<void(const Vec2u)> m_onRightButtonDownFunctor = [](const Vec2u pos) {};
+		std::vector<std::function<void(const Vec2u)>> m_onRightButtonUpFunctors;
+		std::vector<std::function<void(const Vec2u)>> m_onRightButtonDownFunctors;
 
-        std::function<void(const int16_t)> m_onWheelTurnFunctor = [](const int16_t delta) {};
+		std::vector<std::function<void(const int16_t)>> m_onWheelTurnFunctors;
 
-        std::function<void(const Vec2u, const Vec2i)> m_onCursorMove = [](const Vec2u pos, const Vec2i deltaPos) {};
+		std::vector<std::function<void(const Vec2u, const Vec2i)>> m_onCursorMoveFunctors;
 
     public:
 		Mouse();
@@ -39,14 +39,17 @@ class Mouse : PeripheralDevice
 		void onRightButtonDown(const std::function<void(Vec2u)>& functor);
 
         void onWheelTurn(const std::function<void(const int16_t)>& functor);
-		;
+		
         void onCursorMove(const std::function<void(const Vec2u, const Vec2i)>& functor);
-		;
+		
         bool isLeftButtonUp()   const;
 		bool isLeftButtonDown() const;
 
         bool isRightButtonUp()   const;
 		bool isRightButtonDown() const;
+
+		void show() const;
+		void hide() const;
 
 		virtual void __onWindowUpdateBegin() override;
 

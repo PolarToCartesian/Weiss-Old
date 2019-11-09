@@ -50,7 +50,7 @@ class Window
 
             if (RegisterClassA(&wc))
             {
-                const DWORD windowStyle = isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+                const uint32_t windowStyle = isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
 
                 this->m_handle = CreateWindowA("WNDCLASSA", title, windowStyle, 0, 0, width, height, NULL, NULL, hInstance, NULL);
 

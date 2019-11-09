@@ -13,8 +13,8 @@ class Keyboard : PeripheralDevice
     private:
         std::vector<uint8_t> m_downKeys;
 
-        std::function<void(const uint8_t)> m_onKeyUpFunctor   = [](const uint8_t keyCode) {};
-        std::function<void(const uint8_t)> m_onKeyDownFunctor = [](const uint8_t keyCode) {};
+		std::vector<std::function<void(const uint8_t)>> m_onKeyUpFunctors;
+		std::vector<std::function<void(const uint8_t)>> m_onKeyDownFunctors;
 
     public:
 		Keyboard();

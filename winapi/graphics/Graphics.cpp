@@ -55,15 +55,55 @@ void Graphics::createViewport()
 	this->m_pDeviceContext->RSSetViewports(1u, &vp);
 }
 
+void Graphics::createDepthBuffer()
+{
+	D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+	dsDesc.DepthEnable = TRUE;
+	dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+	dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> pDSState;
+	H_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &pDSState));
+
+	// Bind pDSState
+	this->m_pDeviceContext->OMSetDepthStencilState(pDSState.Get(), 1u);
+
+	// Create Detph Texture
+	Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
+	D3D11_TEXTURE2D_DESC descDepth = {};
+	descDepth.Width = 1920u;
+	descDepth.Height = 1080u;
+	descDepth.MipLevels = 1u;
+	descDepth.ArraySize = 1u;
+	descDepth.Format = DXGI_FORMAT_D32_FLOAT;
+	descDepth.SampleDesc.Count = 1u;
+	descDepth.SampleDesc.Quality = 0u;
+	descDepth.Usage = D3D11_USAGE_DEFAULT;
+	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+	H_ERROR(this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil));
+
+	// Create Depth Stencil Texture View
+	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
+	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
+	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+	descDSV.Texture2D.MipSlice = 0u;
+	H_ERROR(this->m_pDevice->CreateDepthStencilView(
+		pDepthStencil.Get(), &descDSV, &this->m_pDepthStencilView
+	));
+
+	// Bind Depth Stencil
+	this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), this->m_pDepthStencilView.Get());
+}
+
 Graphics::Graphics(HWND windowHandle)
 {
 	this->createDeviceAndSwapChain(windowHandle);
 	this->createRenderTarget();
 	this->createViewport();
+	this->createDepthBuffer();
 }
 
 Mesh Graphics::createMesh(const std::vector<Vertex>& vertices,
-						  const std::vector<unsigned short>& indices,
+						  const std::vector<uint32_t>& indices,
 						  const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
 						  const wchar_t* vertexShaderFilename,
 						  const wchar_t* pixelShaderFilename,
@@ -83,6 +123,66 @@ Mesh Graphics::createMesh(const std::vector<Vertex>& vertices,
 	return mesh;
 }
 
+Mesh Graphics::createMesh(const char* filename,
+	const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
+	const wchar_t* vertexShaderFilename,
+	const wchar_t* pixelShaderFilename,
+	const std::vector<std::pair<ConstantBufferShaderBinding, UINT>>& constantBuffers)
+{
+	std::vector<Vertex> vertices;
+	std::vector<uint32_t> indices;
+
+	std::ifstream infile(filename);
+
+	std::string opcode;
+	char junkChar;
+	float junkFloat;
+	std::string line;
+	while (std::getline(infile, line))
+	{
+		std::istringstream iss(line);
+
+		iss >> opcode;
+
+		if (opcode == "v")
+		{
+			Vertex vertex{
+						{0.f, 0.f, 0.f},
+						{std::rand() / (float) RAND_MAX * 255,
+						std::rand() / (float)RAND_MAX * 255,
+						std::rand() / (float)RAND_MAX * 255,
+						255} };
+
+			iss >> vertex.pos.x >> vertex.pos.y >> vertex.pos.z;
+
+			vertices.push_back(vertex);
+		}
+		else if (opcode == "f")
+		{
+			const uint16_t spaceCount = std::count(line.begin(), line.end(), ' ');
+			const uint16_t slashCount = std::count(line.begin(), line.end(), '/');
+
+			if (spaceCount == 3)
+			{
+				uint32_t i1 = 0, i2 = 0, i3 = 0;
+
+				if (slashCount == 0)
+					iss >> i1 >> i2 >> i3;
+				else if (slashCount == 3)
+					iss >> i1 >> junkChar >> junkFloat >> i2 >> junkChar >> junkFloat >> i3;
+				else if (slashCount == 6)
+					iss >> i1 >> junkChar >> junkFloat >> junkChar >> junkFloat >> i2 >> junkChar >> junkFloat >> junkChar >> junkFloat >> i3;
+			
+				indices.push_back(i1 - 1);
+				indices.push_back(i2 - 1);
+				indices.push_back(i3 - 1);
+			}
+		}
+	}
+
+	return this->createMesh(vertices, indices, ieds, vertexShaderFilename, pixelShaderFilename, constantBuffers);
+}
+
 void Graphics::fill(const Color& color)
 {
 	this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&color);
@@ -94,12 +194,13 @@ void Graphics::renderMesh(const Mesh& mesh)
 
 	this->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-	this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), nullptr);
-
 	this->m_pDeviceContext->DrawIndexed(mesh.ib.getSize(), 0u, 0u);
 }
 
 void Graphics::render()
 {
 	H_ERROR(this->m_pSwapChain->Present(1u, 0u));
+
+	// Clear Depth Buffer
+	this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
 }

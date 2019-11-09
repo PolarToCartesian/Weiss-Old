@@ -22,7 +22,7 @@ struct Mesh {
 	{
 		vb.Bind();
 		ib.Bind();
-		ps.Bind();
+		ps.Bind(); 
 		vs.Bind();
 
 		for (const ConstantBuffer& cb : cbs)

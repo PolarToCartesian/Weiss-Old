@@ -2,6 +2,7 @@
 
 #include <string>
 #include <Windows.h>
+#include <iostream>
 
 #define H_ERROR(hr) {\
 	if (hr != S_OK)\
