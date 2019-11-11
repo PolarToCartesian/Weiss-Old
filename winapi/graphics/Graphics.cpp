@@ -107,7 +107,7 @@ Mesh Graphics::createMesh(const std::vector<Vertex>& vertices,
 						  const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
 						  const wchar_t* vertexShaderFilename,
 						  const wchar_t* pixelShaderFilename,
-						  const std::vector<std::pair<ConstantBufferShaderBinding, UINT>>& constantBuffers)
+						  const std::vector<ConstantBufferDescriptor>& constantBufferDescriptors)
 {
 	Mesh mesh {
 		VertexBuffer  (this->m_pDevice, this->m_pDeviceContext, vertices),
@@ -117,8 +117,8 @@ Mesh Graphics::createMesh(const std::vector<Vertex>& vertices,
 		{}
 	};
 
-	for (const std::pair<ConstantBufferShaderBinding, UINT>& cb : constantBuffers)
-		mesh.cbs.emplace_back(this->m_pDevice, this->m_pDeviceContext, cb.first, cb.second);
+	for (const ConstantBufferDescriptor& descriptor : constantBufferDescriptors)
+		mesh.cbs.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 	return mesh;
 }
@@ -127,7 +127,7 @@ Mesh Graphics::createMesh(const char* filename,
 	const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
 	const wchar_t* vertexShaderFilename,
 	const wchar_t* pixelShaderFilename,
-	const std::vector<std::pair<ConstantBufferShaderBinding, UINT>>& constantBuffers)
+	const std::vector<ConstantBufferDescriptor>& constantBufferDescriptors)
 {
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
@@ -148,9 +148,10 @@ Mesh Graphics::createMesh(const char* filename,
 		{
 			Vertex vertex{
 						{0.f, 0.f, 0.f},
-						{std::rand() / (float) RAND_MAX * 255,
-						std::rand() / (float)RAND_MAX * 255,
-						std::rand() / (float)RAND_MAX * 255,
+						{255, 255, 255,
+						//{std::rand() / (float) RAND_MAX * 255,
+						//std::rand() / (float)RAND_MAX * 255,
+						//std::rand() / (float)RAND_MAX * 255,
 						255} };
 
 			iss >> vertex.pos.x >> vertex.pos.y >> vertex.pos.z;
@@ -180,7 +181,7 @@ Mesh Graphics::createMesh(const char* filename,
 		}
 	}
 
-	return this->createMesh(vertices, indices, ieds, vertexShaderFilename, pixelShaderFilename, constantBuffers);
+	return this->createMesh(vertices, indices, ieds, vertexShaderFilename, pixelShaderFilename, constantBufferDescriptors);
 }
 
 void Graphics::fill(const Color& color)
@@ -197,9 +198,9 @@ void Graphics::renderMesh(const Mesh& mesh)
 	this->m_pDeviceContext->DrawIndexed(mesh.ib.getSize(), 0u, 0u);
 }
 
-void Graphics::render()
+void Graphics::render(const bool useVSync)
 {
-	H_ERROR(this->m_pSwapChain->Present(1u, 0u));
+	H_ERROR(this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u));
 
 	// Clear Depth Buffer
 	this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);

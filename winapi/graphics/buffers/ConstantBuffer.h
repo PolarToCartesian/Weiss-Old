@@ -13,20 +13,25 @@ enum class ConstantBufferShaderBinding {
 	BOTH
 };
 
+struct ConstantBufferDescriptor
+{
+	const ConstantBufferShaderBinding bindingType;
+	const size_t objSize;
+	const UINT slotVS;
+	const UINT slotPS;
+};
+
 class ConstantBuffer {
 	private:
 		Microsoft::WRL::ComPtr<ID3D11Buffer> m_pConstantBuffer;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef;
 
-		ConstantBufferShaderBinding m_bindingType;
-
-		size_t m_objSize;
+		ConstantBufferDescriptor m_descriptor;
 
 	public:
 		ConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 					   Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-					   const ConstantBufferShaderBinding bindingType,
-					   const size_t objSize);
+					   const ConstantBufferDescriptor& descriptor);
 
 		void setData(const void* objPtr);
 

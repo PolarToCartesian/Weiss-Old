@@ -37,17 +37,17 @@ class Graphics {
 						const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
 						const wchar_t* vertexShaderFilename,
 						const wchar_t* pixelShaderFilename,
-						const std::vector<std::pair<ConstantBufferShaderBinding, UINT>>& constantBuffers);
+						const std::vector<ConstantBufferDescriptor>& constantBufferDescriptors);
 
 		Mesh createMesh(const char* filename,
 						const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
 						const wchar_t* vertexShaderFilename,
 						const wchar_t* pixelShaderFilename,
-						const std::vector<std::pair<ConstantBufferShaderBinding, UINT>>& constantBuffers);
+						const std::vector<ConstantBufferDescriptor>& constantBufferDescriptors);
 
 		void fill(const Color& color);
 
 		void renderMesh(const Mesh& mesh);
 
-		void render();
+		void render(const bool useVSync);
 };
