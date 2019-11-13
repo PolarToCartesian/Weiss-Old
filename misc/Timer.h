@@ -17,6 +17,6 @@ class Timer
 			const auto end     = std::chrono::system_clock::now();
 			const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - this->m_start);
 
-			return elapsed.count();
+			return static_cast<uint32_t>(elapsed.count());
 		}
 };

@@ -66,18 +66,18 @@ class PerspectiveCamera : public Camera
 		virtual void handleKeyboardInputs(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down) override
 		{
 			if (keyboard.isKeyDown(forward))
-				this->m_position = DirectX::XMVectorAdd(this->m_position, this->m_forwardVector);
+				this->m_position = DirectX::XMVectorAdd(this->m_position,      DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
 			if (keyboard.isKeyDown(backward))
-				this->m_position = DirectX::XMVectorSubtract(this->m_position, this->m_forwardVector);
+				this->m_position = DirectX::XMVectorSubtract(this->m_position, DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
 
 			if (keyboard.isKeyDown(right))
-				this->m_position = DirectX::XMVectorAdd(this->m_position, this->m_rightVector);
+				this->m_position = DirectX::XMVectorAdd(this->m_position,      DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
 			if (keyboard.isKeyDown(left))
-				this->m_position = DirectX::XMVectorSubtract(this->m_position, this->m_rightVector);
+				this->m_position = DirectX::XMVectorSubtract(this->m_position, DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
 
 			if (keyboard.isKeyDown(up))
-				this->m_position = DirectX::XMVectorAdd(this->m_position, UP_VECTOR);
+				this->m_position = DirectX::XMVectorAdd(this->m_position,      DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
 			if (keyboard.isKeyDown(down))
-				this->m_position = DirectX::XMVectorSubtract(this->m_position, UP_VECTOR);
+				this->m_position = DirectX::XMVectorSubtract(this->m_position, DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
 		}
 };

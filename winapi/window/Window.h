@@ -11,12 +11,21 @@
 
 LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
 
+struct WindowDescriptor
+{
+	uint16_t windowPositionX, windowPositionY;
+	uint16_t windowWidth, windowHeight;
+	char* title;
+	bool isResizable;
+	HINSTANCE hInstance;
+};
+
 class Window
 {
     friend LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
 
     private:
-        HWND m_handle;
+        HWND m_handle = 0;
         HINSTANCE m_hinstance;
 
 		Mouse m_mouse;
@@ -31,17 +40,17 @@ class Window
         std::function<void(const Vec2u)> m_onResizeFunctor = [](const Vec2u dim) {};
 
     public:
-        Window(const uint16_t width, const uint16_t height, const char *title, const bool isResizable, HINSTANCE hInstance)
+        Window(const WindowDescriptor descriptor)
         {
-            this->m_dimensions = {width, height};
-            this->m_hinstance  = hInstance;
+            this->m_dimensions = { descriptor.windowWidth, descriptor.windowHeight };
+            this->m_hinstance  = descriptor.hInstance;
 
             const WNDCLASSA wc { 
                 CS_HREDRAW | CS_VREDRAW,
                 WindowProcessMessages,
                 0,
                 0,
-                hInstance,
+                this->m_hinstance,
                 NULL,
                 LoadCursor(nullptr, IDC_ARROW),
                 (HBRUSH)COLOR_WINDOW, NULL,
@@ -50,12 +59,14 @@ class Window
 
             if (RegisterClassA(&wc))
             {
-                const uint32_t windowStyle = isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+                const uint32_t windowStyle = descriptor.isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
 
-                this->m_handle = CreateWindowA("WNDCLASSA", title, windowStyle, 0, 0, width, height, NULL, NULL, hInstance, NULL);
+                this->m_handle = CreateWindowA("WNDCLASSA", descriptor.title, windowStyle, 0, 0, descriptor.windowWidth, descriptor.windowHeight, NULL, NULL, descriptor.hInstance, NULL);
 
                 ShowWindow(this->m_handle, SW_SHOW);
                 UpdateWindow(this->m_handle);
+
+				this->setPosition(descriptor.windowPositionX, descriptor.windowPositionY);
 
                 this->m_isRunning = true;
             }
@@ -64,16 +75,18 @@ class Window
         // Misc
         void onResize(const std::function<void(const Vec2u)>& functor) { this->m_onResizeFunctor = functor; }
 
-		Graphics createGraphics() { return Graphics(this->m_handle); }
+		std::unique_ptr<Graphics> createGraphics() { return std::make_unique<Graphics>(this->m_handle); }
 
         // Getters
         inline uint16_t  getWidth()           const { return this->m_dimensions[0]; }
         inline uint16_t  getHeight()          const { return this->m_dimensions[1]; }
+		inline uint16_t  getDimensionW()      const { return this->m_dimensions[0]; }
+		inline uint16_t  getDimensionH()      const { return this->m_dimensions[1]; }
         inline Vec2u     getDimensions()      const { return this->m_dimensions;    }
         inline bool      isRunning()          const { return this->m_isRunning;     }
-        inline uint16_t  getWindowPositionX() const { return this->m_position[0];   }
-        inline uint16_t  getWindowPositionY() const { return this->m_position[1];   }
-        inline Vec2u     getWindowPosition()  const { return this->m_position;      }
+        inline uint16_t  getPositionX()       const { return this->m_position[0];   }
+        inline uint16_t  getPositionY()       const { return this->m_position[1];   }
+        inline Vec2u     getPosition()        const { return this->m_position;      }
 			   Keyboard& getKeyboard()              { return this->m_keyboard; }
 			   Mouse&    getMouse()                 { return this->m_mouse;         }
 
@@ -161,25 +174,25 @@ class Window
         }
 };
 
-namespace WindowHandler
+namespace WindowManager
 {
     std::vector<Window> windows;
 
-    Window& createWindow(const uint16_t width, const uint16_t height, const char* title, const bool isResizable, HINSTANCE hInstance)
+    Window* createWindow(const WindowDescriptor& descriptor)
     {
-        windows.emplace_back(width, height, title, isResizable, hInstance);
+        windows.emplace_back(descriptor);
 
-        return windows[windows.size() - 1];
+		return &windows[windows.size() - 1];
     }
 }; // namespace WindowHandler
 
 LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    std::vector<Window>::iterator it = std::find_if(WindowHandler::windows.begin(), WindowHandler::windows.end(), [&hwnd](const Window &window) {
+    std::vector<Window>::iterator it = std::find_if(WindowManager::windows.begin(), WindowManager::windows.end(), [&hwnd](const Window &window) {
         return window.m_handle == hwnd;
     });
 
-    if (it != WindowHandler::windows.end())
+    if (it != WindowManager::windows.end())
         return it->handleMessage(msg, wParam, lParam);
 
     return DefWindowProc(hwnd, msg, wParam, lParam);

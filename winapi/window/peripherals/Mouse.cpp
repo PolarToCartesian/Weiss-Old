@@ -1,6 +1,15 @@
 #include "Mouse.h"
 
-Mouse::Mouse() {}
+Mouse::Mouse()
+{
+	RAWINPUTDEVICE mouseInputDevice;
+	mouseInputDevice.usUsagePage = 0x01;
+	mouseInputDevice.usUsage = 0x02;
+	mouseInputDevice.dwFlags = 0;
+	mouseInputDevice.hwndTarget = nullptr;
+
+	RegisterRawInputDevices(&mouseInputDevice, 1, sizeof(RAWINPUTDEVICE));
+}
 
 void Mouse::onLeftButtonUp(const std::function<void(Vec2u)>& functor)    { this->m_onLeftButtonUpFunctors.push_back(functor); }
 void Mouse::onLeftButtonDown(const std::function<void(Vec2u)>& functor)  { this->m_onLeftButtonDownFunctors.push_back(functor); }
@@ -22,6 +31,13 @@ void Mouse::show() const { ShowCursor(true);  }
 
 void Mouse::hide() const { ShowCursor(false); }
 
+void Mouse::clip(uint16_t leftX, uint16_t leftY, uint16_t rightX, uint16_t rightY) const
+{
+	RECT rect{ leftX, leftY, rightX, rightY };
+
+	ClipCursor(&rect);
+}
+
 void Mouse::__onWindowUpdateBegin()
 {
 	this->m_wheelDelta = 0;
@@ -33,15 +49,36 @@ bool Mouse::__handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	switch (msg)
 	{
+		case WM_INPUT:
+			{
+				UINT size = 0;
+
+				if (!GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER)))
+				{
+					std::vector<char> rawBuffer(size);
+
+					if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawBuffer.data(), &size, sizeof(RAWINPUTHEADER)) == size)
+					{
+						const RAWINPUT& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
+
+						if (ri.header.dwType == RIM_TYPEMOUSE && (ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0))
+						{
+							this->m_deltaPosition = {
+								this->m_deltaPosition[0] + static_cast<uint16_t>(ri.data.mouse.lLastX),
+								this->m_deltaPosition[1] + static_cast<uint16_t>(ri.data.mouse.lLastY)
+							};
+
+							this->m_wasCursorMovedDuringUpdate = true;
+						}
+					}
+				}
+
+				return true;
+			}
+			
+			break;
 		case WM_MOUSEMOVE:
 			{
-				this->m_wasCursorMovedDuringUpdate = true;
-
-				this->m_deltaPosition = Vec2i{
-					static_cast<int16_t>(this->m_deltaPosition[0] + static_cast<int16_t>(GET_X_LPARAM(lParam)) - static_cast<int16_t>(this->m_position[0])),
-					static_cast<int16_t>(this->m_deltaPosition[1] + static_cast<int16_t>(GET_Y_LPARAM(lParam)) - static_cast<int16_t>(this->m_position[1]))
-				};
-
 				this->m_position = { (uint16_t)GET_X_LPARAM(lParam), (uint16_t)GET_Y_LPARAM(lParam) };
 			}
 
