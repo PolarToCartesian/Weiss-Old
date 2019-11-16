@@ -181,6 +181,8 @@ Mesh Graphics::createMesh(const char* filename,
 		}
 	}
 
+	std::cout << indices.size() / 3.f << '\n';
+
 	return this->createMesh(vertices, indices, ieds, vertexShaderFilename, pixelShaderFilename, constantBufferDescriptors);
 }
 

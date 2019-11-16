@@ -20,6 +20,7 @@ class Mouse : PeripheralDevice
         bool m_isLeftButtonDown  = false;
         bool m_isRightButtonDown = false;
 
+		bool m_wasMouseMovedDuringUpdate  = false;
         bool m_wasCursorMovedDuringUpdate = false;
 
         std::vector<std::function<void(const Vec2u)>> m_onLeftButtonUpFunctors;
@@ -30,6 +31,7 @@ class Mouse : PeripheralDevice
 
 		std::vector<std::function<void(const int16_t)>> m_onWheelTurnFunctors;
 
+		std::vector<std::function<void(const Vec2u, const Vec2i)>> m_onMouseMoveFunctors;
 		std::vector<std::function<void(const Vec2u, const Vec2i)>> m_onCursorMoveFunctors;
 
     public:
@@ -43,6 +45,7 @@ class Mouse : PeripheralDevice
 
         void onWheelTurn(const std::function<void(const int16_t)>& functor);
 		
+		void onMouseMove(const std::function<void(const Vec2u, const Vec2i)>& functor);
         void onCursorMove(const std::function<void(const Vec2u, const Vec2i)>& functor);
 		
         bool isLeftButtonUp()   const;

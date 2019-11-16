@@ -19,6 +19,7 @@ void Mouse::onRightButtonDown(const std::function<void(Vec2u)>& functor) { this-
 
 void Mouse::onWheelTurn(const std::function<void(const int16_t)>& functor) { this->m_onWheelTurnFunctors.push_back(functor); }
 
+void Mouse::onMouseMove(const std::function<void(const Vec2u, const Vec2i)>& functor)  { this->m_onMouseMoveFunctors.push_back(functor); }
 void Mouse::onCursorMove(const std::function<void(const Vec2u, const Vec2i)>& functor) { this->m_onCursorMoveFunctors.push_back(functor); }
 
 bool Mouse::isLeftButtonUp()    const { return !this->m_isLeftButtonDown; }
@@ -42,6 +43,7 @@ void Mouse::__onWindowUpdateBegin()
 {
 	this->m_wheelDelta = 0;
 	this->m_deltaPosition = { 0, 0 };
+	this->m_wasMouseMovedDuringUpdate  = false;
 	this->m_wasCursorMovedDuringUpdate = false;
 }
 
@@ -68,7 +70,7 @@ bool Mouse::__handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 								this->m_deltaPosition[1] + static_cast<uint16_t>(ri.data.mouse.lLastY)
 							};
 
-							this->m_wasCursorMovedDuringUpdate = true;
+							this->m_wasMouseMovedDuringUpdate = true;
 						}
 					}
 				}
@@ -80,6 +82,7 @@ bool Mouse::__handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 		case WM_MOUSEMOVE:
 			{
 				this->m_position = { (uint16_t)GET_X_LPARAM(lParam), (uint16_t)GET_Y_LPARAM(lParam) };
+				this->m_wasCursorMovedDuringUpdate = true;
 			}
 
 			return true;
@@ -120,6 +123,10 @@ bool Mouse::__handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 }
 
 void Mouse::__onWindowUpdateEnd() {
+	if (this->m_wasMouseMovedDuringUpdate)
+		for (auto& functor : this->m_onMouseMoveFunctors)
+			functor(this->m_position, this->m_deltaPosition);
+
 	if (this->m_wasCursorMovedDuringUpdate)
 		for (auto& functor : this->m_onCursorMoveFunctors)
 			functor(this->m_position, this->m_deltaPosition);

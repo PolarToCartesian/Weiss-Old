@@ -57,7 +57,7 @@ class PerspectiveCamera : public Camera
 
 		virtual void handleMouseMovements(Mouse& mouse, const float sensitivity) override
 		{
-			mouse.onCursorMove([sensitivity, this](const Vec2u position, const Vec2i delta)
+			mouse.onMouseMove([sensitivity, this](const Vec2u position, const Vec2i delta)
 			{
 				this->rotate({ sensitivity * delta[1], sensitivity * delta[0], 0.0f });
 			});
