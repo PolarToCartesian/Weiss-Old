@@ -42,11 +42,14 @@ void Graphics::createRenderTarget()
 	H_ERROR(this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget));
 }
 
-void Graphics::createViewport()
+void Graphics::createViewport(HWND windowHandle)
 {
+	RECT windowRect;
+	GetWindowRect(windowHandle, &windowRect);
+
 	D3D11_VIEWPORT vp;
-	vp.Width = 1920;
-	vp.Height = 1080;
+	vp.Width = windowRect.right - windowRect.left;
+	vp.Height = windowRect.bottom - windowRect.top;
 	vp.MinDepth = 0;
 	vp.MaxDepth = 1;
 	vp.TopLeftX = 0;
@@ -55,7 +58,7 @@ void Graphics::createViewport()
 	this->m_pDeviceContext->RSSetViewports(1u, &vp);
 }
 
-void Graphics::createDepthBuffer()
+void Graphics::createDepthBuffer(HWND windowHandle)
 {
 	D3D11_DEPTH_STENCIL_DESC dsDesc = {};
 	dsDesc.DepthEnable = TRUE;
@@ -67,11 +70,14 @@ void Graphics::createDepthBuffer()
 	// Bind pDSState
 	this->m_pDeviceContext->OMSetDepthStencilState(pDSState.Get(), 1u);
 
+	RECT windowRect;
+	GetWindowRect(windowHandle, &windowRect);
+
 	// Create Detph Texture
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
 	D3D11_TEXTURE2D_DESC descDepth = {};
-	descDepth.Width = 1920u;
-	descDepth.Height = 1080u;
+	descDepth.Width = windowRect.right - windowRect.left;
+	descDepth.Height = windowRect.bottom - windowRect.top;
 	descDepth.MipLevels = 1u;
 	descDepth.ArraySize = 1u;
 	descDepth.Format = DXGI_FORMAT_D32_FLOAT;
@@ -98,10 +104,15 @@ Graphics::Graphics() {}
 
 Graphics::Graphics(HWND windowHandle)
 {
+	this->initGraphics(windowHandle);
+}
+
+void Graphics::initGraphics(HWND windowHandle)
+{
 	this->createDeviceAndSwapChain(windowHandle);
 	this->createRenderTarget();
-	this->createViewport();
-	this->createDepthBuffer();
+	this->createViewport(windowHandle);
+	this->createDepthBuffer(windowHandle);
 }
 
 Microsoft::WRL::ComPtr<ID3D11Device>&        Graphics::getDevice()        { return this->m_pDevice; }

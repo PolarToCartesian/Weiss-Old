@@ -28,6 +28,8 @@ bool Mouse::isLeftButtonDown()  const { return this->m_isLeftButtonDown; }
 bool Mouse::isRightButtonUp()   const { return !this->m_isRightButtonDown; }
 bool Mouse::isRightButtonDown() const { return this->m_isRightButtonDown; }
 
+bool Mouse::isCursorInWindow()  const { return this->m_isCursorInWindow; }
+
 void Mouse::show() const { ShowCursor(true);  }
 
 void Mouse::hide() const { ShowCursor(false); }
@@ -79,11 +81,17 @@ bool Mouse::__handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 			}
 			
 			break;
+		case WM_MOUSELEAVE:
+			this->m_isCursorInWindow = false;
+
+			return true;
 		case WM_MOUSEMOVE:
 			{
 				this->m_position = { (uint16_t)GET_X_LPARAM(lParam), (uint16_t)GET_Y_LPARAM(lParam) };
 				this->m_wasCursorMovedDuringUpdate = true;
 			}
+
+			this->m_isCursorInWindow = true;
 
 			return true;
 		case WM_LBUTTONDOWN:

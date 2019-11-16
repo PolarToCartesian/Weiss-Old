@@ -7,6 +7,13 @@
 #include <vector>
 #include <d3d11.h>
 
+struct VertexBufferDescriptor
+{
+	const void* memoryPtr;
+	const uint32_t nElements;
+	const uint32_t elementSize;
+};
+
 class VertexBuffer {
 	private:
 		size_t nVertices;
@@ -17,7 +24,7 @@ class VertexBuffer {
 	public:
 		VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 					 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef,
-					 const std::vector<Vertex>& vertices);
+					 const VertexBufferDescriptor& descriptor);
 
 		void Bind() const noexcept;
 };

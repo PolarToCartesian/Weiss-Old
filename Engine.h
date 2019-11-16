@@ -11,7 +11,7 @@
 
 struct MeshDescriptorFromVertices
 {
-	const std::vector<Vertex>& vertices;
+	const VertexBufferDescriptor& vertexBufferDescriptor;
 	const std::vector<uint32_t>& indices;
 	const uint16_t vertexShaderIndex;
 	const uint16_t pixelShaderIndex;
@@ -21,9 +21,12 @@ struct MeshDescriptorFromVertices
 struct MeshDescriptorFromFile
 {
 	const char* filename;
-	const uint16_t vertexShaderIndex;
-	const uint16_t pixelShaderIndex;
-	const std::vector<uint16_t>& constantBufferIndices;
+};
+
+struct DataFromMeshFile
+{
+	std::vector<Vec3f> vertices;
+	std::vector<uint32_t> indices;
 };
 
 class Engine
@@ -46,6 +49,10 @@ class Engine
 			
 			this->mouse    = &(this->window->getMouse());
 			this->keyboard = &(this->window->getKeyboard());
+
+			this->window->onResize([this](const Vec2u dimensions) {
+				this->graphics->initGraphics(this->window->getHandle());
+			});
 		}
 
 		void bindCursor() {
@@ -60,21 +67,21 @@ class Engine
 
 		uint16_t loadVertexShaderFromFile(const VertexShaderDescriptor& descriptor)
 		{
-			this->vertexShaders.emplace_back(VertexShader(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor));
+			this->vertexShaders.emplace_back(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor);
 			
 			return this->vertexShaders.size() - 1;
 		}
 
 		uint16_t loadPixelShaderFromFile(const PixelShaderDescriptor& descriptor)
 		{
-			this->pixelShaders.emplace_back(PixelShader(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor));
+			this->pixelShaders.emplace_back(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor);
 
 			return this->pixelShaders.size() - 1;
 		}
 
 		uint16_t createConstantBuffer(const ConstantBufferDescriptor& descriptor)
 		{
-			this->constantBuffers.emplace_back(ConstantBuffer(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor));
+			this->constantBuffers.emplace_back(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor);
 
 			return this->constantBuffers.size() - 1;
 		}
@@ -82,7 +89,7 @@ class Engine
 		Mesh createMeshFromVertices(const MeshDescriptorFromVertices& descriptor)
 		{
 			Mesh mesh{
-				VertexBuffer(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor.vertices),
+				VertexBuffer(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor.vertexBufferDescriptor),
 				IndexBuffer (this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor.indices),
 				descriptor.vertexShaderIndex,
 				descriptor.pixelShaderIndex,
@@ -92,11 +99,11 @@ class Engine
 			return mesh;
 		}
 
-		Mesh loadMeshFromFile(const MeshDescriptorFromFile& descriptor)
+		DataFromMeshFile loadDataFromMeshFile(const MeshDescriptorFromFile& descriptor)
 		{
 			std::ifstream infile(descriptor.filename);
 
-			std::vector<Vertex>   vertices;
+			std::vector<Vec3f>    vertices;
 			std::vector<uint32_t> indices;
 
 			std::string opcode;
@@ -111,12 +118,9 @@ class Engine
 
 				if (opcode == "v")
 				{
-					Vertex vertex{
-						{0.f, 0.f, 0.f},
-						{255, 255, 255, 255}
-					};
+					Vec3f vertex{ 0.f, 0.f, 0.f };
 
-					iss >> vertex.pos.x >> vertex.pos.y >> vertex.pos.z;
+					iss >> vertex[0] >> vertex[1] >> vertex[2];
 
 					vertices.push_back(vertex);
 				}
@@ -143,14 +147,7 @@ class Engine
 				}
 			}
 
-			std::cout << indices.size() / 3.f << '\n';
-
-			const MeshDescriptorFromVertices desciptor2 = {
-				vertices, indices, 
-				descriptor.vertexShaderIndex, descriptor.pixelShaderIndex, descriptor.constantBufferIndices
-			};
-
-			return this->createMeshFromVertices(desciptor2);
+			return { vertices, indices };
 		}
 
 		void drawMesh(Mesh& mesh)

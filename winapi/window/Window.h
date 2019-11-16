@@ -14,7 +14,7 @@ LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 struct WindowDescriptor
 {
 	uint16_t windowPositionX, windowPositionY;
-	uint16_t windowWidth, windowHeight;
+	uint16_t width, height;
 	char* title;
 	bool isResizable;
 	HINSTANCE hInstance;
@@ -40,9 +40,9 @@ class Window
         std::function<void(const Vec2u)> m_onResizeFunctor = [](const Vec2u dim) {};
 
     public:
-        Window(const WindowDescriptor descriptor)
+        Window(const WindowDescriptor& descriptor)
         {
-            this->m_dimensions = { descriptor.windowWidth, descriptor.windowHeight };
+            this->m_dimensions = { descriptor.width, descriptor.height };
             this->m_hinstance  = descriptor.hInstance;
 
             const WNDCLASSA wc { 
@@ -61,7 +61,12 @@ class Window
             {
                 const uint32_t windowStyle = descriptor.isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
 
-                this->m_handle = CreateWindowA("WNDCLASSA", descriptor.title, windowStyle, 0, 0, descriptor.windowWidth, descriptor.windowHeight, NULL, NULL, descriptor.hInstance, NULL);
+				RECT windowRect{ 0, 0, descriptor.width, descriptor.height };
+				AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
+
+                this->m_handle = CreateWindowA("WNDCLASSA", descriptor.title, windowStyle, 
+												0, 0, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, 
+												NULL, NULL, descriptor.hInstance, NULL);
 
                 ShowWindow(this->m_handle, SW_SHOW);
                 UpdateWindow(this->m_handle);
@@ -87,8 +92,9 @@ class Window
         inline uint16_t  getPositionX()       const { return this->m_position[0];   }
         inline uint16_t  getPositionY()       const { return this->m_position[1];   }
         inline Vec2u     getPosition()        const { return this->m_position;      }
-			   Keyboard& getKeyboard()              { return this->m_keyboard; }
+			   Keyboard& getKeyboard()              { return this->m_keyboard;		}
 			   Mouse&    getMouse()                 { return this->m_mouse;         }
+		inline HWND      getHandle()          const { return this->m_handle;		}
 
         // Setters
         inline void setWidth(const uint16_t width)   { this->setSize(width, this->m_dimensions[1]);  }

@@ -24,13 +24,15 @@ class Graphics {
 
 		void createRenderTarget();
 
-		void createViewport();
+		void createViewport(HWND windowHandle);
 
-		void createDepthBuffer();
+		void createDepthBuffer(HWND windowHandle);
 
     public:
 		Graphics();
         Graphics(HWND windowHandle);
+
+		void initGraphics(HWND windowHandle);
 
 		Microsoft::WRL::ComPtr<ID3D11Device>& getDevice();
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext>& getDeviceContext();

@@ -23,6 +23,8 @@ class Mouse : PeripheralDevice
 		bool m_wasMouseMovedDuringUpdate  = false;
         bool m_wasCursorMovedDuringUpdate = false;
 
+		bool m_isCursorInWindow = false;
+
         std::vector<std::function<void(const Vec2u)>> m_onLeftButtonUpFunctors;
 		std::vector<std::function<void(const Vec2u)>> m_onLeftButtonDownFunctors;
         
@@ -53,6 +55,8 @@ class Mouse : PeripheralDevice
 
         bool isRightButtonUp()   const;
 		bool isRightButtonDown() const;
+
+		bool isCursorInWindow() const;
 
 		void show() const;
 		void hide() const;
