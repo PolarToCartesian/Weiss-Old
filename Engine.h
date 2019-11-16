@@ -1,5 +1,10 @@
 #pragma once
 
+#include "winapi/graphics/shaders/PixelShader.h"
+#include "winapi/graphics/shaders/VertexShader.h"
+
+#include "winapi/graphics/buffers/ConstantBuffer.h"
+
 #include "winapi/window/Window.h"
 
 #include <optional>
@@ -8,19 +13,17 @@ struct MeshDescriptorFromVertices
 {
 	const std::vector<Vertex>& vertices;
 	const std::vector<uint32_t>& indices;
-	const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds;
-	const wchar_t* vertexShaderFilename;
-	const wchar_t* pixelShaderFilename;
-	const std::vector<ConstantBufferDescriptor>& constantBufferDescriptors;
+	const uint16_t vertexShaderIndex;
+	const uint16_t pixelShaderIndex;
+	const std::vector<uint16_t>& constantBufferIndices;
 };
 
 struct MeshDescriptorFromFile
 {
 	const char* filename;
-	const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds;
-	const wchar_t* vertexShaderFilename;
-	const wchar_t* pixelShaderFilename;
-	const std::vector<ConstantBufferDescriptor>& constantBufferDescriptors;
+	const uint16_t vertexShaderIndex;
+	const uint16_t pixelShaderIndex;
+	const std::vector<uint16_t>& constantBufferIndices;
 };
 
 class Engine
@@ -32,8 +35,9 @@ class Engine
 
 		std::unique_ptr<Graphics> graphics;
 
-		std::vector<PixelShader>  pixelShaders;
-		std::vector<VertexShader> vertexShaders;
+		std::vector<PixelShader>    pixelShaders;
+		std::vector<VertexShader>   vertexShaders;
+		std::vector<ConstantBuffer> constantBuffers;
 
 		Engine(const WindowDescriptor& windowDesc)
 		{
@@ -54,28 +58,46 @@ class Engine
 			this->window->getMouse().clip(leftX, rightX, topY, bottomY);
 		}
 
+		uint16_t loadVertexShaderFromFile(const VertexShaderDescriptor& descriptor)
+		{
+			this->vertexShaders.emplace_back(VertexShader(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor));
+			
+			return this->vertexShaders.size() - 1;
+		}
+
+		uint16_t loadPixelShaderFromFile(const PixelShaderDescriptor& descriptor)
+		{
+			this->pixelShaders.emplace_back(PixelShader(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor));
+
+			return this->pixelShaders.size() - 1;
+		}
+
+		uint16_t createConstantBuffer(const ConstantBufferDescriptor& descriptor)
+		{
+			this->constantBuffers.emplace_back(ConstantBuffer(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor));
+
+			return this->constantBuffers.size() - 1;
+		}
+
 		Mesh createMeshFromVertices(const MeshDescriptorFromVertices& descriptor)
 		{
 			Mesh mesh{
 				VertexBuffer(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor.vertices),
 				IndexBuffer (this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor.indices),
-				VertexShader(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor.ieds, descriptor.vertexShaderFilename),
-				PixelShader (this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor.pixelShaderFilename),
-				{}
+				descriptor.vertexShaderIndex,
+				descriptor.pixelShaderIndex,
+				descriptor.constantBufferIndices
 			};
-
-			for (const ConstantBufferDescriptor& descriptor : descriptor.constantBufferDescriptors)
-				mesh.cbs.emplace_back(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor);
 
 			return mesh;
 		}
 
 		Mesh loadMeshFromFile(const MeshDescriptorFromFile& descriptor)
 		{
-			std::vector<Vertex> vertices;
-			std::vector<uint32_t> indices;
-
 			std::ifstream infile(descriptor.filename);
+
+			std::vector<Vertex>   vertices;
+			std::vector<uint32_t> indices;
 
 			std::string opcode;
 			char junkChar;
@@ -123,10 +145,26 @@ class Engine
 
 			std::cout << indices.size() / 3.f << '\n';
 
-			return this->createMeshFromVertices({
-				vertices, indices, descriptor.ieds, descriptor.vertexShaderFilename, 
-				descriptor.pixelShaderFilename, descriptor.constantBufferDescriptors
-			});
+			const MeshDescriptorFromVertices desciptor2 = {
+				vertices, indices, 
+				descriptor.vertexShaderIndex, descriptor.pixelShaderIndex, descriptor.constantBufferIndices
+			};
+
+			return this->createMeshFromVertices(desciptor2);
+		}
+
+		void drawMesh(Mesh& mesh)
+		{
+			mesh.vb.Bind();
+			mesh.ib.Bind();
+			this->vertexShaders[mesh.vsIndex].Bind();
+			this->pixelShaders[mesh.psIndex].Bind();
+
+			for (const uint16_t cbIndex : mesh.cbIndices)
+				this->constantBuffers[cbIndex].Bind();
+			
+			this->graphics->getDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+			this->graphics->getDeviceContext()->DrawIndexed(mesh.ib.getSize(), 0u, 0u);
 		}
 
 		void update()

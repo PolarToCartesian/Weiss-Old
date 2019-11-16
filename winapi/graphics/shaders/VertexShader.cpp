@@ -2,16 +2,15 @@
 
 VertexShader::VertexShader(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, 
 						   Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-						   const std::vector<D3D11_INPUT_ELEMENT_DESC>& ieds,
-						   const LPCWSTR filename)
+						   const VertexShaderDescriptor& descriptor)
 	: m_pDeviceContextRef(pDeviceContextRef)
 {
 	Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
-	D3DReadFileToBlob(filename, &pBlob);
+	D3DReadFileToBlob(descriptor.vertexShaderFilename, &pBlob);
 	H_ERROR(pDeviceRef->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader));
 
 	H_ERROR(pDeviceRef->CreateInputLayout(
-		ieds.data(), (UINT)std::size(ieds),
+		descriptor.ieds.data(), (UINT)std::size(descriptor.ieds),
 		pBlob->GetBufferPointer(),
 		pBlob->GetBufferSize(),
 		&m_pInputLayout

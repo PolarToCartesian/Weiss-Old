@@ -37,7 +37,5 @@ class Graphics {
 
 		void fill(const Color& color);
 
-		void renderMesh(const Mesh& mesh);
-
 		void render(const bool useVSync);
 };

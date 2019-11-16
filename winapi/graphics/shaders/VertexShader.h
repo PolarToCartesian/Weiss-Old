@@ -10,6 +10,12 @@
 
 #pragma comment(lib,"D3DCompiler.lib")
 
+struct VertexShaderDescriptor
+{
+	const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds;
+	const wchar_t* vertexShaderFilename;
+};
+
 class VertexShader {
 	private:
 		Microsoft::WRL::ComPtr<ID3D11VertexShader>   m_pVertexShader;
@@ -19,8 +25,7 @@ class VertexShader {
 	public:
 		VertexShader(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 					 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-					 const std::vector<D3D11_INPUT_ELEMENT_DESC>& ieds,
-					 const LPCWSTR filename);
+					 const VertexShaderDescriptor& descriptor);
 
 		void Bind() const noexcept;
 };

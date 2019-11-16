@@ -112,15 +112,6 @@ void Graphics::fill(const Color& color)
 	this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&color);
 }
 
-void Graphics::renderMesh(const Mesh& mesh)
-{
-	mesh.Bind();
-
-	this->m_pDeviceContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
-	this->m_pDeviceContext->DrawIndexed(mesh.ib.getSize(), 0u, 0u);
-}
-
 void Graphics::render(const bool useVSync)
 {
 	H_ERROR(this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u));
