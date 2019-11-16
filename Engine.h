@@ -16,6 +16,7 @@ class Engine
 			this->window   = WindowManager::createWindow(windowDesc);
 			this->graphics = this->window->createGraphics();
 			
+			this->mouse    = &(this->window->getMouse());
 			this->keyboard = &(this->window->getKeyboard());
 		}
 
