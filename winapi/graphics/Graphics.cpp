@@ -94,6 +94,8 @@ void Graphics::createDepthBuffer()
 	this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), this->m_pDepthStencilView.Get());
 }
 
+Graphics::Graphics() {}
+
 Graphics::Graphics(HWND windowHandle)
 {
 	this->createDeviceAndSwapChain(windowHandle);
@@ -102,89 +104,8 @@ Graphics::Graphics(HWND windowHandle)
 	this->createDepthBuffer();
 }
 
-Mesh Graphics::createMesh(const std::vector<Vertex>& vertices,
-						  const std::vector<uint32_t>& indices,
-						  const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
-						  const wchar_t* vertexShaderFilename,
-						  const wchar_t* pixelShaderFilename,
-						  const std::vector<ConstantBufferDescriptor>& constantBufferDescriptors)
-{
-	Mesh mesh {
-		VertexBuffer  (this->m_pDevice, this->m_pDeviceContext, vertices),
-		IndexBuffer   (this->m_pDevice, this->m_pDeviceContext, indices),
-		VertexShader  (this->m_pDevice, this->m_pDeviceContext, ieds, vertexShaderFilename),
-		PixelShader   (this->m_pDevice, this->m_pDeviceContext, pixelShaderFilename),
-		{}
-	};
-
-	for (const ConstantBufferDescriptor& descriptor : constantBufferDescriptors)
-		mesh.cbs.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
-
-	return mesh;
-}
-
-Mesh Graphics::createMesh(const char* filename,
-	const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
-	const wchar_t* vertexShaderFilename,
-	const wchar_t* pixelShaderFilename,
-	const std::vector<ConstantBufferDescriptor>& constantBufferDescriptors)
-{
-	std::vector<Vertex> vertices;
-	std::vector<uint32_t> indices;
-
-	std::ifstream infile(filename);
-
-	std::string opcode;
-	char junkChar;
-	float junkFloat;
-	std::string line;
-	while (std::getline(infile, line))
-	{
-		std::istringstream iss(line);
-
-		iss >> opcode;
-
-		if (opcode == "v")
-		{
-			Vertex vertex{
-						{0.f, 0.f, 0.f},
-						{255, 255, 255,
-						//{std::rand() / (float) RAND_MAX * 255,
-						//std::rand() / (float)RAND_MAX * 255,
-						//std::rand() / (float)RAND_MAX * 255,
-						255} };
-
-			iss >> vertex.pos.x >> vertex.pos.y >> vertex.pos.z;
-
-			vertices.push_back(vertex);
-		}
-		else if (opcode == "f")
-		{
-			const uint16_t spaceCount = std::count(line.begin(), line.end(), ' ');
-			const uint16_t slashCount = std::count(line.begin(), line.end(), '/');
-
-			if (spaceCount == 3)
-			{
-				uint32_t i1 = 0, i2 = 0, i3 = 0;
-
-				if (slashCount == 0)
-					iss >> i1 >> i2 >> i3;
-				else if (slashCount == 3)
-					iss >> i1 >> junkChar >> junkFloat >> i2 >> junkChar >> junkFloat >> i3;
-				else if (slashCount == 6)
-					iss >> i1 >> junkChar >> junkFloat >> junkChar >> junkFloat >> i2 >> junkChar >> junkFloat >> junkChar >> junkFloat >> i3;
-			
-				indices.push_back(i1 - 1);
-				indices.push_back(i2 - 1);
-				indices.push_back(i3 - 1);
-			}
-		}
-	}
-
-	std::cout << indices.size() / 3.f << '\n';
-
-	return this->createMesh(vertices, indices, ieds, vertexShaderFilename, pixelShaderFilename, constantBufferDescriptors);
-}
+Microsoft::WRL::ComPtr<ID3D11Device>&        Graphics::getDevice()        { return this->m_pDevice; }
+Microsoft::WRL::ComPtr<ID3D11DeviceContext>& Graphics::getDeviceContext() { return this->m_pDeviceContext; }
 
 void Graphics::fill(const Color& color)
 {

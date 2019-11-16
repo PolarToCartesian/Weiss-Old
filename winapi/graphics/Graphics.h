@@ -29,21 +29,11 @@ class Graphics {
 		void createDepthBuffer();
 
     public:
-		Graphics() {};
+		Graphics();
         Graphics(HWND windowHandle);
 
-		Mesh createMesh(const std::vector<Vertex>& vertices,
-						const std::vector<uint32_t>& indices,
-						const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
-						const wchar_t* vertexShaderFilename,
-						const wchar_t* pixelShaderFilename,
-						const std::vector<ConstantBufferDescriptor>& constantBufferDescriptors);
-
-		Mesh createMesh(const char* filename,
-						const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds,
-						const wchar_t* vertexShaderFilename,
-						const wchar_t* pixelShaderFilename,
-						const std::vector<ConstantBufferDescriptor>& constantBufferDescriptors);
+		Microsoft::WRL::ComPtr<ID3D11Device>& getDevice();
+		Microsoft::WRL::ComPtr<ID3D11DeviceContext>& getDeviceContext();
 
 		void fill(const Color& color);
 
