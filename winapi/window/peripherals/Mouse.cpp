@@ -67,10 +67,7 @@ bool Mouse::__handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
 						if (ri.header.dwType == RIM_TYPEMOUSE && (ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0))
 						{
-							this->m_deltaPosition = {
-								this->m_deltaPosition[0] + static_cast<uint16_t>(ri.data.mouse.lLastX),
-								this->m_deltaPosition[1] + static_cast<uint16_t>(ri.data.mouse.lLastY)
-							};
+							this->m_deltaPosition += Vec2i{ static_cast<int16_t>(ri.data.mouse.lLastX), static_cast<int16_t >(ri.data.mouse.lLastY) };
 
 							this->m_wasMouseMovedDuringUpdate = true;
 						}
@@ -87,7 +84,7 @@ bool Mouse::__handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 			return true;
 		case WM_MOUSEMOVE:
 			{
-				this->m_position = { (uint16_t)GET_X_LPARAM(lParam), (uint16_t)GET_Y_LPARAM(lParam) };
+				this->m_position = { static_cast<uint16_t>(GET_X_LPARAM(lParam)), static_cast<uint16_t>(GET_Y_LPARAM(lParam)) };
 				this->m_wasCursorMovedDuringUpdate = true;
 			}
 
