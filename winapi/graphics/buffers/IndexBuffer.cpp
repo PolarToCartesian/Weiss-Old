@@ -14,6 +14,7 @@ IndexBuffer::IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 
 	D3D11_SUBRESOURCE_DATA isd = {};
 	isd.pSysMem = indices.data();
+
 	H_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer));
 }
 

@@ -1,11 +1,10 @@
 #pragma once
 
 #include "../../misc/Error.h"
+#include "../../misc/includes.h"
 #include "../../../math/Vertex.h"
 
-#include <wrl.h>
 #include <vector>
-#include <d3d11.h>
 
 class IndexBuffer {
 	private:

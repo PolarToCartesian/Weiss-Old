@@ -1,14 +1,10 @@
 #pragma once
 
 #include "../../misc/Error.h"
+#include "../../misc/includes.h"
 
-#include <wrl.h>
 #include <vector>
-#include <d3d11.h>
 #include <algorithm>
-#include <d3dcompiler.h>
-
-#pragma comment(lib,"D3DCompiler.lib")
 
 struct VertexShaderDescriptor
 {

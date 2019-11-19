@@ -2,8 +2,8 @@
 
 #include "MatrixMath.h"
 #include "../../../misc/Constants.h"
-#include "../../window/peripherals/Mouse.h"
-#include "../../window/peripherals/Keyboard.h"
+#include "../../windows/peripherals/Mouse.h"
+#include "../../windows/peripherals/Keyboard.h"
 
 class Camera
 {

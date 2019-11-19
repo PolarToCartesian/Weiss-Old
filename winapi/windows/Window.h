@@ -4,10 +4,11 @@
 #include "../graphics/Graphics.h"
 #include "peripherals/Keyboard.h"
 
+#include "../misc/includes.h"
+
 #include <vector>
 #include <memory>
 #include <functional>
-#include <Windowsx.h>
 
 LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
 

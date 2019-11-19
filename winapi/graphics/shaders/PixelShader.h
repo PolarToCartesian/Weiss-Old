@@ -1,12 +1,7 @@
 #pragma once
 
 #include "../../misc/Error.h"
-
-#include <wrl.h>
-#include <d3d11.h>
-#include <d3dcompiler.h>
-
-#pragma comment(lib,"D3DCompiler.lib")
+#include "../../misc/includes.h"
 
 struct PixelShaderDescriptor
 {

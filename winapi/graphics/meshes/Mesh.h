@@ -3,8 +3,6 @@
 #include "../buffers/IndexBuffer.h"
 #include "../buffers/VertexBuffer.h"
 
-#include <DirectXMath.h>
-
 struct Mesh {
 	VertexBuffer vb;
 	IndexBuffer ib;

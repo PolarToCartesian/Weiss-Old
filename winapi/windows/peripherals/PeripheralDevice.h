@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Windows.h>
+#include "../../misc/includes.h"
 
 class PeripheralDevice
 {

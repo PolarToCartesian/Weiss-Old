@@ -1,7 +1,6 @@
 #pragma once
 
-#include <DirectXMath.h>
-
+#include "../../misc/includes.h"
 #include "../../../math/Vectors.h"
 
 DirectX::XMMATRIX createRotationMatrix(const Vec3f& centerOfRotation, const Vec3f& rotation)

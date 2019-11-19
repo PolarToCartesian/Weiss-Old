@@ -5,7 +5,7 @@
 
 #include "winapi/graphics/buffers/ConstantBuffer.h"
 
-#include "winapi/window/Window.h"
+#include "winapi/windows/Window.h"
 
 #include <optional>
 

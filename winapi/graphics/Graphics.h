@@ -1,15 +1,11 @@
 #pragma once
 
 #include "meshes/Mesh.h"
+#include "../misc/includes.h"
 #include "../../math/Vectors.h"
 
-#include <wrl.h>
 #include <sstream>
-#include <d3d11.h>
 #include <fstream>
-#include <DirectXMath.h>
-
-#pragma comment(lib, "d3d11.lib")
 
 class Graphics {
 	private:
