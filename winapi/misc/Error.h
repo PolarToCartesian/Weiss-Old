@@ -14,7 +14,7 @@
 		MESSAGE_BOX_ERROR()\
 }
 
-#define H_ERROR(hr) {\
+#define HRESULT_ERROR(hr) {\
 	if (hr != S_OK)\
 		MESSAGE_BOX_ERROR()\
 }

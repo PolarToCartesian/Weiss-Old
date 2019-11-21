@@ -10,12 +10,12 @@ IndexBuffer::IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 	ibd.Usage = D3D11_USAGE_DEFAULT;
 	ibd.CPUAccessFlags = 0u;
 	ibd.MiscFlags = 0u;
-	ibd.ByteWidth = this->m_nBytes;
+	ibd.ByteWidth = static_cast<UINT>(this->m_nBytes);
 
 	D3D11_SUBRESOURCE_DATA isd = {};
 	isd.pSysMem = indices.data();
 
-	H_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer));
+	HRESULT_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer));
 }
 
 uint64_t IndexBuffer::getSize() const { return this->m_nBytes; }

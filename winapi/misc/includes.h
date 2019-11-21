@@ -6,5 +6,6 @@
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 
+#pragma comment(lib, "winmm.lib")
 #pragma comment(lib, "d3d11.lib")
 #pragma comment(lib, "D3DCompiler.lib")

@@ -32,9 +32,6 @@ class Window
 		Mouse m_mouse;
 		Keyboard m_keyboard;
 
-        Vec2u m_position{0, 0};
-        Vec2u m_dimensions{0, 0};
-
         bool m_isRunning   = false;
 		bool m_isMinimized = false;
 
@@ -43,8 +40,7 @@ class Window
     public:
         Window(const WindowDescriptor& descriptor)
         {
-            this->m_dimensions = { descriptor.width, descriptor.height };
-            this->m_hinstance  = descriptor.hInstance;
+            this->m_hinstance = descriptor.hInstance;
 
             const WNDCLASSA wc { 
                 CS_HREDRAW | CS_VREDRAW,
@@ -66,13 +62,11 @@ class Window
 				AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
 
                 this->m_handle = CreateWindowA("WNDCLASSA", descriptor.title, windowStyle, 
-												0, 0, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, 
+												descriptor.windowPositionX, descriptor.windowPositionY, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top, 
 												NULL, NULL, descriptor.hInstance, NULL);
 
                 ShowWindow(this->m_handle, SW_SHOW);
                 UpdateWindow(this->m_handle);
-
-				this->setPosition(descriptor.windowPositionX, descriptor.windowPositionY);
 
                 this->m_isRunning = true;
             }
@@ -84,38 +78,36 @@ class Window
 		std::unique_ptr<Graphics> createGraphics() { return std::make_unique<Graphics>(this->m_handle); }
 
         // Getters
-        inline uint16_t  getWidth()           const { return this->m_dimensions[0]; }
-        inline uint16_t  getHeight()          const { return this->m_dimensions[1]; }
-		inline uint16_t  getDimensionW()      const { return this->m_dimensions[0]; }
-		inline uint16_t  getDimensionH()      const { return this->m_dimensions[1]; }
-        inline Vec2u     getDimensions()      const { return this->m_dimensions;    }
         inline bool      isRunning()          const { return this->m_isRunning;     }
-        inline uint16_t  getPositionX()       const { return this->m_position[0];   }
-        inline uint16_t  getPositionY()       const { return this->m_position[1];   }
-        inline Vec2u     getPosition()        const { return this->m_position;      }
 			   Keyboard& getKeyboard()              { return this->m_keyboard;		}
 			   Mouse&    getMouse()                 { return this->m_mouse;         }
 		inline HWND      getHandle()          const { return this->m_handle;		}
 
+		RECT getWindowRect() const { RECT result; GetWindowRect(this->m_handle, &result); return result; }
+		RECT getClientRect() const { RECT result; GetClientRect(this->m_handle, &result); return result; }
+
+		uint16_t getWindowPositionX() const { const RECT rect = this->getWindowRect(); return static_cast<uint16_t>( rect.left ); }
+		uint16_t getWindowPositionY() const { const RECT rect = this->getWindowRect(); return static_cast<uint16_t>( rect.top  ); }
+
+		uint16_t getWindowWidth()  const { const RECT rect = this->getWindowRect(); return static_cast<uint16_t>( rect.right - rect.left ); }
+		uint16_t getWindowHeight() const { const RECT rect = this->getWindowRect(); return static_cast<uint16_t>( rect.right - rect.left ); }
+
+		uint16_t getClientWidth()  const { const RECT rect = this->getClientRect(); return static_cast<uint16_t>(rect.right); }
+		uint16_t getClientHeight() const { const RECT rect = this->getClientRect(); return static_cast<uint16_t>(rect.bottom); }
+
         // Setters
-        inline void setWidth(const uint16_t width)   { this->setSize(width, this->m_dimensions[1]);  }
-        inline void setHeight(const uint16_t height) { this->setSize(this->m_dimensions[0], height); }
+        void setWindowSize(const uint16_t width, const uint16_t height)
+		{
+			SetWindowPos(this->m_handle, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOOWNERZORDER);
+		}
 
-        void setSize(const uint16_t width, const uint16_t height)
-        {
-            this->m_dimensions = { width, height };
+		void setClientSize(const uint16_t width, const uint16_t height)
+		{
+			const uint16_t topBottomWindowPadding = this->getWindowHeight() - this->getClientHeight();
+			const uint16_t leftRightWindowPadding = this->getWindowWidth()  - this->getClientWidth();
 
-            SetWindowPos(this->m_handle, NULL, 0, 0, this->m_dimensions[0], this->m_dimensions[1], SWP_NOMOVE | SWP_NOOWNERZORDER);
-        }
-
-        inline void setPositionX(const uint16_t x) { this->setPosition(x, this->m_position[1]); }
-        inline void setPositionY(const uint16_t y) { this->setPosition(this->m_position[0], y); }
-
-        void setPosition(const uint16_t x, const uint16_t y)
-        {
-            this->m_position = { x, y };
-            SetWindowPos(this->m_handle, NULL, x, y, 0, 0, SWP_NOSIZE | SWP_NOOWNERZORDER);
-        }
+			this->setWindowSize(width + leftRightWindowPadding, height + topBottomWindowPadding);
+		}
 
         void setTitle(const char* title) { SetWindowTextA(this->m_handle, title); }
 
@@ -141,22 +133,17 @@ class Window
         {
             switch (msg)
             {
-                case WM_MOVE:
-                    this->m_position   = {
-						static_cast<uint16_t>(GET_X_LPARAM(lParam)), 
-						static_cast<uint16_t>(GET_Y_LPARAM(lParam))
-					};
-
-                    return 0;
                 case WM_SIZE:
-                    this->m_dimensions = {
-						static_cast<uint16_t>(GET_X_LPARAM(lParam)),
-						static_cast<uint16_t>(GET_Y_LPARAM(lParam))
-					};
+					{
+						const Vec2u client_area_dimensions = {
+							static_cast<uint16_t>(GET_X_LPARAM(lParam)),
+							static_cast<uint16_t>(GET_Y_LPARAM(lParam))
+						};
 
-                    this->m_onResizeFunctor(this->m_dimensions);
+						this->m_onResizeFunctor(client_area_dimensions);
 
-					this->m_isMinimized = (this->m_dimensions[0] == 0 && this->m_dimensions[1] == 0);
+						this->m_isMinimized = (client_area_dimensions[0] == 0 && client_area_dimensions[1] == 0);
+					}
 
                     return 0;
                 case WM_DESTROY:

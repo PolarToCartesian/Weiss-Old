@@ -56,30 +56,31 @@ class Engine
 		}
 
 		void bindCursor() {
-			const uint16_t leftX = this->window->getPositionX() + 1;
-			const uint16_t topY  = this->window->getPositionY() + 1;
+			const RECT windowRect = this->window->getWindowRect();
+			const RECT clientRect = this->window->getClientRect();
 
-			const uint16_t rightX  = this->window->getPositionX() + this->window->getDimensionW() - 1;
-			const uint16_t bottomY = this->window->getPositionY() + this->window->getDimensionH() - 1;
+			RECT boundingRect = windowRect;
 
-			this->window->getMouse().clip(leftX, rightX, topY, bottomY);
+			boundingRect.top += (windowRect.bottom - windowRect.top) - clientRect.bottom;
+
+			this->window->getMouse().clip(boundingRect);
 		}
 
-		uint16_t loadVertexShaderFromFile(const VertexShaderDescriptor& descriptor)
+		size_t loadVertexShaderFromFile(const VertexShaderDescriptor& descriptor)
 		{
 			this->vertexShaders.emplace_back(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor);
 			
 			return this->vertexShaders.size() - 1;
 		}
 
-		uint16_t loadPixelShaderFromFile(const PixelShaderDescriptor& descriptor)
+		size_t loadPixelShaderFromFile(const PixelShaderDescriptor& descriptor)
 		{
 			this->pixelShaders.emplace_back(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor);
 
 			return this->pixelShaders.size() - 1;
 		}
 
-		uint16_t createConstantBuffer(const ConstantBufferDescriptor& descriptor)
+		size_t createConstantBuffer(const ConstantBufferDescriptor& descriptor)
 		{
 			this->constantBuffers.emplace_back(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor);
 
@@ -161,7 +162,7 @@ class Engine
 				this->constantBuffers[cbIndex].Bind();
 			
 			this->graphics->getDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			this->graphics->getDeviceContext()->DrawIndexed(mesh.ib.getSize(), 0u, 0u);
+			this->graphics->getDeviceContext()->DrawIndexed(static_cast<UINT>(mesh.ib.getSize()), 0u, 0u);
 		}
 
 		void update()

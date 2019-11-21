@@ -14,7 +14,7 @@ ConstantBuffer::ConstantBuffer(Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 	cbd.ByteWidth = static_cast<UINT>(this->m_descriptor.objSize);
 
 	cbd.StructureByteStride = 0u;
-	H_ERROR(pDeviceRef->CreateBuffer(&cbd, nullptr, &this->m_pConstantBuffer));
+	HRESULT_ERROR(pDeviceRef->CreateBuffer(&cbd, nullptr, &this->m_pConstantBuffer));
 }
 
 void ConstantBuffer::setData(const void* objPtr)

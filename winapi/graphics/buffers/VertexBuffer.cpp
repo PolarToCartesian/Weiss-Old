@@ -11,11 +11,11 @@ VertexBuffer::VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRe
 	bd.CPUAccessFlags = 0u;
 	bd.MiscFlags = 0u;
 	bd.ByteWidth = static_cast<UINT>(descriptor.elementSize * this->nVertices);
-	bd.StructureByteStride = descriptor.elementSize;
+	bd.StructureByteStride = static_cast<UINT>(descriptor.elementSize);
 
 	D3D11_SUBRESOURCE_DATA sd = {};
 	sd.pSysMem = descriptor.memoryPtr;
-	H_ERROR(pDeviceRef->CreateBuffer(&bd, &sd, &this->m_pVertexBuffer));
+	HRESULT_ERROR(pDeviceRef->CreateBuffer(&bd, &sd, &this->m_pVertexBuffer));
 }
 
 void VertexBuffer::Bind() const noexcept

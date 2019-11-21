@@ -61,7 +61,7 @@ class Mouse : PeripheralDevice
 		void show() const;
 		void hide() const;
 
-		void clip(uint16_t leftX, uint16_t leftY, uint16_t rightX, uint16_t rightY) const;
+		void clip(const RECT& rect) const;
 
 		virtual void __onWindowUpdateBegin() override;
 

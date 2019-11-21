@@ -34,12 +34,7 @@ void Mouse::show() const { ShowCursor(true);  }
 
 void Mouse::hide() const { ShowCursor(false); }
 
-void Mouse::clip(uint16_t leftX, uint16_t leftY, uint16_t rightX, uint16_t rightY) const
-{
-	RECT rect{ leftX, leftY, rightX, rightY };
-
-	ClipCursor(&rect);
-}
+void Mouse::clip(const RECT& rect) const { ClipCursor(&rect); }
 
 void Mouse::__onWindowUpdateBegin()
 {

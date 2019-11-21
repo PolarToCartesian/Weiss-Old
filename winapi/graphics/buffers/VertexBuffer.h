@@ -9,8 +9,8 @@
 struct VertexBufferDescriptor
 {
 	const void* memoryPtr;
-	const uint32_t nElements;
-	const uint32_t elementSize;
+	const size_t nElements;
+	const size_t elementSize;
 };
 
 class VertexBuffer {

@@ -7,9 +7,9 @@ VertexShader::VertexShader(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRe
 {
 	Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
 	D3DReadFileToBlob(descriptor.vertexShaderFilename, &pBlob);
-	H_ERROR(pDeviceRef->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader));
+	HRESULT_ERROR(pDeviceRef->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader));
 
-	H_ERROR(pDeviceRef->CreateInputLayout(
+	HRESULT_ERROR(pDeviceRef->CreateInputLayout(
 		descriptor.ieds.data(), (UINT)std::size(descriptor.ieds),
 		pBlob->GetBufferPointer(),
 		pBlob->GetBufferSize(),

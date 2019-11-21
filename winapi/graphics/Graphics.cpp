@@ -18,7 +18,7 @@ void Graphics::createDeviceAndSwapChain(HWND windowHandle) {
 	scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	scd.Flags = 0;
 
-	H_ERROR(D3D11CreateDeviceAndSwapChain(
+	HRESULT_ERROR(D3D11CreateDeviceAndSwapChain(
 		nullptr,
 		D3D_DRIVER_TYPE_HARDWARE,
 		nullptr,
@@ -38,8 +38,8 @@ void Graphics::createRenderTarget()
 {
 	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
 
-	H_ERROR(this->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer));
-	H_ERROR(this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget));
+	HRESULT_ERROR(this->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer));
+	HRESULT_ERROR(this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget));
 }
 
 void Graphics::createViewport(HWND windowHandle)
@@ -48,8 +48,8 @@ void Graphics::createViewport(HWND windowHandle)
 	GetWindowRect(windowHandle, &windowRect);
 
 	D3D11_VIEWPORT vp;
-	vp.Width = windowRect.right - windowRect.left;
-	vp.Height = windowRect.bottom - windowRect.top;
+	vp.Width  = static_cast<FLOAT>(windowRect.right - windowRect.left);
+	vp.Height = static_cast<FLOAT>(windowRect.bottom - windowRect.top);
 	vp.MinDepth = 0;
 	vp.MaxDepth = 1;
 	vp.TopLeftX = 0;
@@ -65,7 +65,7 @@ void Graphics::createDepthBuffer(HWND windowHandle)
 	dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> pDSState;
-	H_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &pDSState));
+	HRESULT_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &pDSState));
 
 	// Bind pDSState
 	this->m_pDeviceContext->OMSetDepthStencilState(pDSState.Get(), 1u);
@@ -85,14 +85,14 @@ void Graphics::createDepthBuffer(HWND windowHandle)
 	descDepth.SampleDesc.Quality = 0u;
 	descDepth.Usage = D3D11_USAGE_DEFAULT;
 	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	H_ERROR(this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil));
+	HRESULT_ERROR(this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil));
 
 	// Create Depth Stencil Texture View
 	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
 	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
 	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 	descDSV.Texture2D.MipSlice = 0u;
-	H_ERROR(this->m_pDevice->CreateDepthStencilView(
+	HRESULT_ERROR(this->m_pDevice->CreateDepthStencilView(
 		pDepthStencil.Get(), &descDSV, &this->m_pDepthStencilView
 	));
 
@@ -125,7 +125,7 @@ void Graphics::fill(const Color& color)
 
 void Graphics::render(const bool useVSync)
 {
-	H_ERROR(this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u));
+	HRESULT_ERROR(this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u));
 
 	// Clear Depth Buffer
 	this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
