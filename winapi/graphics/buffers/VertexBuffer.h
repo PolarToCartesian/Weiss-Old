@@ -11,11 +11,13 @@ struct VertexBufferDescriptor
 	const void* memoryPtr;
 	const size_t nElements;
 	const size_t elementSize;
+	const bool isUpdatable;
 };
 
 class VertexBuffer {
 	private:
-		size_t nVertices;
+		size_t nElements;
+		size_t elementSize;
 
 		Microsoft::WRL::ComPtr<ID3D11Buffer> m_pVertexBuffer;
 		Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef;

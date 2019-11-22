@@ -4,9 +4,9 @@
 #include "PeripheralDevice.h"
 
 #include "../../misc/Error.h"
+#include "../../misc/includes.h"
 
-#include <strsafe.h>
-#include <windowsx.h>
+#include <vector>
 #include <functional>
 
 class Mouse : PeripheralDevice

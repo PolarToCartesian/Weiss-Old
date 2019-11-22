@@ -13,8 +13,9 @@ Engine::Engine(const WindowDescriptor& windowDesc)
 	});
 }
 
-void Engine::bindCursor()
+void Engine::captureCursor()
 {
+	// Clip Cursor
 	const RECT windowRect = this->window->getWindowRect();
 	const RECT clientRect = this->window->getClientRect();
 
@@ -23,6 +24,10 @@ void Engine::bindCursor()
 	boundingRect.top += (windowRect.bottom - windowRect.top) - clientRect.bottom;
 
 	this->window->getMouse().clip(boundingRect);
+
+	// Hide Cursor
+
+	this->mouse->hide();
 }
 
 size_t Engine::loadVertexShaderFromFile(const VertexShaderDescriptor& descriptor)
@@ -128,3 +133,30 @@ void Engine::drawMesh(Mesh& mesh)
 void Engine::update() { this->window->update(); }
 
 void Engine::render(const bool useVSync) { this->graphics->render(useVSync); }
+
+void Engine::run(const std::function<void(float)>& functor, const bool useVSync, const uint16_t fps) {
+	Timer timer;
+	uint32_t frames = 0;
+
+	while (this->window->isRunning())
+	{
+		const uint32_t elapsed = timer.getElapsedTime();
+
+		if (!useVSync)
+		{
+			if (elapsed >= 1 / static_cast<float>(fps) * 1000)
+			{
+				timer = Timer();
+			} else {
+				std::this_thread::yield();
+				continue;
+			}
+		}
+
+		this->update();
+		
+		functor(elapsed);
+
+		this->render(useVSync);
+	}
+}

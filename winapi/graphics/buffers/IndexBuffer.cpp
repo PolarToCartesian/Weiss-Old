@@ -18,7 +18,7 @@ IndexBuffer::IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 	HRESULT_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer));
 }
 
-uint64_t IndexBuffer::getSize() const { return this->m_nBytes; }
+size_t IndexBuffer::getSize() const { return this->m_nBytes; }
 
 void IndexBuffer::Bind() const noexcept
 {

@@ -7,6 +7,9 @@
 
 #include "winapi/windows/Window.h"
 
+#include "misc/Timer.h"
+
+#include <thread>
 #include <optional>
 
 struct MeshDescriptorFromVertices
@@ -31,34 +34,36 @@ struct DataFromMeshFile
 
 class Engine
 {
-	public:
-		Window* window;
-		Mouse* mouse;
-		Keyboard* keyboard;
+public:
+	Window* window;
+	Mouse* mouse;
+	Keyboard* keyboard;
 
-		std::unique_ptr<Graphics> graphics;
+	std::unique_ptr<Graphics> graphics;
 
-		std::vector<PixelShader>    pixelShaders;
-		std::vector<VertexShader>   vertexShaders;
-		std::vector<ConstantBuffer> constantBuffers;
+	std::vector<PixelShader>    pixelShaders;
+	std::vector<VertexShader>   vertexShaders;
+	std::vector<ConstantBuffer> constantBuffers;
 
-		Engine(const WindowDescriptor& windowDesc);
+	Engine(const WindowDescriptor& windowDesc);
 
-		void bindCursor();
+	void captureCursor();
 
-		size_t loadVertexShaderFromFile(const VertexShaderDescriptor& descriptor);
+	size_t loadVertexShaderFromFile(const VertexShaderDescriptor& descriptor);
 
-		size_t loadPixelShaderFromFile(const PixelShaderDescriptor& descriptor);
+	size_t loadPixelShaderFromFile(const PixelShaderDescriptor& descriptor);
 
-		size_t createConstantBuffer(const ConstantBufferDescriptor& descriptor);
+	size_t createConstantBuffer(const ConstantBufferDescriptor& descriptor);
 
-		Mesh createMeshFromVertices(const MeshDescriptorFromVertices& descriptor);
+	Mesh createMeshFromVertices(const MeshDescriptorFromVertices& descriptor);
 
-		DataFromMeshFile loadDataFromMeshFile(const MeshDescriptorFromFile& descriptor);
+	DataFromMeshFile loadDataFromMeshFile(const MeshDescriptorFromFile& descriptor);
 
-		void drawMesh(Mesh& mesh);
+	void drawMesh(Mesh& mesh);
 
-		void update();
+	void update();
 
-		void render(const bool useVSync);
+	void render(const bool useVSync);
+
+	void run(const std::function<void(float)>& functor, const bool useVSync = true, const uint16_t fps = 60);
 };
