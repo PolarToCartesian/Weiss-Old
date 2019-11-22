@@ -21,7 +21,10 @@ void Engine::captureCursor()
 
 	RECT boundingRect = windowRect;
 
-	boundingRect.top += (windowRect.bottom - windowRect.top) - clientRect.bottom;
+	boundingRect.top    += (windowRect.bottom - windowRect.top) - clientRect.bottom + 10;
+	boundingRect.left   += 10;
+	boundingRect.right  -= 10;
+	boundingRect.bottom -= 10;
 
 	this->window->getMouse().clip(boundingRect);
 
@@ -58,7 +61,8 @@ Mesh Engine::createMeshFromVertices(const MeshDescriptorFromVertices& descriptor
 		IndexBuffer(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor.indices),
 		descriptor.vertexShaderIndex,
 		descriptor.pixelShaderIndex,
-		descriptor.constantBufferIndices
+		descriptor.constantBufferIndices,
+		descriptor.primitiveTopology
 	};
 
 	return mesh;
@@ -126,7 +130,7 @@ void Engine::drawMesh(Mesh& mesh)
 	for (const uint16_t cbIndex : mesh.cbIndices)
 		this->constantBuffers[cbIndex].Bind();
 
-	this->graphics->getDeviceContext()->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	this->graphics->getDeviceContext()->IASetPrimitiveTopology(mesh.pt);
 	this->graphics->getDeviceContext()->DrawIndexed(static_cast<UINT>(mesh.ib.getSize()), 0u, 0u);
 }
 

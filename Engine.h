@@ -16,9 +16,10 @@ struct MeshDescriptorFromVertices
 {
 	const VertexBufferDescriptor& vertexBufferDescriptor;
 	const std::vector<uint32_t>& indices;
-	const uint16_t vertexShaderIndex;
-	const uint16_t pixelShaderIndex;
-	const std::vector<uint16_t>& constantBufferIndices;
+	const size_t vertexShaderIndex;
+	const size_t pixelShaderIndex;
+	const std::vector<size_t>& constantBufferIndices;
+	const D3D_PRIMITIVE_TOPOLOGY primitiveTopology;
 };
 
 struct MeshDescriptorFromFile

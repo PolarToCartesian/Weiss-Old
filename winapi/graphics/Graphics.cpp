@@ -44,12 +44,12 @@ void Graphics::createRenderTarget()
 
 void Graphics::createViewport(HWND windowHandle)
 {
-	RECT windowRect;
-	GetWindowRect(windowHandle, &windowRect);
+	RECT clientRect;
+	GetClientRect(windowHandle, &clientRect);
 
 	D3D11_VIEWPORT vp;
-	vp.Width  = static_cast<FLOAT>(windowRect.right - windowRect.left);
-	vp.Height = static_cast<FLOAT>(windowRect.bottom - windowRect.top);
+	vp.Width  = static_cast<FLOAT>(clientRect.right  - clientRect.left);
+	vp.Height = static_cast<FLOAT>(clientRect.bottom - clientRect.top);
 	vp.MinDepth = 0;
 	vp.MaxDepth = 1;
 	vp.TopLeftX = 0;

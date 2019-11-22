@@ -7,8 +7,10 @@ struct Mesh {
 	VertexBuffer vb;
 	IndexBuffer ib;
 
-	uint16_t vsIndex;
-	uint16_t psIndex;
+	size_t vsIndex;
+	size_t psIndex;
 
-	std::vector<uint16_t> cbIndices;
+	std::vector<size_t> cbIndices;
+
+	D3D_PRIMITIVE_TOPOLOGY pt;
 };
