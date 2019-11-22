@@ -13,11 +13,12 @@ LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 
 struct WindowDescriptor
 {
-	uint16_t windowPositionX, windowPositionY;
-	uint16_t width, height;
-	char* title;
-	bool isResizable;
-	HINSTANCE hInstance;
+	const uint16_t windowPositionX, windowPositionY;
+	const uint16_t width, height;
+	const char* title;
+	const char* iconPath;
+	const bool isResizable;
+	const HINSTANCE hInstance;
 };
 
 class Window
@@ -68,6 +69,8 @@ class Window
 		void setClientSize(const uint16_t width, const uint16_t height);
 
         void setTitle(const char* title);
+
+		void setIcon(const char* pathname);
 
         // MESSAGE HANDLING
 		void update();

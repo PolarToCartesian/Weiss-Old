@@ -20,7 +20,7 @@ VertexBuffer::VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRe
 
 void VertexBuffer::Bind() const noexcept
 {
-	const UINT stride = this->elementSize;
+	const UINT stride = static_cast<UINT>(this->elementSize);
 	const UINT offset = 0u;
 
 	this->m_pDeviceContextRef->IASetVertexBuffers(0u, 1u, this->m_pVertexBuffer.GetAddressOf(), &stride, &offset);

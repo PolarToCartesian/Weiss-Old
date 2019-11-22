@@ -134,7 +134,7 @@ void Engine::update() { this->window->update(); }
 
 void Engine::render(const bool useVSync) { this->graphics->render(useVSync); }
 
-void Engine::run(const std::function<void(float)>& functor, const bool useVSync, const uint16_t fps) {
+void Engine::run(const std::function<void(uint32_t)>& functor, const bool useVSync, const uint16_t fps) {
 	Timer timer;
 	uint32_t frames = 0;
 

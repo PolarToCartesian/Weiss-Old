@@ -33,6 +33,9 @@ Window::Window(const WindowDescriptor& descriptor)
 		UpdateWindow(this->m_handle);
 
 		this->m_isRunning = true;
+		
+		if (descriptor.iconPath != nullptr)
+			this->setIcon(descriptor.iconPath);
 	}
 }
 
@@ -74,6 +77,13 @@ void Window::setClientSize(const uint16_t width, const uint16_t height)
 }
 
 void Window::setTitle(const char* title) { SetWindowTextA(this->m_handle, title); }
+
+void Window::setIcon(const char* pathname) {
+	const HICON hIcon = (HICON)LoadImage(NULL, pathname, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+	ASSERT_ERROR(hIcon != NULL);
+	
+	SendMessage(this->m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+}
 
 // MESSAGE HANDLING
 void Window::update()

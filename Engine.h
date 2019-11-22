@@ -65,5 +65,5 @@ public:
 
 	void render(const bool useVSync);
 
-	void run(const std::function<void(float)>& functor, const bool useVSync = true, const uint16_t fps = 60);
+	void run(const std::function<void(uint32_t)>& functor, const bool useVSync = true, const uint16_t fps = 60);
 };
