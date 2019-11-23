@@ -24,9 +24,9 @@ void ConstantBuffer::setData(const void* objPtr)
 
 void ConstantBuffer::Bind() const noexcept
 {
-	if (this->m_descriptor.bindingType == ConstantBufferShaderBinding::VERTEX || this->m_descriptor.bindingType == ConstantBufferShaderBinding::BOTH)
+	if (this->m_descriptor.bindingType == ShaderBindingType::VERTEX || this->m_descriptor.bindingType == ShaderBindingType::BOTH)
 		this->m_pDeviceContextRef->VSSetConstantBuffers(this->m_descriptor.slotVS, 1u, this->m_pConstantBuffer.GetAddressOf());
 
-	if (this->m_descriptor.bindingType == ConstantBufferShaderBinding::PIXEL  || this->m_descriptor.bindingType == ConstantBufferShaderBinding::BOTH)
+	if (this->m_descriptor.bindingType == ShaderBindingType::PIXEL  || this->m_descriptor.bindingType == ShaderBindingType::BOTH)
 		this->m_pDeviceContextRef->PSSetConstantBuffers(this->m_descriptor.slotPS, 1u, this->m_pConstantBuffer.GetAddressOf());
 }

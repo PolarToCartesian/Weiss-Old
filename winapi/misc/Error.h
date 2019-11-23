@@ -10,7 +10,7 @@
 }
 
 #define ASSERT_ERROR(v) {\
-	if (!v)\
+	if (!(v))\
 		MESSAGE_BOX_ERROR()\
 }
 

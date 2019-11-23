@@ -2,10 +2,10 @@
 
 Engine::Engine(const WindowDescriptor& windowDesc)
 {
-	this->window = WindowManager::createWindow(windowDesc);
+	this->window   = WindowManager::createWindow(windowDesc);
 	this->graphics = this->window->createGraphics();
 
-	this->mouse = &(this->window->getMouse());
+	this->mouse    = &(this->window->getMouse());
 	this->keyboard = &(this->window->getKeyboard());
 
 	this->window->onResize([this](const Vec2u dimensions) {
@@ -47,6 +47,20 @@ size_t Engine::loadPixelShaderFromFile(const PixelShaderDescriptor& descriptor)
 	return this->pixelShaders.size() - 1;
 }
 
+size_t Engine::loadTextureFromImage(const Texture2DDescriptor& descriptor)
+{
+	this->textures.emplace_back(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor);
+
+	return this->textures.size() - 1;
+}
+
+size_t Engine::loadTextureSampler(const TextureSamplerDescriptor& descriptor)
+{
+	this->textureSamplers.emplace_back(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor);
+
+	return this->textureSamplers.size() - 1;
+}
+
 size_t Engine::createConstantBuffer(const ConstantBufferDescriptor& descriptor)
 {
 	this->constantBuffers.emplace_back(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor);
@@ -61,6 +75,8 @@ Mesh Engine::createMeshFromVertices(const MeshDescriptorFromVertices& descriptor
 		IndexBuffer(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor.indices),
 		descriptor.vertexShaderIndex,
 		descriptor.pixelShaderIndex,
+		descriptor.t2dIndex,
+		descriptor.tsIndex,
 		descriptor.constantBufferIndices,
 		descriptor.primitiveTopology
 	};
@@ -126,6 +142,12 @@ void Engine::drawMesh(Mesh& mesh)
 	mesh.ib.Bind();
 	this->vertexShaders[mesh.vsIndex].Bind();
 	this->pixelShaders[mesh.psIndex].Bind();
+
+	if (mesh.t2dIndex.has_value())
+		this->textures[mesh.t2dIndex.value()].bind();
+	
+	if (mesh.tsIndex.has_value())
+		this->textureSamplers[mesh.tsIndex.value()].bind();
 
 	for (const uint16_t cbIndex : mesh.cbIndices)
 		this->constantBuffers[cbIndex].Bind();

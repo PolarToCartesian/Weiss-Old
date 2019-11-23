@@ -4,17 +4,13 @@
 #include "../../misc/includes.h"
 #include "../../../math/Vertex.h"
 
-#include <vector>
+#include "../misc/ShaderBindingType.h"
 
-enum class ConstantBufferShaderBinding {
-	VERTEX,
-	PIXEL,
-	BOTH
-};
+#include <vector>
 
 struct ConstantBufferDescriptor
 {
-	const ConstantBufferShaderBinding bindingType;
+	const ShaderBindingType bindingType;
 	const size_t objSize;
 	const UINT slotVS;
 	const UINT slotPS;

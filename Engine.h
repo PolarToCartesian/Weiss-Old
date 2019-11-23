@@ -5,6 +5,9 @@
 
 #include "winapi/graphics/buffers/ConstantBuffer.h"
 
+#include "winapi/graphics/images/Texture2D.h"
+#include "winapi/graphics/images/TextureSampler.h"
+
 #include "winapi/windows/Window.h"
 
 #include "misc/Timer.h"
@@ -18,6 +21,8 @@ struct MeshDescriptorFromVertices
 	const std::vector<uint32_t>& indices;
 	const size_t vertexShaderIndex;
 	const size_t pixelShaderIndex;
+	const std::optional<size_t> t2dIndex;
+	const std::optional<size_t> tsIndex;
 	const std::vector<size_t>& constantBufferIndices;
 	const D3D_PRIMITIVE_TOPOLOGY primitiveTopology;
 };
@@ -42,9 +47,11 @@ public:
 
 	std::unique_ptr<Graphics> graphics;
 
+	std::vector<Texture2D>      textures;
 	std::vector<PixelShader>    pixelShaders;
 	std::vector<VertexShader>   vertexShaders;
 	std::vector<ConstantBuffer> constantBuffers;
+	std::vector<TextureSampler> textureSamplers;
 
 	Engine(const WindowDescriptor& windowDesc);
 
@@ -53,6 +60,10 @@ public:
 	size_t loadVertexShaderFromFile(const VertexShaderDescriptor& descriptor);
 
 	size_t loadPixelShaderFromFile(const PixelShaderDescriptor& descriptor);
+
+	size_t loadTextureFromImage(const Texture2DDescriptor& descriptor);
+
+	size_t loadTextureSampler(const TextureSamplerDescriptor& descriptor);
 
 	size_t createConstantBuffer(const ConstantBufferDescriptor& descriptor);
 
