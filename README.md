@@ -20,15 +20,14 @@ git clone "https://github.com/PolarToCartesian/Weiss"
     + [ ] Lights
       + [ ] Point Light
       + [ ] Directional Light
-    + [ ] Shading
-      + [ ] Goraud
-      + [ ] Phong
-      + [ ] Flat
-    + [ ] Techniques
-      + [ ] Diffuse
-      + [ ] Specular
   + [ ] Misc
+	+ [x] Texturing
     + [x] Rotation Around Point
     + [ ] Visual Timers
 + [ ] Audio
+  + [x] Basic
+	+ [x] Play
+  + [ ] Advanced
+    + [ ] Volume Control
+	+ [ ] Play/Pause
 + [ ] Networking
