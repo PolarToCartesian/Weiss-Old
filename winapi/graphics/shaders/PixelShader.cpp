@@ -6,8 +6,8 @@ PixelShader::PixelShader(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 	: m_pDeviceContextRef(pDeviceContextRef)
 {
 	Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
-	HRESULT_ERROR(D3DReadFileToBlob(descriptor.pixelShaderFilename, &pBlob));
-	HRESULT_ERROR(pDeviceRef->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pPixelShader));
+	HRESULT_ERROR(D3DReadFileToBlob(descriptor.pixelShaderFilename, &pBlob), "Could Not Read Pixel Shader File");
+	HRESULT_ERROR(pDeviceRef->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pPixelShader), "Could Not Create Pixel Shader");
 }
 
 void PixelShader::Bind() const noexcept

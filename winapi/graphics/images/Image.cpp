@@ -4,7 +4,7 @@ Image::Image(const char* filename)
 {
 	std::ifstream file(filename, std::ifstream::binary);
 
-	ASSERT_ERROR(file.is_open());
+	ASSERT_ERROR(file.is_open(), "Could Not Open Image File");
 
 	// Read Header
 	std::string magicNumber;
@@ -19,7 +19,7 @@ Image::Image(const char* filename)
 
 	const uint64_t nSubPixels = static_cast<uint64_t>(this->m_nPixels) * 3;
 
-	ASSERT_ERROR(magicNumber == "P6");
+	ASSERT_ERROR(magicNumber == "P6", "Weiss Only Supports PPM6 Images");
 
 	// Parse Image Data
 	file.read((char*)this->m_buff.get(), nSubPixels);

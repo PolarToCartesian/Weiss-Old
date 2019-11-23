@@ -80,7 +80,7 @@ void Window::setTitle(const char* title) { SetWindowTextA(this->m_handle, title)
 
 void Window::setIcon(const char* pathname) {
 	const HICON hIcon = (HICON)LoadImage(NULL, pathname, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
-	ASSERT_ERROR(hIcon != NULL);
+	ASSERT_ERROR(hIcon != NULL, "Could Not Load Icon");
 	
 	SendMessage(this->m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 }

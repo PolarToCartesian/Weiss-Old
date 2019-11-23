@@ -15,7 +15,7 @@ IndexBuffer::IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 	D3D11_SUBRESOURCE_DATA isd = {};
 	isd.pSysMem = indices.data();
 
-	HRESULT_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer));
+	HRESULT_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer), "Unable To Create Index Buffer");
 }
 
 size_t IndexBuffer::getSize() const { return this->m_nBytes; }

@@ -23,14 +23,14 @@ Texture2D::Texture2D(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, Mic
 	texture2DDescriptor.BindFlags        = D3D11_BIND_SHADER_RESOURCE;
 
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2D;
-	HRESULT_ERROR(pDeviceRef->CreateTexture2D(&texture2DDescriptor, &subResourceData, texture2D.GetAddressOf()));
+	HRESULT_ERROR(pDeviceRef->CreateTexture2D(&texture2DDescriptor, &subResourceData, texture2D.GetAddressOf()), "Could Not Create Texture 2D");
 
 	D3D11_SHADER_RESOURCE_VIEW_DESC SRVDescriptor = {};
 	SRVDescriptor.Format              = DXGI_FORMAT_R8G8B8A8_UNORM;
 	SRVDescriptor.ViewDimension       = D3D11_SRV_DIMENSION_TEXTURE2D;
 	SRVDescriptor.Texture2D.MipLevels = 1;
 
-	HRESULT_ERROR(pDeviceRef->CreateShaderResourceView(texture2D.Get(), &SRVDescriptor, this->m_pShaderResourceView.GetAddressOf()));
+	HRESULT_ERROR(pDeviceRef->CreateShaderResourceView(texture2D.Get(), &SRVDescriptor, this->m_pShaderResourceView.GetAddressOf()), "Could Not Create ShaderResourceView");
 }
 
 void Texture2D::bind() const noexcept

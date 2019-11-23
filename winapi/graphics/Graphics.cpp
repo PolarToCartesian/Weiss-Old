@@ -31,15 +31,15 @@ void Graphics::createDeviceAndSwapChain(HWND windowHandle) {
 		&m_pDevice,
 		nullptr,
 		&m_pDeviceContext
-	));
+	), "Could Not Create Device And SwapChain");
 }
 
 void Graphics::createRenderTarget()
 {
 	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
 
-	HRESULT_ERROR(this->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer));
-	HRESULT_ERROR(this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget));
+	HRESULT_ERROR(this->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer), "Could Not Get BackBuffer");
+	HRESULT_ERROR(this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget), "Could Not Create RenderTargetView");
 }
 
 void Graphics::createViewport(HWND windowHandle)
@@ -65,7 +65,7 @@ void Graphics::createDepthBuffer(HWND windowHandle)
 	dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 	dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> pDSState;
-	HRESULT_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &pDSState));
+	HRESULT_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &pDSState), "Could Not Create DepthStencilState");
 
 	// Bind pDSState
 	this->m_pDeviceContext->OMSetDepthStencilState(pDSState.Get(), 1u);
@@ -85,8 +85,7 @@ void Graphics::createDepthBuffer(HWND windowHandle)
 	descDepth.SampleDesc.Quality = 0u;
 	descDepth.Usage = D3D11_USAGE_DEFAULT;
 	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-	HRESULT_ERROR(this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil));
-
+	HRESULT_ERROR(this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil), "Could Not Create Texture2D");
 	// Create Depth Stencil Texture View
 	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
 	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
@@ -94,7 +93,7 @@ void Graphics::createDepthBuffer(HWND windowHandle)
 	descDSV.Texture2D.MipSlice = 0u;
 	HRESULT_ERROR(this->m_pDevice->CreateDepthStencilView(
 		pDepthStencil.Get(), &descDSV, &this->m_pDepthStencilView
-	));
+	), "Could Not Create DepthStencilView");
 
 	// Bind Depth Stencil
 	this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), this->m_pDepthStencilView.Get());
@@ -125,7 +124,7 @@ void Graphics::fill(const Color& color)
 
 void Graphics::render(const bool useVSync)
 {
-	HRESULT_ERROR(this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u));
+	HRESULT_ERROR(this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u), "Could Not Present Frame");
 
 	// Clear Depth Buffer
 	this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);

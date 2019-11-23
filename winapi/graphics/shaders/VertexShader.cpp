@@ -6,15 +6,15 @@ VertexShader::VertexShader(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRe
 	: m_pDeviceContextRef(pDeviceContextRef)
 {
 	Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
-	D3DReadFileToBlob(descriptor.vertexShaderFilename, &pBlob);
-	HRESULT_ERROR(pDeviceRef->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader));
+	HRESULT_ERROR(D3DReadFileToBlob(descriptor.vertexShaderFilename, &pBlob), "Could Not Read Vertex Shader File");
+	HRESULT_ERROR(pDeviceRef->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader), "Could Not Create Vertex Shader");
 
 	HRESULT_ERROR(pDeviceRef->CreateInputLayout(
 		descriptor.ieds.data(), (UINT)std::size(descriptor.ieds),
 		pBlob->GetBufferPointer(),
 		pBlob->GetBufferSize(),
 		&m_pInputLayout
-	));
+	), "Could Not Create Input Layout");
 }
 
 void VertexShader::Bind() const noexcept
