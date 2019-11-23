@@ -8,7 +8,7 @@
 
 struct VertexShaderDescriptor
 {
-	const std::vector<D3D11_INPUT_ELEMENT_DESC> ieds;
+	const std::vector<std::pair<const char*, DXGI_FORMAT>> inputElementDescriptors;
 	const wchar_t* vertexShaderFilename;
 };
 
