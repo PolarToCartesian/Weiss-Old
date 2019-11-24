@@ -151,7 +151,7 @@ void Engine::drawMesh(const size_t meshIndex)
 	if (mesh.tsIndex.has_value())
 		this->textureSamplers[mesh.tsIndex.value()].bind();
 
-	for (const uint16_t cbIndex : mesh.cbIndices)
+	for (const size_t cbIndex : mesh.cbIndices)
 		this->constantBuffers[cbIndex].Bind();
 
 	this->graphics->getDeviceContext()->IASetPrimitiveTopology(mesh.pt);
@@ -164,7 +164,7 @@ void Engine::run(const bool useVSync, const uint16_t fps) {
 
 	while (this->window->isRunning())
 	{
-		const uint32_t elapsed = timer.getElapsedTime();
+		const float elapsed = timer.getElapsedTimeMs();
 
 		if (!useVSync)
 		{

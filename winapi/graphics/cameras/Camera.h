@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../../windows/Window.h"
-#include "../../../misc/Constants.h"
+#include "../../../math/Constants.h"
 
 class Camera
 {

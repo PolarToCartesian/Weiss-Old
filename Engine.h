@@ -2,10 +2,11 @@
 
 #include "Engine.h"
 
+#include "math/Constants.h"
+#include "math/Conversions.h"
 #include "math/Vectors.h"
 #include "math/Vertex.h"
 
-#include "misc/Constants.h"
 #include "misc/Timer.h"
 
 #include "winapi/audio/AudioHandler.h"
@@ -84,7 +85,7 @@ public:
 
 	Engine(const WindowDescriptor& windowDesc);
 
-	virtual void onRender(const uint32_t elapsed) = 0;
+	virtual void onRender(const float elapsed) = 0;
 
 	void captureCursor();
 
