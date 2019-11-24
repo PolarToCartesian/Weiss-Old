@@ -14,8 +14,6 @@ class PerspectiveCamera : public Camera
 
 		float m_fov, m_aspectRatio, m_zNear, m_zFar;
 
-		DirectX::XMVECTOR m_rotation;
-
 	public:
 		PerspectiveCamera(const Vec3f& position, const Vec3f& rotation, const float fov, const float aspectRatio, const float zNear, const float zFar)
 			: m_fov(fov), m_aspectRatio(aspectRatio), m_zNear(zNear), m_zFar(zFar)
@@ -26,11 +24,30 @@ class PerspectiveCamera : public Camera
 			this->calculateTransform();
 		}
 
+		void translate(const Vec3f& v)
+		{
+			this->m_position = DirectX::XMVectorAdd(this->m_position, DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f));
+		}
+
+		void setPosition(const Vec3f& v) { this->m_position = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f); }
+
 		void rotate(const Vec3f& v)
 		{
 			const DirectX::XMVECTOR rotationDeltaVector = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f);
 			
 			this->m_rotation = DirectX::XMVectorAdd(this->m_rotation, rotationDeltaVector);
+
+			// UP-DOWN Rotation Limit
+			if (this->m_rotation.m128_f32[0] > HALF_PI)
+				this->m_rotation.m128_f32[0] = HALF_PI;
+
+			if (this->m_rotation.m128_f32[0] < -HALF_PI)
+				this->m_rotation.m128_f32[0] = -HALF_PI;
+		}
+
+		void setRotation(const Vec3f& v)
+		{
+			this->m_rotation = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f);
 
 			// UP-DOWN Rotation Limit
 			if (this->m_rotation.m128_f32[0] > HALF_PI)
@@ -47,7 +64,7 @@ class PerspectiveCamera : public Camera
 			const DirectX::XMVECTOR upDirectionVec = DirectX::XMVector3TransformCoord(UP_VECTOR, rotationMatrix);
 
 			this->m_transform = DirectX::XMMatrixLookAtLH(this->m_position, lookAtPosition, upDirectionVec)
-							  * createPerspectiveMatrix(m_fov, m_aspectRatio, m_zNear, m_zFar);
+							  * DirectX::XMMatrixPerspectiveFovLH(m_fov, m_aspectRatio, m_zNear, m_zFar);
 
 			const DirectX::XMMATRIX rotationYMatrix = DirectX::XMMatrixRotationRollPitchYaw(0.0f, this->m_rotation.m128_f32[1], 0.0f);
 
@@ -55,7 +72,7 @@ class PerspectiveCamera : public Camera
 			this->m_rightVector   = DirectX::XMVector3TransformCoord(RIGHT_VECTOR,   rotationYMatrix);
 		}
 
-		virtual void handleMouseMovements(Mouse& mouse, const float sensitivity) override
+		void handleMouseMovements(Mouse& mouse, const float sensitivity)
 		{
 			mouse.onMouseMove([sensitivity, this, &mouse](const Vec2u position, const Vec2i delta)
 			{
@@ -64,7 +81,7 @@ class PerspectiveCamera : public Camera
 			});
 		}
 
-		virtual void handleKeyboardInputs(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down) override
+		void handleKeyboardInputs(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down)
 		{
 			if (keyboard.isKeyDown(forward))
 				this->m_position = DirectX::XMVectorAdd(this->m_position,      DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
