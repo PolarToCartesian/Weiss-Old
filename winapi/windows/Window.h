@@ -35,7 +35,7 @@ class Window
         bool m_isRunning   = false;
 		bool m_isMinimized = false;
 
-        std::function<void(const Vec2u)> m_onResizeFunctor = [](const Vec2u dim) {};
+		std::vector<std::function<void(const Vec2u)>> m_onResizeFunctors;
 
     public:
         Window(const WindowDescriptor& descriptor);

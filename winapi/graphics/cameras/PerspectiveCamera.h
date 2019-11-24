@@ -12,16 +12,23 @@ class PerspectiveCamera : public Camera
 		DirectX::XMVECTOR m_forwardVector = FORWARD_VECTOR;
 		DirectX::XMVECTOR m_rightVector   = RIGHT_VECTOR;
 
-		float m_fov, m_aspectRatio, m_zNear, m_zFar;
+		float m_fov = 0.0f, m_aspectRatio = 0.0f, m_zNear = 0.0f, m_zFar = 0.0f;
 
 	public:
-		PerspectiveCamera(const Vec3f& position, const Vec3f& rotation, const float fov, const float aspectRatio, const float zNear, const float zFar)
-			: m_fov(fov), m_aspectRatio(aspectRatio), m_zNear(zNear), m_zFar(zFar)
+		PerspectiveCamera(const Vec3f& position, const Vec3f& rotation, const float fov, Window& window, const float zNear, const float zFar)
+			: m_fov(fov), m_zNear(zNear), m_zFar(zFar)
 		{
 			this->m_position = DirectX::XMVectorSet(position[0], position[1], position[2], 0.0f);
 			this->m_rotation = DirectX::XMVectorSet(rotation[0], rotation[1], rotation[2], 0.0f);
 
-			this->calculateTransform();
+			auto recalculateAspectRatio = [this, &window](const Vec2u& clientDims)
+			{
+				this->m_aspectRatio = clientDims[0] / static_cast<float>(clientDims[1]);
+			};
+
+			recalculateAspectRatio({ window.getClientWidth(), window.getClientHeight() });
+
+			window.onResize(recalculateAspectRatio);
 		}
 
 		void translate(const Vec3f& v)

@@ -1,8 +1,7 @@
 #pragma once
 
+#include "../../windows/Window.h"
 #include "../../../misc/Constants.h"
-#include "../../windows/peripherals/Mouse.h"
-#include "../../windows/peripherals/Keyboard.h"
 
 class Camera
 {

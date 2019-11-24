@@ -9,11 +9,19 @@ private:
 	float m_InvAspectRatio = 0.0f;
 
 public:
-	OrthographicCamera(const Vec2f& position, const Vec2u& dimensions, const float ratation)
-		: m_InvAspectRatio(dimensions[1] / static_cast<float>(dimensions[0]))
+	OrthographicCamera(const Vec2f& position, Window& window, const float ratation)
 	{
 		this->m_position = DirectX::XMVectorSet(position[0], position[1], 0.0f,     0.0f);
 		this->m_rotation = DirectX::XMVectorSet(0.0f,        0.0f,        ratation, 0.0f);
+
+		auto recalculateInvAspectRatio = [this, &window](const Vec2u& clientDims)
+		{
+			this->m_InvAspectRatio = clientDims[1] / static_cast<float>(clientDims[0]);
+		};
+
+		recalculateInvAspectRatio({ window.getClientWidth(), window.getClientHeight() });
+
+		window.onResize(recalculateInvAspectRatio);
 	}
 
 	void rotate(const float angle)   { this->m_rotation.m128_f32[2] += angle; }

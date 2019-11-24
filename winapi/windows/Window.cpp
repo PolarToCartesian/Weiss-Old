@@ -40,7 +40,7 @@ Window::Window(const WindowDescriptor& descriptor)
 }
 
 // Misc
-void Window::onResize(const std::function<void(const Vec2u)>& functor) { this->m_onResizeFunctor = functor; }
+void Window::onResize(const std::function<void(const Vec2u)>& functor) { this->m_onResizeFunctors.push_back(functor); }
 
 std::unique_ptr<Graphics> Window::createGraphics() { return std::make_unique<Graphics>(this->m_handle); }
 
@@ -114,9 +114,10 @@ LRESULT Window::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 					static_cast<uint16_t>(GET_Y_LPARAM(lParam))
 				};
 
-				this->m_onResizeFunctor(client_area_dimensions);
-
 				this->m_isMinimized = (client_area_dimensions[0] == 0 && client_area_dimensions[1] == 0);
+
+				for (auto& functor : this->m_onResizeFunctors)
+					functor(client_area_dimensions);
 			}
 
 			return 0;
