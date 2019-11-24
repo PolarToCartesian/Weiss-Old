@@ -68,9 +68,9 @@ size_t Engine::createConstantBuffer(const ConstantBufferDescriptor& descriptor)
 	return this->constantBuffers.size() - 1;
 }
 
-Mesh Engine::createMeshFromVertices(const MeshDescriptorFromVertices& descriptor)
+size_t Engine::createMeshFromVertices(const MeshDescriptorFromVertices& descriptor)
 {
-	Mesh mesh{
+	this->meshes.emplace_back(Mesh{
 		VertexBuffer(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor.vertexBufferDescriptor),
 		IndexBuffer(this->graphics->getDevice(), this->graphics->getDeviceContext(), descriptor.indices),
 		descriptor.vertexShaderIndex,
@@ -79,9 +79,9 @@ Mesh Engine::createMeshFromVertices(const MeshDescriptorFromVertices& descriptor
 		descriptor.tsIndex,
 		descriptor.constantBufferIndices,
 		descriptor.primitiveTopology
-	};
+	});
 
-	return mesh;
+	return this->meshes.size() - 1;
 }
 
 DataFromMeshFile Engine::loadDataFromMeshFile(const MeshDescriptorFromFile& descriptor)
@@ -136,8 +136,10 @@ DataFromMeshFile Engine::loadDataFromMeshFile(const MeshDescriptorFromFile& desc
 	return { vertices, indices };
 }
 
-void Engine::drawMesh(Mesh& mesh)
+void Engine::drawMesh(const size_t meshIndex)
 {
+	Mesh& mesh = this->meshes[meshIndex];
+
 	mesh.vb.Bind();
 	mesh.ib.Bind();
 	this->vertexShaders[mesh.vsIndex].Bind();
@@ -156,11 +158,7 @@ void Engine::drawMesh(Mesh& mesh)
 	this->graphics->getDeviceContext()->DrawIndexed(static_cast<UINT>(mesh.ib.getSize()), 0u, 0u);
 }
 
-void Engine::update() { this->window->update(); }
-
-void Engine::render(const bool useVSync) { this->graphics->render(useVSync); }
-
-void Engine::run(const std::function<void(uint32_t)>& functor, const bool useVSync, const uint16_t fps) {
+void Engine::run(const bool useVSync, const uint16_t fps) {
 	Timer timer;
 	uint32_t frames = 0;
 
@@ -179,10 +177,10 @@ void Engine::run(const std::function<void(uint32_t)>& functor, const bool useVSy
 			}
 		}
 
-		this->update();
+		this->window->update();
 		
-		functor(elapsed);
+		this->onRender(elapsed);
 
-		this->render(useVSync);
+		this->graphics->render(useVSync);
 	}
 }

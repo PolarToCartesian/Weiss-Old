@@ -1,16 +1,44 @@
 #pragma once
 
-#include "winapi/graphics/shaders/PixelShader.h"
-#include "winapi/graphics/shaders/VertexShader.h"
+#include "Engine.h"
+
+#include "math/Vectors.h"
+#include "math/Vertex.h"
+
+#include "misc/Constants.h"
+#include "misc/Timer.h"
+
+#include "winapi/audio/AudioHandler.h"
 
 #include "winapi/graphics/buffers/ConstantBuffer.h"
+#include "winapi/graphics/buffers/IndexBuffer.h"
+#include "winapi/graphics/buffers/VertexBuffer.h"
 
+#include "winapi/graphics/cameras/Camera.h"
+#include "winapi/graphics/cameras/OrthographicCamera.h"
+#include "winapi/graphics/cameras/PerspectiveCamera.h"
+
+#include "winapi/graphics/Graphics.h"
+
+#include "winapi/graphics/images/Image.h"
 #include "winapi/graphics/images/Texture2D.h"
 #include "winapi/graphics/images/TextureSampler.h"
 
-#include "winapi/windows/Window.h"
+#include "winapi/graphics/meshes/Mesh.h"
 
-#include "misc/Timer.h"
+#include "winapi/graphics/misc/ShaderBindingType.h"
+
+#include "winapi/graphics/shaders/PixelShader.h"
+#include "winapi/graphics/shaders/VertexShader.h"
+
+#include "winapi/misc/Error.h"
+#include "winapi/misc/includes.h"
+
+#include "winapi/windows/peripherals/Keyboard.h"
+#include "winapi/windows/peripherals/Mouse.h"
+#include "winapi/windows/peripherals/PeripheralDevice.h"
+
+#include "winapi/windows/Window.h"
 
 #include <thread>
 #include <optional>
@@ -47,6 +75,7 @@ public:
 
 	std::unique_ptr<Graphics> graphics;
 
+	std::vector<Mesh>           meshes;
 	std::vector<Texture2D>      textures;
 	std::vector<PixelShader>    pixelShaders;
 	std::vector<VertexShader>   vertexShaders;
@@ -54,6 +83,8 @@ public:
 	std::vector<TextureSampler> textureSamplers;
 
 	Engine(const WindowDescriptor& windowDesc);
+
+	virtual void onRender(const uint32_t elapsed) = 0;
 
 	void captureCursor();
 
@@ -67,15 +98,11 @@ public:
 
 	size_t createConstantBuffer(const ConstantBufferDescriptor& descriptor);
 
-	Mesh createMeshFromVertices(const MeshDescriptorFromVertices& descriptor);
+	size_t createMeshFromVertices(const MeshDescriptorFromVertices& descriptor);
 
 	DataFromMeshFile loadDataFromMeshFile(const MeshDescriptorFromFile& descriptor);
 
-	void drawMesh(Mesh& mesh);
+	void drawMesh(const size_t mesh);
 
-	void update();
-
-	void render(const bool useVSync);
-
-	void run(const std::function<void(uint32_t)>& functor, const bool useVSync = true, const uint16_t fps = 60);
+	void run(const bool useVSync = true, const uint16_t fps = 60);
 };
