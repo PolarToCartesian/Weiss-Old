@@ -1,10 +1,7 @@
 #pragma once
 
-#include "../../misc/Error.h"
-#include "../../misc/includes.h"
-#include "../../../math/Vertex.h"
-
-#include <vector>
+#include "../misc/includes.h"
+#include "../math/Vertex.h"
 
 class IndexBuffer {
 	private:

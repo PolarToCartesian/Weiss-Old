@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../../misc/Error.h"
-#include "../../misc/includes.h"
+#include "../misc/Includes.h"
 
 struct PixelShaderDescriptor
 {

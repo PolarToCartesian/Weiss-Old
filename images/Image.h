@@ -1,12 +1,6 @@
 #pragma once
 
-#include "../../misc/Error.h"
-#include "../../../math/Vectors.h"
-
-#include <array>
-#include <memory>
-#include <fstream>
-#include <sstream>
+#include "../math/Vectors.h"
 
 class Image {
 	private:

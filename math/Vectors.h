@@ -1,7 +1,6 @@
 #pragma once
 
-#include <array>
-#include <iostream>
+#include "../misc/Includes.h"
 
 typedef std::array<float,    2> Vec2f;
 typedef std::array<uint16_t, 2> Vec2u;

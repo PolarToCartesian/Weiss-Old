@@ -1,10 +1,6 @@
 #pragma once
 
-#include "../../misc/Error.h"
-#include "../../misc/includes.h"
-
-#include <vector>
-#include <algorithm>
+#include "../misc/Includes.h"
 
 struct VertexShaderDescriptor
 {

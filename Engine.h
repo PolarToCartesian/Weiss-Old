@@ -9,40 +9,34 @@
 
 #include "misc/Timer.h"
 
-#include "winapi/audio/AudioHandler.h"
+#include "audio/AudioHandler.h"
 
-#include "winapi/graphics/buffers/ConstantBuffer.h"
-#include "winapi/graphics/buffers/IndexBuffer.h"
-#include "winapi/graphics/buffers/VertexBuffer.h"
+#include "buffers/ConstantBuffer.h"
+#include "buffers/IndexBuffer.h"
+#include "buffers/VertexBuffer.h"
 
-#include "winapi/graphics/cameras/Camera.h"
-#include "winapi/graphics/cameras/OrthographicCamera.h"
-#include "winapi/graphics/cameras/PerspectiveCamera.h"
+#include "cameras/Camera.h"
+#include "cameras/OrthographicCamera.h"
+#include "cameras/PerspectiveCamera.h"
 
-#include "winapi/graphics/Graphics.h"
+#include "images/Image.h"
+#include "images/Texture2D.h"
+#include "images/TextureSampler.h"
 
-#include "winapi/graphics/images/Image.h"
-#include "winapi/graphics/images/Texture2D.h"
-#include "winapi/graphics/images/TextureSampler.h"
+#include "meshes/Mesh.h"
 
-#include "winapi/graphics/meshes/Mesh.h"
+#include "misc/ShaderBindingType.h"
 
-#include "winapi/graphics/misc/ShaderBindingType.h"
+#include "shaders/PixelShader.h"
+#include "shaders/VertexShader.h"
 
-#include "winapi/graphics/shaders/PixelShader.h"
-#include "winapi/graphics/shaders/VertexShader.h"
+#include "misc/Includes.h"
 
-#include "winapi/misc/Error.h"
-#include "winapi/misc/includes.h"
+#include "peripherals/Keyboard.h"
+#include "peripherals/Mouse.h"
+#include "peripherals/PeripheralDevice.h"
 
-#include "winapi/windows/peripherals/Keyboard.h"
-#include "winapi/windows/peripherals/Mouse.h"
-#include "winapi/windows/peripherals/PeripheralDevice.h"
-
-#include "winapi/windows/Window.h"
-
-#include <thread>
-#include <optional>
+#include "Window.h"
 
 struct MeshDescriptorFromVertices
 {
@@ -69,12 +63,17 @@ struct DataFromMeshFile
 
 class Engine
 {
+private:
+	Microsoft::WRL::ComPtr<ID3D11Device> m_pDevice;
+	Microsoft::WRL::ComPtr<IDXGISwapChain> m_pSwapChain;
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_pDeviceContext;
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_pRenderTarget;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_pDepthStencilView;
+
 public:
 	Window* window;
 	Mouse* mouse;
 	Keyboard* keyboard;
-
-	std::unique_ptr<Graphics> graphics;
 
 	std::vector<Mesh>           meshes;
 	std::vector<Texture2D>      textures;
@@ -83,6 +82,20 @@ public:
 	std::vector<ConstantBuffer> constantBuffers;
 	std::vector<TextureSampler> textureSamplers;
 
+private:
+	void createDeviceAndSwapChain(HWND windowHandle);
+
+	void createRenderTarget();
+
+	void createViewport(HWND windowHandle);
+
+	void createDepthBuffer(HWND windowHandle);
+
+	void initGraphics();
+
+	void presentFrame(const bool useVSync);
+
+public:
 	Engine(const WindowDescriptor& windowDesc);
 
 	virtual void onRender(const float elapsed) = 0;
@@ -104,6 +117,8 @@ public:
 	DataFromMeshFile loadDataFromMeshFile(const MeshDescriptorFromFile& descriptor);
 
 	void drawMesh(const size_t mesh);
+
+	void fill(const Color& color);
 
 	void run(const bool useVSync = true, const uint16_t fps = 60);
 };

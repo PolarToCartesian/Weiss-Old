@@ -2,10 +2,6 @@
 
 #include "PeripheralDevice.h"
 
-#include <vector>
-#include <algorithm>
-#include <functional>
-
 #define CHECK_BIT(var,pos) ((var) & ( 1 << (pos)))
 
 class Keyboard : PeripheralDevice

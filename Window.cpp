@@ -42,8 +42,6 @@ Window::Window(const WindowDescriptor& descriptor)
 // Misc
 void Window::onResize(const std::function<void(const Vec2u)>& functor) { this->m_onResizeFunctors.push_back(functor); }
 
-std::unique_ptr<Graphics> Window::createGraphics() { return std::make_unique<Graphics>(this->m_handle); }
-
 // Getters
 bool	  Window::isRunning()   const { return this->m_isRunning; }
 Keyboard& Window::getKeyboard()       { return this->m_keyboard;  }

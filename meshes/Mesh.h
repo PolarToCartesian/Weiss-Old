@@ -3,8 +3,6 @@
 #include "../buffers/IndexBuffer.h"
 #include "../buffers/VertexBuffer.h"
 
-#include <optional>
-
 struct Mesh {
 	VertexBuffer vb;
 	IndexBuffer ib;

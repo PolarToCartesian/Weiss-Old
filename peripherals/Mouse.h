@@ -1,13 +1,9 @@
 #pragma once
 
-#include "../../../math/Vectors.h"
+#include "../math/Vectors.h"
 #include "PeripheralDevice.h"
 
-#include "../../misc/Error.h"
-#include "../../misc/includes.h"
-
-#include <vector>
-#include <functional>
+#include "../misc/Includes.h"
 
 class Mouse : PeripheralDevice
 {

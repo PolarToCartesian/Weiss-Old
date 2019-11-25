@@ -3,8 +3,6 @@
 #include "Image.h"
 #include "../misc/ShaderBindingType.h"
 
-#include <vector>
-
 struct Texture2DDescriptor
 {
 	const ShaderBindingType bindingType;

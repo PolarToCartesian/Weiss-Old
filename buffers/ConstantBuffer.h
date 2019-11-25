@@ -1,12 +1,9 @@
 #pragma once
 
-#include "../../misc/Error.h"
-#include "../../misc/includes.h"
-#include "../../../math/Vertex.h"
+#include "../misc/includes.h"
+#include "../math/Vertex.h"
 
 #include "../misc/ShaderBindingType.h"
-
-#include <vector>
 
 struct ConstantBufferDescriptor
 {

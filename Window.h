@@ -1,13 +1,8 @@
 #pragma once
 
-#include "../misc/includes.h"
+#include "misc/Includes.h"
 #include "peripherals/Mouse.h"
-#include "../graphics/Graphics.h"
 #include "peripherals/Keyboard.h"
-
-#include <vector>
-#include <memory>
-#include <functional>
 
 LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
 
@@ -42,8 +37,6 @@ class Window
 
         // Misc
         void onResize(const std::function<void(const Vec2u)>& functor);
-
-		std::unique_ptr<Graphics> createGraphics();
 
         // Getters
         bool      isRunning() const;
