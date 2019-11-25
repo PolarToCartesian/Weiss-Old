@@ -75,6 +75,8 @@ public:
 	Mouse* mouse;
 	Keyboard* keyboard;
 
+	std::vector<size_t> renderPool;
+
 	std::vector<Mesh>           meshes;
 	std::vector<Texture2D>      textures;
 	std::vector<PixelShader>    pixelShaders;
@@ -83,15 +85,17 @@ public:
 	std::vector<TextureSampler> textureSamplers;
 
 private:
-	void createDeviceAndSwapChain(HWND windowHandle);
+	void createDeviceAndSwapChain();
 
 	void createRenderTarget();
 
-	void createViewport(HWND windowHandle);
+	void createViewport();
 
-	void createDepthBuffer(HWND windowHandle);
+	void createDepthBuffer();
 
 	void initGraphics();
+
+	void drawMesh(const size_t mesh);
 
 	void presentFrame(const bool useVSync);
 
@@ -116,7 +120,7 @@ public:
 
 	DataFromMeshFile loadDataFromMeshFile(const MeshDescriptorFromFile& descriptor);
 
-	void drawMesh(const size_t mesh);
+	void queueMeshForRendering(const size_t mesh);
 
 	void fill(const Color& color);
 

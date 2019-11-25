@@ -1,6 +1,6 @@
 #include "Engine.h"
 
-void Engine::createDeviceAndSwapChain(HWND windowHandle) {
+void Engine::createDeviceAndSwapChain() {
 	DXGI_SWAP_CHAIN_DESC scd{};
 	scd.BufferDesc.Width = 0;
 	scd.BufferDesc.Height = 0;
@@ -13,7 +13,7 @@ void Engine::createDeviceAndSwapChain(HWND windowHandle) {
 	scd.SampleDesc.Quality = 0;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.BufferCount = 1;
-	scd.OutputWindow = windowHandle;
+	scd.OutputWindow = this->window->getHandle();
 	scd.Windowed = TRUE;
 	scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	scd.Flags = 0;
@@ -42,14 +42,11 @@ void Engine::createRenderTarget()
 	HRESULT_ERROR(this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget), "Could Not Create RenderTargetView");
 }
 
-void Engine::createViewport(HWND windowHandle)
+void Engine::createViewport()
 {
-	RECT clientRect;
-	GetClientRect(windowHandle, &clientRect);
-
 	D3D11_VIEWPORT vp;
-	vp.Width = static_cast<FLOAT>(clientRect.right - clientRect.left);
-	vp.Height = static_cast<FLOAT>(clientRect.bottom - clientRect.top);
+	vp.Width  = static_cast<FLOAT>(this->window->getClientWidth());
+	vp.Height = static_cast<FLOAT>(this->window->getClientHeight());
 	vp.MinDepth = 0;
 	vp.MaxDepth = 1;
 	vp.TopLeftX = 0;
@@ -58,7 +55,7 @@ void Engine::createViewport(HWND windowHandle)
 	this->m_pDeviceContext->RSSetViewports(1u, &vp);
 }
 
-void Engine::createDepthBuffer(HWND windowHandle)
+void Engine::createDepthBuffer()
 {
 	D3D11_DEPTH_STENCIL_DESC dsDesc = {};
 	dsDesc.DepthEnable = TRUE;
@@ -70,14 +67,11 @@ void Engine::createDepthBuffer(HWND windowHandle)
 	// Bind pDSState
 	this->m_pDeviceContext->OMSetDepthStencilState(pDSState.Get(), 1u);
 
-	RECT windowRect;
-	GetWindowRect(windowHandle, &windowRect);
-
 	// Create Detph Texture
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
 	D3D11_TEXTURE2D_DESC descDepth = {};
-	descDepth.Width = windowRect.right - windowRect.left;
-	descDepth.Height = windowRect.bottom - windowRect.top;
+	descDepth.Width  = this->window->getClientWidth();
+	descDepth.Height = this->window->getClientHeight();
 	descDepth.MipLevels = 1u;
 	descDepth.ArraySize = 1u;
 	descDepth.Format = DXGI_FORMAT_D32_FLOAT;
@@ -101,10 +95,32 @@ void Engine::createDepthBuffer(HWND windowHandle)
 
 void Engine::initGraphics()
 {
-	this->createDeviceAndSwapChain(this->window->getHandle());
+	this->createDeviceAndSwapChain();
 	this->createRenderTarget();
-	this->createViewport(this->window->getHandle());
-	this->createDepthBuffer(this->window->getHandle());
+	this->createViewport();
+	this->createDepthBuffer();
+}
+
+void Engine::drawMesh(const size_t meshIndex)
+{
+	Mesh& mesh = this->meshes[meshIndex];
+
+	mesh.vb.Bind();
+	mesh.ib.Bind();
+	this->vertexShaders[mesh.vsIndex].Bind();
+	this->pixelShaders[mesh.psIndex].Bind();
+
+	if (mesh.t2dIndex.has_value())
+		this->textures[mesh.t2dIndex.value()].bind();
+
+	if (mesh.tsIndex.has_value())
+		this->textureSamplers[mesh.tsIndex.value()].bind();
+
+	for (const size_t cbIndex : mesh.cbIndices)
+		this->constantBuffers[cbIndex].Bind();
+
+	this->m_pDeviceContext->IASetPrimitiveTopology(mesh.pt);
+	this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(mesh.ib.getSize()), 0u, 0u);
 }
 
 void Engine::presentFrame(const bool useVSync)
@@ -115,16 +131,14 @@ void Engine::presentFrame(const bool useVSync)
 	this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
 }
 
-
-
 Engine::Engine(const WindowDescriptor& windowDesc)
 {
 	this->window   = WindowManager::createWindow(windowDesc);
-	
-	this->initGraphics();
 
 	this->mouse    = &(this->window->getMouse());
 	this->keyboard = &(this->window->getKeyboard());
+
+	this->initGraphics();
 
 	this->window->onResize([this](const Vec2u dimensions) {
 		this->initGraphics();
@@ -254,31 +268,14 @@ DataFromMeshFile Engine::loadDataFromMeshFile(const MeshDescriptorFromFile& desc
 	return { vertices, indices };
 }
 
-void Engine::drawMesh(const size_t meshIndex)
-{
-	Mesh& mesh = this->meshes[meshIndex];
-
-	mesh.vb.Bind();
-	mesh.ib.Bind();
-	this->vertexShaders[mesh.vsIndex].Bind();
-	this->pixelShaders[mesh.psIndex].Bind();
-
-	if (mesh.t2dIndex.has_value())
-		this->textures[mesh.t2dIndex.value()].bind();
-	
-	if (mesh.tsIndex.has_value())
-		this->textureSamplers[mesh.tsIndex.value()].bind();
-
-	for (const size_t cbIndex : mesh.cbIndices)
-		this->constantBuffers[cbIndex].Bind();
-
-	this->m_pDeviceContext->IASetPrimitiveTopology(mesh.pt);
-	this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(mesh.ib.getSize()), 0u, 0u);
-}
-
 void Engine::fill(const Color& color)
 {
 	this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&color);
+}
+
+void Engine::queueMeshForRendering(const size_t mesh)
+{
+	this->renderPool.push_back(mesh);
 }
 
 void Engine::run(const bool useVSync, const uint16_t fps) {
@@ -302,7 +299,11 @@ void Engine::run(const bool useVSync, const uint16_t fps) {
 
 		this->window->update();
 		
+		this->renderPool.clear();
 		this->onRender(elapsed);
+
+		for (const size_t mesh : this->renderPool)
+			this->drawMesh(mesh);
 
 		this->presentFrame(useVSync);
 	}
