@@ -10,7 +10,7 @@ struct Mesh {
 	size_t vsIndex;
 	size_t psIndex;
 
-	std::optional<size_t> t2dIndex;
+	std::vector<size_t> t2dIndices;
 	std::optional<size_t> tsIndex;
 
 	std::vector<size_t> cbIndices;

@@ -110,8 +110,8 @@ void Engine::drawMesh(const size_t meshIndex)
 	this->vertexShaders[mesh.vsIndex].Bind();
 	this->pixelShaders[mesh.psIndex].Bind();
 
-	if (mesh.t2dIndex.has_value())
-		this->textures[mesh.t2dIndex.value()].bind();
+	for (size_t textureIndex : mesh.t2dIndices)
+		this->textures[textureIndex].bind();
 
 	if (mesh.tsIndex.has_value())
 		this->textureSamplers[mesh.tsIndex.value()].bind();
@@ -207,7 +207,7 @@ size_t Engine::createMeshFromVertices(const MeshDescriptorFromVertices& descript
 		IndexBuffer(this->m_pDevice, this->m_pDeviceContext, descriptor.indices),
 		descriptor.vertexShaderIndex,
 		descriptor.pixelShaderIndex,
-		descriptor.t2dIndex,
+		descriptor.t2dIndices,
 		descriptor.tsIndex,
 		descriptor.constantBufferIndices,
 		descriptor.primitiveTopology
