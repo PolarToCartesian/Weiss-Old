@@ -14,4 +14,8 @@ struct Vertex
 	float u;
 	float v;
 	float textureIndex;
+
+	float nx;
+	float ny;
+	float nz;
 };

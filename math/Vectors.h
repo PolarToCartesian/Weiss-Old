@@ -23,13 +23,17 @@ typedef Vec4f Color;
 // Operator Overloading
 
 template <typename T, size_t S>
-std::array<T, S> operator+(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] += b[i]; }
+std::array<T, S> operator+(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] += b[i]; return result; }
 template <typename T, size_t S>
-std::array<T, S> operator-(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] -= b[i]; }
+std::array<T, S> operator-(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] -= b[i]; return result; }
 template <typename T, size_t S>
-std::array<T, S> operator*(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] *= b[i]; }
+std::array<T, S> operator*(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] *= b[i]; return result; }
 template <typename T, size_t S>
-std::array<T, S> operator/(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] /= b[i]; }
+std::array<T, S> operator/(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] /= b[i]; return result; }
+
+template <typename T, size_t S>
+std::array<T, S> operator/(const std::array<T, S>& a, const float n) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] /= n; return result; }
+
 
 template <typename T, size_t S>
 void operator+=(std::array<T, S>& a, const std::array<T, S>& b) { for (size_t i = 0; i < S; i++) a[i] += b[i]; }
@@ -39,6 +43,15 @@ template <typename T, size_t S>
 void operator*=(std::array<T, S>& a, const std::array<T, S>& b) { for (size_t i = 0; i < S; i++) a[i] *= b[i]; }
 template <typename T, size_t S>
 void operator/=(std::array<T, S>& a, const std::array<T, S>& b) { for (size_t i = 0; i < S; i++) a[i] /= b[i]; }
+
+template <typename T, size_t S>
+void operator+=(std::array<T, S>& a, const float n) { for (size_t i = 0; i < S; i++) a[i] += n; }
+template <typename T, size_t S>
+void operator-=(std::array<T, S>& a, const float n) { for (size_t i = 0; i < S; i++) a[i] -= n; }
+template <typename T, size_t S>
+void operator*=(std::array<T, S>& a, const float n) { for (size_t i = 0; i < S; i++) a[i] *= n; }
+template <typename T, size_t S>
+void operator/=(std::array<T, S>& a, const float n) { for (size_t i = 0; i < S; i++) a[i] /= n; }
 
 // Printing
 

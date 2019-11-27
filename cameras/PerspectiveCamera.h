@@ -38,6 +38,10 @@ class PerspectiveCamera : public Camera
 
 		void setPosition(const Vec3f& v) { this->m_position = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f); }
 
+		Vec3f getPosition() const {
+			return Vec3f{ this->m_position.m128_f32[0], this->m_position.m128_f32[1], this->m_position.m128_f32[2] };
+		}
+
 		void rotate(const Vec3f& v)
 		{
 			const DirectX::XMVECTOR rotationDeltaVector = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f);
