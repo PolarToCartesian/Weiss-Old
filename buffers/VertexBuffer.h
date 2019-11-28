@@ -1,7 +1,6 @@
 #pragma once
 
 #include "../misc/Includes.h"
-#include "../math/Vertex.h"
 
 struct VertexBufferDescriptor
 {

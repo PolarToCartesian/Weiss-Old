@@ -5,7 +5,6 @@
 #include "math/Constants.h"
 #include "math/Conversions.h"
 #include "math/Vectors.h"
-#include "math/Vertex.h"
 
 #include "misc/Timer.h"
 
@@ -40,13 +39,13 @@
 
 struct MeshDescriptorFromVertices
 {
-	const VertexBufferDescriptor& vertexBufferDescriptor;
-	const std::vector<uint32_t>& indices;
+	const VertexBufferDescriptor vertexBufferDescriptor;
+	const std::vector<uint32_t> indices;
 	const size_t vertexShaderIndex;
 	const size_t pixelShaderIndex;
 	const std::vector<size_t> t2dIndices;
 	const std::optional<size_t> tsIndex;
-	const std::vector<size_t>& constantBufferIndices;
+	const std::vector<size_t> constantBufferIndices;
 	const D3D_PRIMITIVE_TOPOLOGY primitiveTopology;
 };
 
