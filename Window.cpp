@@ -40,7 +40,7 @@ Window::Window(const WindowDescriptor& descriptor)
 }
 
 // Misc
-void Window::onResize(const std::function<void(const Vec2u)>& functor) { this->m_onResizeFunctors.push_back(functor); }
+void Window::onResize(const std::function<void(const Vec2u16)>& functor) { this->m_onResizeFunctors.push_back(functor); }
 
 // Getters
 bool	  Window::isRunning()   const { return this->m_isRunning; }
@@ -107,7 +107,7 @@ LRESULT Window::handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		case WM_SIZE:
 			{
-				const Vec2u client_area_dimensions = {
+				const Vec2u16 client_area_dimensions = {
 					static_cast<uint16_t>(GET_X_LPARAM(lParam)),
 					static_cast<uint16_t>(GET_Y_LPARAM(lParam))
 				};

@@ -11,16 +11,16 @@ Mouse::Mouse()
 	RegisterRawInputDevices(&mouseInputDevice, 1, sizeof(RAWINPUTDEVICE));
 }
 
-void Mouse::onLeftButtonUp(const std::function<void(Vec2u)>& functor)    { this->m_onLeftButtonUpFunctors.push_back(functor); }
-void Mouse::onLeftButtonDown(const std::function<void(Vec2u)>& functor)  { this->m_onLeftButtonDownFunctors.push_back(functor); }
+void Mouse::onLeftButtonUp(const std::function<void(Vec2u16)>& functor)    { this->m_onLeftButtonUpFunctors.push_back(functor); }
+void Mouse::onLeftButtonDown(const std::function<void(Vec2u16)>& functor)  { this->m_onLeftButtonDownFunctors.push_back(functor); }
 
-void Mouse::onRightButtonUp(const std::function<void(Vec2u)>& functor)   { this->m_onRightButtonUpFunctors.push_back(functor); }
-void Mouse::onRightButtonDown(const std::function<void(Vec2u)>& functor) { this->m_onRightButtonDownFunctors.push_back(functor); }
+void Mouse::onRightButtonUp(const std::function<void(Vec2u16)>& functor)   { this->m_onRightButtonUpFunctors.push_back(functor); }
+void Mouse::onRightButtonDown(const std::function<void(Vec2u16)>& functor) { this->m_onRightButtonDownFunctors.push_back(functor); }
 
 void Mouse::onWheelTurn(const std::function<void(const int16_t)>& functor) { this->m_onWheelTurnFunctors.push_back(functor); }
 
-void Mouse::onMouseMove(const std::function<void(const Vec2u, const Vec2i)>& functor)  { this->m_onMouseMoveFunctors.push_back(functor); }
-void Mouse::onCursorMove(const std::function<void(const Vec2u, const Vec2i)>& functor) { this->m_onCursorMoveFunctors.push_back(functor); }
+void Mouse::onMouseMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor)  { this->m_onMouseMoveFunctors.push_back(functor); }
+void Mouse::onCursorMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor) { this->m_onCursorMoveFunctors.push_back(functor); }
 
 bool Mouse::isLeftButtonUp()    const { return !this->m_isLeftButtonDown; }
 bool Mouse::isLeftButtonDown()  const { return this->m_isLeftButtonDown; }
@@ -62,7 +62,7 @@ bool Mouse::__handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 
 						if (ri.header.dwType == RIM_TYPEMOUSE && (ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0))
 						{
-							this->m_deltaPosition += Vec2i{ static_cast<int16_t>(ri.data.mouse.lLastX), static_cast<int16_t >(ri.data.mouse.lLastY) };
+							this->m_deltaPosition += Vec2i16{ static_cast<int16_t>(ri.data.mouse.lLastX), static_cast<int16_t >(ri.data.mouse.lLastY) };
 
 							this->m_wasMouseMovedDuringUpdate = true;
 						}

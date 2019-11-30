@@ -140,7 +140,7 @@ Engine::Engine(const WindowDescriptor& windowDesc)
 
 	this->initGraphics();
 
-	this->window->onResize([this](const Vec2u dimensions) {
+	this->window->onResize([this](const Vec2u16 dimensions) {
 		this->initGraphics();
 	});
 }

@@ -5,6 +5,7 @@
 #include "math/Constants.h"
 #include "math/Conversions.h"
 #include "math/Vectors.h"
+#include "math/Misc.h"
 
 #include "misc/Timer.h"
 

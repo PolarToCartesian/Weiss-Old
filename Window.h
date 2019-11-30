@@ -30,13 +30,13 @@ class Window
         bool m_isRunning   = false;
 		bool m_isMinimized = false;
 
-		std::vector<std::function<void(const Vec2u)>> m_onResizeFunctors;
+		std::vector<std::function<void(const Vec2u16)>> m_onResizeFunctors;
 
     public:
         Window(const WindowDescriptor& descriptor);
 
         // Misc
-        void onResize(const std::function<void(const Vec2u)>& functor);
+        void onResize(const std::function<void(const Vec2u16)>& functor);
 
         // Getters
         bool      isRunning() const;
