@@ -20,10 +20,13 @@ git clone "https://github.com/PolarToCartesian/Weiss"
     + [ ] Lights
       + [ ] Point Light
       + [ ] Directional Light
-  + [ ] Misc
+  + [x] Misc
 	+ [x] Texturing
     + [x] Rotation Around Point
     + [ ] Visual Timers
+  + [ ] Advanced
+    + [ ] Multithreaded Rendering
+    + [ ] 
 + [ ] Audio
   + [x] Basic
 	+ [x] Play
