@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../buffers/IndexBuffer.h"
-#include "../buffers/VertexBuffer.h"
+#include "buffers/IndexBuffer.h"
+#include "buffers/VertexBuffer.h"
 
 struct Mesh {
 	VertexBuffer vb;

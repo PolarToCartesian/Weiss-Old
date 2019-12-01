@@ -7,6 +7,8 @@
 #include "math/Vectors.h"
 #include "math/Misc.h"
 
+#include "Mesh.h"
+
 #include "misc/Timer.h"
 
 #include "audio/AudioHandler.h"
@@ -22,8 +24,6 @@
 #include "images/Image.h"
 #include "images/Texture2D.h"
 #include "images/TextureSampler.h"
-
-#include "meshes/Mesh.h"
 
 #include "misc/ShaderBindingType.h"
 
@@ -100,7 +100,9 @@ private:
 	void presentFrame(const bool useVSync);
 
 public:
-	Engine(const WindowDescriptor& windowDesc);
+	Engine();
+
+	void createWindow(const WindowDescriptor& windowDesc);
 
 	virtual void onRender(const float elapsed) = 0;
 

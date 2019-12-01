@@ -131,11 +131,13 @@ void Engine::presentFrame(const bool useVSync)
 	this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
 }
 
-Engine::Engine(const WindowDescriptor& windowDesc)
-{
-	this->window   = WindowManager::createWindow(windowDesc);
+Engine::Engine() {}
 
-	this->mouse    = &(this->window->getMouse());
+void Engine::createWindow(const WindowDescriptor& windowDesc)
+{
+	this->window = WindowManager::createWindow(windowDesc);
+
+	this->mouse = &(this->window->getMouse());
 	this->keyboard = &(this->window->getKeyboard());
 
 	this->initGraphics();
