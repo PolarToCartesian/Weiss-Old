@@ -13,17 +13,20 @@ git clone "https://github.com/PolarToCartesian/Weiss"
 ## Progress
 
 + 2D and 3D Rendering
-  + [ ] Cameras
+  + [x] Cameras
     + [x] Perspective
-    + [ ] Orthographic
+    + [x] Orthographic
   + [ ] Lighting
     + [ ] Lights
       + [ ] Point Light
       + [ ] Directional Light
-  + [ ] Misc
+  + [x] Misc
 	+ [x] Texturing
     + [x] Rotation Around Point
     + [ ] Visual Timers
+  + [ ] Advanced
+    + [ ] Multithreaded Rendering
+    + [ ] 
 + [ ] Audio
   + [x] Basic
 	+ [x] Play
