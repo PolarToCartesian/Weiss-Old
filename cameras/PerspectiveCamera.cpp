@@ -90,3 +90,25 @@ void PerspectiveCamera::handleKeyboardInputs(Keyboard& keyboard, const float spe
 	if (keyboard.isKeyDown(down))
 		this->m_position = DirectX::XMVectorSubtract(this->m_position, DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
 }
+
+Vec3f PerspectiveCamera::getKeyboardInputsDelta(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down)
+{
+	DirectX::XMVECTOR delta = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
+
+	if (keyboard.isKeyDown(forward))
+		delta = DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f));
+	if (keyboard.isKeyDown(backward))
+		delta = DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f));
+
+	if (keyboard.isKeyDown(right))
+		delta = DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f));
+	if (keyboard.isKeyDown(left))
+		delta = DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f));
+
+	if (keyboard.isKeyDown(up))
+		delta = DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f));
+	if (keyboard.isKeyDown(down))
+		delta = DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f));
+
+	return Vec3f { delta.m128_f32[0], delta.m128_f32[1], delta.m128_f32[2] };
+}

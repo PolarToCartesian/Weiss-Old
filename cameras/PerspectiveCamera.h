@@ -30,4 +30,6 @@ class PerspectiveCamera : public Camera
 		void handleMouseMovements(Mouse& mouse, const float sensitivity);
 
 		void handleKeyboardInputs(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down);
+
+		Vec3f getKeyboardInputsDelta(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down);
 };

@@ -18,6 +18,13 @@ VertexBuffer::VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRe
 	HRESULT_ERROR(pDeviceRef->CreateBuffer(&bd, &sd, &this->m_pVertexBuffer), "Unable To Create Vertex Buffer");
 }
 
+void VertexBuffer::SetData(const void* memoryPtr, const size_t nElements, const size_t elementSize) const noexcept {
+	D3D11_MAPPED_SUBRESOURCE resource;
+	this->m_pDeviceContextRef->Map(this->m_pVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+	memcpy(resource.pData, memoryPtr, nElements * elementSize);
+	this->m_pDeviceContextRef->Unmap(this->m_pVertexBuffer.Get(), 0);
+}
+
 void VertexBuffer::Bind() const noexcept
 {
 	const UINT stride = static_cast<UINT>(this->elementSize);

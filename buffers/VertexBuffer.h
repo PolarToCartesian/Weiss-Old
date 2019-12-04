@@ -23,5 +23,7 @@ class VertexBuffer {
 					 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef,
 					 const VertexBufferDescriptor& descriptor);
 
+		void SetData(const void* memoryPtr, const size_t nElements, const size_t elementSize) const noexcept;
+
 		void Bind() const noexcept;
 };

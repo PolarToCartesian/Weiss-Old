@@ -8,6 +8,8 @@ struct TextureSamplerDescriptor
 	const ShaderBindingType bindingType;
 	const UINT slotVS;
 	const UINT slotPS;
+	const D3D11_FILTER filter;
+	const D3D11_TEXTURE_ADDRESS_MODE addressMode;
 };
 
 class TextureSampler {

@@ -27,6 +27,8 @@
 
 #include "misc/ShaderBindingType.h"
 
+#include "physics/PhysicsObject.h"
+
 #include "shaders/PixelShader.h"
 #include "shaders/VertexShader.h"
 
