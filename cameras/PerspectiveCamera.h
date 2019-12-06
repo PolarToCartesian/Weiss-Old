@@ -27,6 +27,9 @@ class PerspectiveCamera : public Camera
 
 		virtual void calculateTransform() override;
 
+		DirectX::XMMATRIX getViewMatrix();
+		DirectX::XMMATRIX getProjectionMatrix();
+
 		void handleMouseMovements(Mouse& mouse, const float sensitivity);
 
 		void handleKeyboardInputs(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down);

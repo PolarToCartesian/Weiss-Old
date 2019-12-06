@@ -21,7 +21,6 @@
 #include "cameras/OrthographicCamera.h"
 #include "cameras/PerspectiveCamera.h"
 
-#include "images/Image.h"
 #include "images/Texture2D.h"
 #include "images/TextureSampler.h"
 

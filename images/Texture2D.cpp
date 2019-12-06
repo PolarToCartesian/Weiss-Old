@@ -3,12 +3,8 @@
 Texture2D::Texture2D(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef, const Texture2DDescriptor& descriptor)
  : m_pDeviceContextRef(pDeviceContextRef), m_descriptor(descriptor)
 {
-	std::vector<Vec4u8> buff(this->m_descriptor.image.getNPixels());
-	for (uint16_t i = 0; i < this->m_descriptor.image.getNPixels(); i++)
-		buff[i] = Vec4u8{ descriptor.image.getBuffer()[i][0], descriptor.image.getBuffer()[i][1], descriptor.image.getBuffer()[i][2], 1 };
-
 	D3D11_SUBRESOURCE_DATA subResourceData;
-	subResourceData.pSysMem          = static_cast<void*>(buff.data());
+	subResourceData.pSysMem          = static_cast<void*>(descriptor.image.getBuffer());
 	subResourceData.SysMemPitch      = this->m_descriptor.image.getWidth() * 4 * sizeof(uint8_t);
 	subResourceData.SysMemSlicePitch = 0;
 	

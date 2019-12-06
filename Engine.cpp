@@ -131,7 +131,9 @@ void Engine::presentFrame(const bool useVSync)
 	this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
 }
 
-Engine::Engine() {}
+Engine::Engine() {
+	HRESULT_ERROR(CoInitialize(NULL), "Could Not Initialize COM");
+}
 
 void Engine::createWindow(const WindowDescriptor& windowDesc)
 {

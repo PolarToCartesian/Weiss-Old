@@ -19,6 +19,7 @@
 #include <Windows.h>
 #include <windowsx.h>
 //#include <winhttp.h>
+#include <wincodec.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 
@@ -26,6 +27,7 @@
 #pragma comment(lib, "d3d11.lib")
 //#pragma comment(lib, "winhttp.lib")
 #pragma comment(lib, "D3DCompiler.lib")
+#pragma comment(lib, "windowscodecs.lib")
 
 #define MESSAGE_BOX_ERROR(errorMsg) {\
 	MessageBox(NULL, (std::string("Error in File: ") + std::string(__FILE__) + std::string("\nAt line: ") + std::to_string(__LINE__) + std::string("\nIn Function: ") + std::string(__FUNCTION__) + std::string("\nError: ") + std::string(errorMsg)).c_str(), "Weiss Engine Error", MB_ABORTRETRYIGNORE);\

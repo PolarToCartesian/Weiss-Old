@@ -8,7 +8,7 @@ struct Texture2DDescriptor
 	const ShaderBindingType bindingType;
 	const Image& image;
 	const UINT slotVS;
-	const UINT slotPS;
+	UINT slotPS;
 };
 
 class Texture2D {

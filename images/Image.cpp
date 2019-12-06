@@ -1,37 +1,59 @@
 #include "Image.h"
 
-Image::Image(const char* filename)
+Image::Image(const wchar_t* filename)
 {
-	std::ifstream file(filename, std::ifstream::binary);
+	Microsoft::WRL::ComPtr<IWICBitmapSource>      decodedConvertedFrame;
+	Microsoft::WRL::ComPtr<IWICBitmapDecoder>     bitmapDecoder;
+	Microsoft::WRL::ComPtr<IWICImagingFactory>    factory;
+	Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frameDecoder;
 
-	ASSERT_ERROR(file.is_open(), "Could Not Open Image File");
+	HRESULT_ERROR(CoCreateInstance(
+		CLSID_WICImagingFactory,
+		NULL,
+		CLSCTX_INPROC_SERVER,
+		IID_PPV_ARGS(&factory)
+	), "Could Not Create IWICImagingFactory");
 
-	// Read Header
-	std::string magicNumber;
-	float maxColorValue;
+	HRESULT_ERROR(factory->CreateDecoderFromFilename(
+		filename,
+		NULL,
+		GENERIC_READ,
+		WICDecodeMetadataCacheOnLoad,
+		&bitmapDecoder
+	), "Could Not Read/Open Image");
 
-	file >> magicNumber >> this->m_width >> this->m_height >> maxColorValue;
+	HRESULT_ERROR(bitmapDecoder->GetFrame(0, &frameDecoder));
 
-	file.ignore(1); // Skip the last whitespace
+	HRESULT_ERROR(frameDecoder->GetSize(
+		(UINT*)&this->m_width,
+		(UINT*)&this->m_height
+	), "Could Not Get Image Width/Height");
 
 	this->m_nPixels = this->m_width * this->m_height;
-	this->m_buff    = std::make_unique<Vec3u8[]>(this->m_nPixels);
 
-	const uint64_t nSubPixels = static_cast<uint64_t>(this->m_nPixels) * 3;
+	HRESULT_ERROR(WICConvertBitmapSource(
+		GUID_WICPixelFormat32bppRGBA,
+		frameDecoder.Get(), 
+		&decodedConvertedFrame
+	), "Could Not Create Bitmap Converter");
 
-	ASSERT_ERROR(magicNumber == "P6", "Weiss Only Supports PPM6 Images");
+	this->m_buff = std::make_unique<Coloru8[]>(this->m_nPixels * sizeof(Coloru8));
 
-	// Parse Image Data
-	file.read((char*)this->m_buff.get(), nSubPixels);
+	const WICRect sampleRect { 0, 0, this->m_width, this->m_height };
 
-	file.close();
+	HRESULT_ERROR(decodedConvertedFrame->CopyPixels(
+		&sampleRect,
+		this->m_width   * sizeof(Coloru8), 
+		this->m_nPixels * sizeof(Coloru8), 
+		(BYTE*)this->m_buff.get()
+	), "Could Not Copy Pixels From Bitmap");
 }
 
 uint16_t Image::getWidth()   const { return this->m_width;   }
 uint16_t Image::getHeight()  const { return this->m_height;  }
 uint32_t Image::getNPixels() const { return this->m_nPixels; }
 
-Vec3u8 Image::sample(const uint16_t x, const uint16_t y) const                { return this->m_buff[y * this->m_width + x]; }
-void   Image::set   (const uint16_t x, const uint16_t y, const Vec3u8& color) { this->m_buff[y * this->m_width + x] = color; }
+Coloru8 Image::sample(const uint16_t x, const uint16_t y) const                 { return this->m_buff[y * this->m_width + x]; }
+void    Image::set   (const uint16_t x, const uint16_t y, const Coloru8& color) { this->m_buff[y * this->m_width + x] = color; }
 
-Vec3u8* Image::getBuffer() const { return this->m_buff.get(); }
+Coloru8* Image::getBuffer() const { return this->m_buff.get(); }

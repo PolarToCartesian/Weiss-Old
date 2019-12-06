@@ -51,26 +51,36 @@ void PerspectiveCamera::setRotation(const Vec3f& v)
 
 void PerspectiveCamera::calculateTransform()
 {
-	const DirectX::XMMATRIX rotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(this->m_rotation.m128_f32[0], this->m_rotation.m128_f32[1], this->m_rotation.m128_f32[2]);
-	const DirectX::XMVECTOR lookAtPosition = DirectX::XMVectorAdd(this->m_position, DirectX::XMVector3TransformCoord(FORWARD_VECTOR, rotationMatrix));
-	const DirectX::XMVECTOR upDirectionVec = DirectX::XMVector3TransformCoord(UP_VECTOR, rotationMatrix);
 
-	this->m_transform = DirectX::XMMatrixLookAtLH(this->m_position, lookAtPosition, upDirectionVec)
-		* DirectX::XMMatrixPerspectiveFovLH(m_fov, m_aspectRatio, m_zNear, m_zFar);
+	this->m_transform = getViewMatrix() * getProjectionMatrix();
+}
 
+DirectX::XMMATRIX PerspectiveCamera::getViewMatrix()
+{
 	const DirectX::XMMATRIX rotationYMatrix = DirectX::XMMatrixRotationRollPitchYaw(0.0f, this->m_rotation.m128_f32[1], 0.0f);
 
 	this->m_forwardVector = DirectX::XMVector3TransformCoord(FORWARD_VECTOR, rotationYMatrix);
 	this->m_rightVector = DirectX::XMVector3TransformCoord(RIGHT_VECTOR, rotationYMatrix);
+
+	const DirectX::XMMATRIX rotationMatrix = DirectX::XMMatrixRotationRollPitchYaw(this->m_rotation.m128_f32[0], this->m_rotation.m128_f32[1], this->m_rotation.m128_f32[2]);
+	const DirectX::XMVECTOR lookAtPosition = DirectX::XMVectorAdd(this->m_position, DirectX::XMVector3TransformCoord(FORWARD_VECTOR, rotationMatrix));
+	const DirectX::XMVECTOR upDirectionVec = DirectX::XMVector3TransformCoord(UP_VECTOR, rotationMatrix);
+
+	return DirectX::XMMatrixLookAtLH(this->m_position, lookAtPosition, upDirectionVec);
+}
+
+DirectX::XMMATRIX PerspectiveCamera::getProjectionMatrix()
+{
+	return DirectX::XMMatrixPerspectiveFovLH(m_fov, m_aspectRatio, m_zNear, m_zFar);
 }
 
 void PerspectiveCamera::handleMouseMovements(Mouse& mouse, const float sensitivity)
 {
 	mouse.onMouseMove([sensitivity, this, &mouse](const Vec2u16 position, const Vec2i16 delta)
-		{
-			if (mouse.isCursorInWindow())
-				this->rotate({ sensitivity * delta[1], sensitivity * delta[0], 0.0f });
-		});
+	{
+		if (mouse.isCursorInWindow())
+			this->rotate({ sensitivity * delta[1], sensitivity * delta[0], 0.0f });
+	});
 }
 
 void PerspectiveCamera::handleKeyboardInputs(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down)
