@@ -5,7 +5,7 @@ Texture2D::Texture2D(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, Mic
 {
 	D3D11_SUBRESOURCE_DATA subResourceData;
 	subResourceData.pSysMem          = static_cast<void*>(descriptor.image.getBuffer());
-	subResourceData.SysMemPitch      = this->m_descriptor.image.getWidth() * 4 * sizeof(uint8_t);
+	subResourceData.SysMemPitch      = this->m_descriptor.image.getWidth() * sizeof(Coloru8);
 	subResourceData.SysMemSlicePitch = 0;
 	
 	D3D11_TEXTURE2D_DESC texture2DDescriptor = {};
