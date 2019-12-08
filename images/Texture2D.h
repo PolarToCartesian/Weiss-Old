@@ -8,7 +8,8 @@ struct Texture2DDescriptor
 	const ShaderBindingType bindingType;
 	const Image& image;
 	const UINT slotVS;
-	UINT slotPS;
+	const UINT slotPS;
+	const bool useMipMaps;
 };
 
 class Texture2D {
