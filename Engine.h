@@ -7,10 +7,10 @@
 // Description  : Weiss is a 2D and 3D rendering engine for windows built with DirectX in c++.
 //                It is intended to be a wrapper around low-level apis to make the developpement of 2D and 3D applications simpler and faster.
 
-// LISCENCE     : MIT
-//
+// LISCENCE     :
+
 // Copyright (c) 2019 HENRY LE BERRE
-//
+
 // Permission is hereby granted, free of charge, to any person obtaining a copy of this softwareand associated documentation files(the "Software"), 
 // to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
 // and /or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions :
@@ -99,9 +99,10 @@ constexpr float HALF_PI        = PI / 2.0f;
 constexpr float QUARTER_PI     = PI / 4.0f;
 constexpr float PI_DIV_180     = PI / 180.0f;
 constexpr float PI_DIV_180_INV = 180.0f / PI;
-constexpr float TAU            = TWO_PI;
-constexpr float HALF_TAU       = PI;
-constexpr float QUARTER_TAU    = HALF_PI;
+
+constexpr float TAU         = TWO_PI;
+constexpr float HALF_TAU    = PI;
+constexpr float QUARTER_TAU = HALF_PI;
 
 // --> MATH --> CONSTANTS END
 
@@ -143,37 +144,119 @@ typedef std::array<uint8_t,  4> Vec4u8;
 // --> MATH --> VECTORS --> OPERATOR OVERLOADING START
 
 template <typename T, size_t S>
-std::array<T, S> operator+(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] += b[i]; return result; }
-template <typename T, size_t S>
-std::array<T, S> operator-(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] -= b[i]; return result; }
-template <typename T, size_t S>
-std::array<T, S> operator*(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] *= b[i]; return result; }
-template <typename T, size_t S>
-std::array<T, S> operator/(const std::array<T, S>& a, const std::array<T, S>& b) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] /= b[i]; return result; }
+std::array<T, S> operator+(const std::array<T, S>& a, const std::array<T, S>& b)
+{
+	std::array<T, S> result(a);
+	
+	for (size_t i = 0; i < S; i++)
+		result[i] += b[i];
+	
+	return result;
+}
 
 template <typename T, size_t S>
-std::array<T, S> operator/(const std::array<T, S>& a, const float n) { std::array<T, S> result(a); for (size_t i = 0; i < S; i++) result[i] /= n; return result; }
+std::array<T, S> operator-(const std::array<T, S>& a, const std::array<T, S>& b)
+{
+	std::array<T, S> result(a);
+
+	for (size_t i = 0; i < S; i++)
+		result[i] -= b[i];
+
+	return result;
+}
 
 template <typename T, size_t S>
-void operator+=(std::array<T, S>& a, const std::array<T, S>& b) { for (size_t i = 0; i < S; i++) a[i] += b[i]; }
-template <typename T, size_t S>
-void operator-=(std::array<T, S>& a, const std::array<T, S>& b) { for (size_t i = 0; i < S; i++) a[i] -= b[i]; }
-template <typename T, size_t S>
-void operator*=(std::array<T, S>& a, const std::array<T, S>& b) { for (size_t i = 0; i < S; i++) a[i] *= b[i]; }
-template <typename T, size_t S>
-void operator/=(std::array<T, S>& a, const std::array<T, S>& b) { for (size_t i = 0; i < S; i++) a[i] /= b[i]; }
+std::array<T, S> operator*(const std::array<T, S>& a, const std::array<T, S>& b)
+{
+	std::array<T, S> result(a);
+
+	for (size_t i = 0; i < S; i++)
+		result[i] *= b[i];
+
+	return result;
+}
 
 template <typename T, size_t S>
-void operator+=(std::array<T, S>& a, const float n) { for (size_t i = 0; i < S; i++) a[i] += n; }
-template <typename T, size_t S>
-void operator-=(std::array<T, S>& a, const float n) { for (size_t i = 0; i < S; i++) a[i] -= n; }
-template <typename T, size_t S>
-void operator*=(std::array<T, S>& a, const float n) { for (size_t i = 0; i < S; i++) a[i] *= n; }
-template <typename T, size_t S>
-void operator/=(std::array<T, S>& a, const float n) { for (size_t i = 0; i < S; i++) a[i] /= n; }
+std::array<T, S> operator/(const std::array<T, S>& a, const std::array<T, S>& b)
+{
+	std::array<T, S> result(a);
+	
+	for (size_t i = 0; i < S; i++)
+		result[i] /= b[i];
+	
+	return result;
+}
 
 template <typename T, size_t S>
-std::ostream& operator<<(std::ostream& stream, const std::array<T, S>& v) {
+std::array<T, S> operator/(const std::array<T, S>& a, const float n)
+{
+	std::array<T, S> result(a);
+	
+	for (size_t i = 0; i < S; i++)
+		result[i] /= n;
+	
+	return result;
+}
+
+template <typename T, size_t S>
+void operator+=(std::array<T, S>& a, const std::array<T, S>& b)
+{
+	for (size_t i = 0; i < S; i++)
+		a[i] += b[i];
+}
+
+template <typename T, size_t S>
+void operator-=(std::array<T, S>& a, const std::array<T, S>& b)
+{
+	for (size_t i = 0; i < S; i++)
+		a[i] -= b[i];
+}
+
+template <typename T, size_t S>
+void operator*=(std::array<T, S>& a, const std::array<T, S>& b)
+{
+	for (size_t i = 0; i < S; i++)
+		a[i] *= b[i];
+}
+
+template <typename T, size_t S>
+void operator/=(std::array<T, S>& a, const std::array<T, S>& b)
+{
+	for (size_t i = 0; i < S; i++)
+		a[i] /= b[i];
+}
+
+template <typename T, size_t S>
+void operator+=(std::array<T, S>& a, const float n)
+{
+	for (size_t i = 0; i < S; i++)
+		a[i] += n;
+}
+
+template <typename T, size_t S>
+void operator-=(std::array<T, S>& a, const float n)
+{
+	for (size_t i = 0; i < S; i++)
+		a[i] -= n;
+}
+
+template <typename T, size_t S>
+void operator*=(std::array<T, S>& a, const float n)
+{
+	for (size_t i = 0; i < S; i++)
+		a[i] *= n;
+}
+
+template <typename T, size_t S>
+void operator/=(std::array<T, S>& a, const float n)
+{
+	for (size_t i = 0; i < S; i++)
+		a[i] /= n;
+}
+
+template <typename T, size_t S>
+std::ostream& operator<<(std::ostream& stream, const std::array<T, S>& v)
+{
 	stream << '(';
 
 	for (auto it = v.begin(); it != v.end() - 1; it++)
@@ -189,11 +272,19 @@ std::ostream& operator<<(std::ostream& stream, const std::array<T, S>& v) {
 
 namespace Conversions
 {
-	inline float degreesToRadians(const float degrees) { return degrees * PI_DIV_180; }
-	inline float radiansToDegrees(const float radians) { return radians * PI_DIV_180_INV; }
+	inline float degreesToRadians(const float degrees)
+	{
+		return degrees * PI_DIV_180;
+	}
+
+	inline float radiansToDegrees(const float radians)
+	{
+		return radians * PI_DIV_180_INV;
+	}
 
 	// If a polar point is stored as (θ, r)
-	inline Vec2f polarToCartesian(const Vec2f polar) {
+	inline Vec2f polarToCartesian(const Vec2f polar)
+	{
 		const float x = polar[1] * std::cos(polar[0]);
 		const float y = polar[1] * std::sin(polar[0]);
 		return Vec2f{ x, y };
@@ -273,7 +364,10 @@ public:
 		HRESULT_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer), "Unable To Create Index Buffer");
 	}
 
-	size_t getSize() const { return this->m_nBytes; }
+	size_t getSize() const
+	{
+		return this->m_nBytes;
+	}
 
 	void Bind() const noexcept
 	{
@@ -582,29 +676,80 @@ public:
 		RegisterRawInputDevices(&mouseInputDevice, 1, sizeof(RAWINPUTDEVICE));
 	}
 
-	void onLeftButtonUp  (const std::function<void(Vec2u16)>& functor) { this->m_onLeftButtonUpFunctors.push_back(functor);   }
-	void onLeftButtonDown(const std::function<void(Vec2u16)>& functor) { this->m_onLeftButtonDownFunctors.push_back(functor); }
+	void onLeftButtonUp(const std::function<void(Vec2u16)>& functor)
+	{
+		this->m_onLeftButtonUpFunctors.push_back(functor);
+	}
 
-	void onRightButtonUp  (const std::function<void(Vec2u16)>& functor) { this->m_onRightButtonUpFunctors.push_back(functor);   }
-	void onRightButtonDown(const std::function<void(Vec2u16)>& functor) { this->m_onRightButtonDownFunctors.push_back(functor); }
+	void onLeftButtonDown(const std::function<void(Vec2u16)>& functor)
+	{
+		this->m_onLeftButtonDownFunctors.push_back(functor);
+	}
 
-	void onWheelTurn(const std::function<void(const int16_t)>& functor) { this->m_onWheelTurnFunctors.push_back(functor); }
+	void onRightButtonUp(const std::function<void(Vec2u16)>& functor)
+	{
+		this->m_onRightButtonUpFunctors.push_back(functor);
+	}
 
-	void onMouseMove (const std::function<void(const Vec2u16, const Vec2i16)>& functor) { this->m_onMouseMoveFunctors.push_back(functor);  }
-	void onCursorMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor) { this->m_onCursorMoveFunctors.push_back(functor); }
+	void onRightButtonDown(const std::function<void(Vec2u16)>& functor)
+	{
+		this->m_onRightButtonDownFunctors.push_back(functor);
+	}
 
-	bool isLeftButtonUp()   const { return !this->m_isLeftButtonDown; }
-	bool isLeftButtonDown() const { return this->m_isLeftButtonDown;  }
+	void onWheelTurn(const std::function<void(const int16_t)>& functor)
+	{
+		this->m_onWheelTurnFunctors.push_back(functor);
+	}
 
-	bool isRightButtonUp()   const { return !this->m_isRightButtonDown; }
-	bool isRightButtonDown() const { return this->m_isRightButtonDown; }
+	void onMouseMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor)
+	{
+		this->m_onMouseMoveFunctors.push_back(functor);
+	}
+	
+	void onCursorMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor)
+	{
+		this->m_onCursorMoveFunctors.push_back(functor);
+	}
 
-	bool isCursorInWindow() const { return this->m_isCursorInWindow; }
+	bool isLeftButtonUp()   const
+	{
+		return !this->m_isLeftButtonDown;
+	}
 
-	void show() const { ShowCursor(true); }
-	void hide() const { ShowCursor(false); }
+	bool isLeftButtonDown() const
+	{ 
+		return this->m_isLeftButtonDown;
+	}
 
-	void clip(const RECT& rect) const { ClipCursor(&rect); }
+	bool isRightButtonUp()   const
+	{
+		return !this->m_isRightButtonDown;
+	}
+
+	bool isRightButtonDown() const
+	{
+		return this->m_isRightButtonDown;
+	}
+
+	bool isCursorInWindow() const
+	{
+		return this->m_isCursorInWindow;
+	}
+
+	void show() const
+	{
+		ShowCursor(true);
+	}
+
+	void hide() const
+	{
+		ShowCursor(false);
+	}
+
+	void clip(const RECT& rect) const
+	{
+		ClipCursor(&rect);
+	}
 
 	virtual void __onWindowUpdateBegin() override
 	{
@@ -725,51 +870,59 @@ private:
 public:
 	Keyboard()
 	{
-	
+
 	}
 
-	void onKeyUp  (const std::function<void(const uint8_t)>& functor) { this->m_onKeyUpFunctors.push_back(functor);   }
-	void onKeyDown(const std::function<void(const uint8_t)>& functor) { this->m_onKeyDownFunctors.push_back(functor); }
+	void onKeyUp(const std::function<void(const uint8_t)>& functor)
+	{
+		this->m_onKeyUpFunctors.push_back(functor);
+	}
 
-	bool isKeyDown(const uint8_t key) {
+	void onKeyDown(const std::function<void(const uint8_t)>& functor)
+	{
+		this->m_onKeyDownFunctors.push_back(functor);
+	}
+
+	bool isKeyDown(const uint8_t key)
+	{
 		return this->m_downKeys.end() != std::find(this->m_downKeys.begin(), this->m_downKeys.end(), key);
 	}
 
 	virtual void __onWindowUpdateBegin() override
 	{
-	
+
 	}
 
 	virtual bool __handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override
 	{
 		switch (msg)
 		{
-		case WM_KEYDOWN:
-		{
-			const uint8_t keyCode = static_cast<uint8_t>(wParam);
-
-			// Verify that the key was not down before the message was sent
-			if (!CHECK_BIT(lParam, 30))
+			case WM_KEYDOWN:
 			{
-				this->m_downKeys.push_back(keyCode);
+				const uint8_t keyCode = static_cast<uint8_t>(wParam);
 
-				for (auto& functor : this->m_onKeyDownFunctors)
-					functor(keyCode);
+				// Verify that the key was not down before the message was sent
+				if (!CHECK_BIT(lParam, 30))
+				{
+					this->m_downKeys.push_back(keyCode);
+
+					for (auto& functor : this->m_onKeyDownFunctors)
+						functor(keyCode);
+				}
+
+				return true;
 			}
+			case WM_KEYUP:
+			{
+				const uint8_t keyCode = static_cast<uint8_t>(wParam);
 
-			return true;
-		}
-		case WM_KEYUP:
-		{
-			const uint8_t keyCode = static_cast<uint8_t>(wParam);
+				this->m_downKeys.erase(std::remove(this->m_downKeys.begin(), this->m_downKeys.end(), keyCode), this->m_downKeys.end());
 
-			this->m_downKeys.erase(std::remove(this->m_downKeys.begin(), this->m_downKeys.end(), keyCode), this->m_downKeys.end());
+				for (auto& functor : this->m_onKeyUpFunctors)
+					functor(keyCode);
 
-			for (auto& functor : this->m_onKeyUpFunctors)
-				functor(keyCode);
-
-			return true;
-		}
+				return true;
+			}
 		}
 
 		return false;
@@ -853,25 +1006,71 @@ public:
 	}
 
 	// Misc
-	void onResize(const std::function<void(const Vec2u16)>& functor) { this->m_onResizeFunctors.push_back(functor); }
+	void onResize(const std::function<void(const Vec2u16)>& functor)
+	{
+		this->m_onResizeFunctors.push_back(functor);
+	}
 
 	// Getters
-	bool      isRunning()   const { return this->m_isRunning; }
-	Keyboard& getKeyboard()       { return this->m_keyboard;  }
-	Mouse&    getMouse()          { return this->m_mouse;     }
-	HWND      getHandle()   const { return this->m_handle;    }
+	bool      isRunning()   const
+	{
+		return this->m_isRunning;
+	}
 
-	RECT getWindowRect() const { RECT result; GetWindowRect(this->m_handle, &result); return result; }
-	RECT getClientRect() const { RECT result; GetClientRect(this->m_handle, &result); return result; }
+	Keyboard& getKeyboard()
+	{
+		return this->m_keyboard;
+	}
 
-	uint16_t getWindowPositionX() const { const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.left); }
-	uint16_t getWindowPositionY() const { const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.top);  }
+	Mouse&    getMouse() 
+	{
+		return this->m_mouse;
+	}
 
-	uint16_t getWindowWidth()  const { const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.right  - rect.left); }
-	uint16_t getWindowHeight() const { const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.bottom - rect.top);  }
+	HWND      getHandle() const
+	{
+		return this->m_handle;
+	}
 
-	uint16_t getClientWidth()  const { const RECT rect = this->getClientRect(); return static_cast<uint16_t>(rect.right);  }
-	uint16_t getClientHeight() const { const RECT rect = this->getClientRect(); return static_cast<uint16_t>(rect.bottom); }
+	RECT getWindowRect() const
+	{
+		RECT result; GetWindowRect(this->m_handle, &result); return result;
+	}
+
+	RECT getClientRect() const
+	{
+		RECT result; GetClientRect(this->m_handle, &result); return result;
+	}
+
+	uint16_t getWindowPositionX() const
+	{
+		const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.left);
+	}
+
+	uint16_t getWindowPositionY() const
+	{
+		const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.top);
+	}
+
+	uint16_t getWindowWidth()  const
+	{
+		const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.right - rect.left);
+	}
+
+	uint16_t getWindowHeight() const
+	{
+		const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.bottom - rect.top);
+	}
+
+	uint16_t getClientWidth()  const
+	{
+		const RECT rect = this->getClientRect(); return static_cast<uint16_t>(rect.right);
+	}
+	
+	uint16_t getClientHeight() const
+	{
+		const RECT rect = this->getClientRect(); return static_cast<uint16_t>(rect.bottom);
+	}
 
 	// Setters
 	void setWindowSize(const uint16_t width, const uint16_t height)
@@ -951,9 +1150,15 @@ public:
 	}
 
 	// DESTROYING
-	void destroy() { this->m_isRunning = !DestroyWindow(this->m_handle); }
+	void destroy()
+	{
+		this->m_isRunning = !DestroyWindow(this->m_handle);
+	}
 
-	~Window() { this->destroy(); }
+	~Window()
+	{
+		this->destroy();
+	}
 };
 // --> WINDOW END
 // --> WINDOW MANAGER START
@@ -972,9 +1177,10 @@ namespace WindowManager
 
 LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	std::vector<Window>::iterator it = std::find_if(WindowManager::windows.begin(), WindowManager::windows.end(), [&hwnd](const Window& window) {
+	std::vector<Window>::iterator it = std::find_if(WindowManager::windows.begin(), WindowManager::windows.end(), [&hwnd](const Window& window)
+	{
 		return window.m_handle == hwnd;
-		});
+	});
 
 	if (it != WindowManager::windows.end())
 		return it->handleMessage(msg, wParam, lParam);
@@ -1003,11 +1209,25 @@ public:
 
 	}
 
-	DirectX::XMMATRIX getTransform() const noexcept { return this->m_transform; }
-	DirectX::XMMATRIX getTransposedTransform() const noexcept { return DirectX::XMMatrixTranspose(this->m_transform); }
+	DirectX::XMMATRIX getTransform()           const noexcept
+	{
+		return this->m_transform;
+	}
 
-	Vec3f getPosition() const noexcept { return Vec3f{ this->m_position.m128_f32[0], this->m_position.m128_f32[1], this->m_position.m128_f32[2] }; };
-	Vec3f getRotation() const noexcept { return Vec3f{ this->m_rotation.m128_f32[0], this->m_rotation.m128_f32[1], this->m_rotation.m128_f32[2] }; };
+	DirectX::XMMATRIX getTransposedTransform() const noexcept
+	{
+		return DirectX::XMMatrixTranspose(this->m_transform);
+	}
+
+	Vec3f getPosition() const noexcept
+	{
+		return Vec3f{ this->m_position.m128_f32[0], this->m_position.m128_f32[1], this->m_position.m128_f32[2] };
+	}
+
+	Vec3f getRotation() const noexcept
+	{
+		return Vec3f{ this->m_rotation.m128_f32[0], this->m_rotation.m128_f32[1], this->m_rotation.m128_f32[2] };
+	}
 
 	virtual void calculateTransform() = 0;
 };
@@ -1036,9 +1256,15 @@ public:
 		window.onResize(recalculateInvAspectRatio);
 	}
 
-	void rotate(const float angle) { this->m_rotation.m128_f32[2] += angle; }
+	void rotate(const float angle)
+	{
+		this->m_rotation.m128_f32[2] += angle;
+	}
 
-	void setPosition(const Vec2f& v) { this->m_position = DirectX::XMVectorSet(v[0], v[1], 0.0f, 0.0f); }
+	void setPosition(const Vec2f& v)
+	{
+		this->m_position = DirectX::XMVectorSet(v[0], v[1], 0.0f, 0.0f);
+	}
 
 	void setRotation(const Vec2f& v)
 	{
@@ -1079,12 +1305,12 @@ public:
 class PerspectiveCamera : public Camera
 {
 private:
-	const DirectX::XMVECTOR UP_VECTOR = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+	const DirectX::XMVECTOR UP_VECTOR      = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 	const DirectX::XMVECTOR FORWARD_VECTOR = DirectX::XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-	const DirectX::XMVECTOR RIGHT_VECTOR = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
+	const DirectX::XMVECTOR RIGHT_VECTOR   = DirectX::XMVectorSet(1.0f, 0.0f, 0.0f, 0.0f);
 
 	DirectX::XMVECTOR m_forwardVector = FORWARD_VECTOR;
-	DirectX::XMVECTOR m_rightVector = RIGHT_VECTOR;
+	DirectX::XMVECTOR m_rightVector   = RIGHT_VECTOR;
 
 	float m_fov = 0.0f, m_aspectRatio = 0.0f, m_zNear = 0.0f, m_zFar = 0.0f;
 
@@ -1110,7 +1336,10 @@ public:
 		this->m_position = DirectX::XMVectorAdd(this->m_position, DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f));
 	}
 
-	void setPosition(const Vec3f& v) { this->m_position = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f); }
+	void setPosition(const Vec3f& v)
+	{
+		this->m_position = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f);
+	}
 
 	void rotate(const Vec3f& v)
 	{
@@ -1233,7 +1462,7 @@ class Image {
 private:
 	std::unique_ptr<Coloru8[]> m_buff;
 
-	uint16_t m_width = 0, m_height = 0;
+	uint16_t m_width   = 0, m_height = 0;
 	uint32_t m_nPixels = 0;
 
 public:
@@ -1286,14 +1515,32 @@ public:
 		), "Could Not Copy Pixels From Bitmap");
 	}
 
-	uint16_t getWidth()   const { return this->m_width;   }
-	uint16_t getHeight()  const { return this->m_height;  }
-	uint32_t getNPixels() const { return this->m_nPixels; }
+	uint16_t getWidth()   const { 
+		return this->m_width;
+	}
 
-	Coloru8 sample(const uint16_t x, const uint16_t y) const { return this->m_buff[y * this->m_width + x]; }
-	void    set(const uint16_t x, const uint16_t y, const Coloru8& color) { this->m_buff[y * this->m_width + x] = color; }
+	uint16_t getHeight()  const { 
+		return this->m_height;
+	}
 
-	Coloru8* getBuffer() const { return this->m_buff.get(); }
+	uint32_t getNPixels() const { 
+		return this->m_nPixels;
+	}
+
+	Coloru8 sample(const uint16_t x, const uint16_t y) const
+	{
+		return this->m_buff[y * this->m_width + x];
+	}
+
+	void    set(const uint16_t x, const uint16_t y, const Coloru8& color)
+	{
+		this->m_buff[y * this->m_width + x] = color;
+	}
+
+	Coloru8* getBuffer() const
+	{
+		return this->m_buff.get();
+	}
 };
 
 // --> IMAGES --> IMAGE END
@@ -1529,8 +1776,8 @@ private:
 	void createViewport()
 	{
 		D3D11_VIEWPORT vp;
-		vp.Width = static_cast<FLOAT>(this->window->getClientWidth());
-		vp.Height = static_cast<FLOAT>(this->window->getClientHeight());
+		vp.Width    = static_cast<FLOAT>(this->window->getClientWidth());
+		vp.Height   = static_cast<FLOAT>(this->window->getClientHeight());
 		vp.MinDepth = 0;
 		vp.MaxDepth = 1;
 		vp.TopLeftX = 0;
@@ -1630,7 +1877,8 @@ public:
 
 		this->initGraphics();
 
-		this->window->onResize([this](const Vec2u16 dimensions) {
+		this->window->onResize([this](const Vec2u16 dimensions)
+		{
 			this->initGraphics();
 		});
 	}
@@ -1645,10 +1893,10 @@ public:
 
 		RECT boundingRect = windowRect;
 
-		boundingRect.top += (windowRect.bottom - windowRect.top) - clientRect.bottom + 10;
-		boundingRect.left += 10;
-		boundingRect.right -= 10;
-		boundingRect.bottom -= 10;
+		boundingRect.top    += (windowRect.bottom - windowRect.top) - clientRect.bottom + 10; // padding
+		boundingRect.left   += 10; // padding
+		boundingRect.right  -= 10; // padding
+		boundingRect.bottom -= 10; // padding
 
 		this->window->getMouse().clip(boundingRect);
 
@@ -1703,7 +1951,7 @@ public:
 			descriptor.tsIndex,
 			descriptor.constantBufferIndices,
 			descriptor.primitiveTopology
-			});
+		});
 
 		return this->meshes.size() - 1;
 	}
@@ -1787,7 +2035,8 @@ public:
 				{
 					timer = Timer();
 				}
-				else {
+				else
+				{
 					std::this_thread::yield();
 					continue;
 				}
