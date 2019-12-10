@@ -1456,6 +1456,14 @@ struct Coloru8
 	uint8_t alpha;
 };
 
+struct Colorf16
+{
+	float red;
+	float green;
+	float blue;
+	float alpha;
+};
+
 // --> IMAGES --> COLOR STRUCTS END
 // --> IMAGES --> IMAGE START
 
@@ -1683,6 +1691,12 @@ struct PhysicsObject
 // --> PHYSICS END
 
 // --> ENGINE START
+// --> ENGINE DEFINES START
+
+constexpr const size_t WEISS_GUI_PANEL_VS_INDEX = 0;
+constexpr const size_t WEISS_GUI_PANEL_PS_INDEX = 0;
+
+// --> ENGINE DEFINES END
 
 struct MeshDescriptorFromVertices
 {
@@ -1848,6 +1862,9 @@ private:
 		this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), this->m_pDepthStencilView.Get());
 	}
 
+	/*
+	 * This function initiliazes directx and creates key components
+	*/
 	void initGraphics()
 	{
 		this->createDeviceAndSwapChain();
@@ -1890,12 +1907,32 @@ private:
 		this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(mesh.ib.getSize()), 0u, 0u);
 	}
 
+	/*
+	 * This functions swaps the back buffer and the front buffer to show the frame to the user
+	 * It also clears the depthStencilView
+	 */
 	void presentFrame(const bool useVSync)
 	{
 		HRESULT_ERROR(this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u), "Could Not Present Frame");
 
 		// Clear Depth Stencil
-		this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(),      D3D11_CLEAR_DEPTH, 1.0f, 0u);
+		this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
+	}
+
+	/*
+	 * This function loads default shaders which are used by different parts of Weiss such as the GUI Components
+	 * Please refer to section [--> ENGINE --> ENGINE DEFINES] before making any changes
+	 */
+	void initDefaultShaders()
+	{
+		std::vector<std::pair<const char*, DXGI_FORMAT>> ieds
+		{
+			{ "POSITION",         DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT },
+			{ "BACKGROUND_COLOR", DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT },
+		};
+
+		this->loadVertexShaderFromFile({ ieds, L"engine/gui_panel_vs.cso" });
+		this->loadPixelShaderFromFile({ L"engine/gui_panel_ps.cso" });
 	}
 
 public:
@@ -1912,6 +1949,7 @@ public:
 		this->keyboard = &(this->window->getKeyboard());
 
 		this->initGraphics();
+		this->initDefaultShaders();
 
 		this->window->onResize([this](const Vec2u16 dimensions)
 		{
@@ -2106,3 +2144,85 @@ public:
 };
 
 // --> ENGINE END
+
+// --> GUI START
+// --> GUI --> GUIELEMENTDESCRIPTOR START
+
+struct GUIElementDescriptor
+{
+	Vec2f position;
+	Vec2f dimensions;
+
+	Colorf16 foregroundColor;
+	Colorf16 backgroundColor;
+
+	Engine& engine;
+};
+
+// --> GUI --> GUIELEMENTDESCRIPTOR END
+// --> GUI --> GUIELEMENT START
+
+class GUIElement
+{
+protected:
+	size_t m_meshIndex = 0u;
+
+public:
+	GUIElementDescriptor descriptor;
+
+public:
+	GUIElement(const GUIElementDescriptor descriptor)
+		: descriptor(descriptor) {}
+
+	void render() const noexcept
+	{
+		descriptor.engine.queueMeshFor2dRendering(this->m_meshIndex);
+	}
+
+private:
+
+public:
+};
+
+// --> GUI --> PANEL START
+
+struct Vertex2dColorf
+{
+	Vec2f position;
+	Colorf16 color;
+};
+
+class Panel : public GUIElement
+{
+public:
+	Panel(const GUIElementDescriptor descriptor) : GUIElement(descriptor)
+	{
+		Engine& engine = descriptor.engine;
+
+		const Vertex2dColorf vertices[4] = {
+			{ descriptor.position,                                            descriptor.backgroundColor }, { descriptor.position + Vec2f { descriptor.dimensions[0], 0.0f }, descriptor.backgroundColor },
+			{ descriptor.position + Vec2f { 0.0f, descriptor.dimensions[1] }, descriptor.backgroundColor }, { descriptor.position + descriptor.dimensions,                    descriptor.backgroundColor }
+		};
+
+		VertexBufferDescriptor vbd = { vertices, 4, sizeof(Vertex2dColorf), true };
+
+		const std::vector<uint32_t> indices {
+			2, 1, 0,
+			2, 3, 1
+		};
+
+		MeshDescriptorFromVertices mdfv = {
+			vbd, indices, WEISS_GUI_PANEL_VS_INDEX, WEISS_GUI_PANEL_PS_INDEX, {}, {}, {}, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
+		};
+
+		this->m_meshIndex = descriptor.engine.createMeshFromVertices(mdfv);
+	}
+};
+
+// --> GUI --> PANEL END
+// --> GUI --> GUIELEMENT END
+
+// Future : Panels, Buttons, Sliders, Text Input ...
+// Events : onClick, onHover, onMouseLeave ...
+
+// --> GUI END
