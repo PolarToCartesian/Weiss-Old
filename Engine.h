@@ -488,7 +488,7 @@ public:
 
 struct PixelShaderDescriptor
 {
-	const wchar_t* pixelShaderFilename;
+	const wchar_t* binaryFilename;
 };
 
 class PixelShader {
@@ -503,7 +503,8 @@ public:
 		: m_pDeviceContextRef(pDeviceContextRef)
 	{
 		Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
-		HRESULT_ERROR(D3DReadFileToBlob(descriptor.pixelShaderFilename, &pBlob), "Could Not Read Pixel Shader File");
+
+		HRESULT_ERROR(D3DReadFileToBlob(descriptor.binaryFilename, &pBlob), "Could Not Read Pixel Shader File");
 		HRESULT_ERROR(pDeviceRef->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pPixelShader), "Could Not Create Pixel Shader");
 	}
 
@@ -1121,24 +1122,24 @@ public:
 	{
 		switch (msg)
 		{
-		case WM_SIZE:
-		{
-			const Vec2u16 client_area_dimensions = {
-				static_cast<uint16_t>(GET_X_LPARAM(lParam)),
-				static_cast<uint16_t>(GET_Y_LPARAM(lParam))
-			};
+			case WM_SIZE:
+			{
+				const Vec2u16 client_area_dimensions = {
+					static_cast<uint16_t>(GET_X_LPARAM(lParam)),
+					static_cast<uint16_t>(GET_Y_LPARAM(lParam))
+				};
 
-			this->m_isMinimized = (client_area_dimensions[0] == 0 && client_area_dimensions[1] == 0);
+				this->m_isMinimized = (client_area_dimensions[0] == 0 && client_area_dimensions[1] == 0);
 
-			for (auto& functor : this->m_onResizeFunctors)
-				functor(client_area_dimensions);
-		}
-
-		return 0;
-		case WM_DESTROY:
-			this->destroy();
+				for (auto& functor : this->m_onResizeFunctors)
+					functor(client_area_dimensions);
+			}
 
 			return 0;
+			case WM_DESTROY:
+				this->destroy();
+
+				return 0;
 		}
 
 		// Dispatch Message To Peripheral Devices
@@ -1713,14 +1714,18 @@ private:
 	Microsoft::WRL::ComPtr<IDXGISwapChain> m_pSwapChain;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_pDeviceContext;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_pRenderTarget;
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilView> m_pDepthStencilView;
+
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView>  m_pDepthStencilView;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_pDepthStencilStateForZBufferOn;
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_pDepthStencilStateForZBufferOff;
 
 public:
 	Window* window;
 	Mouse* mouse;
 	Keyboard* keyboard;
 
-	std::vector<size_t> renderPool;
+	std::vector<size_t> renderPool2D;
+	std::vector<size_t> renderPool3D;
 
 	std::vector<Mesh>           meshes;
 	std::vector<Texture2D>      textures;
@@ -1786,18 +1791,32 @@ private:
 		this->m_pDeviceContext->RSSetViewports(1u, &vp);
 	}
 
-	void createDepthBuffer()
+	void createDepthStencilStates()
 	{
 		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
 		dsDesc.DepthEnable = TRUE;
 		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
 		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
-		Microsoft::WRL::ComPtr<ID3D11DepthStencilState> pDSState;
-		HRESULT_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &pDSState), "Could Not Create DepthStencilState");
+		dsDesc.StencilReadMask = 0xFF;
+		dsDesc.StencilWriteMask = 0xFF;
+		dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+		dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+		dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		
+		HRESULT_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOn), "Could Not Create DepthStencilState");
+		
+		dsDesc.DepthEnable = FALSE;
+		
+		HRESULT_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOff), "Could Not Create EmptyDepthStencilState");
+	}
 
-		// Bind pDSState
-		this->m_pDeviceContext->OMSetDepthStencilState(pDSState.Get(), 1u);
-
+	void createDepthStencil()
+	{
 		// Create Detph Texture
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
 		D3D11_TEXTURE2D_DESC descDepth = {};
@@ -1810,17 +1829,22 @@ private:
 		descDepth.SampleDesc.Quality = 0u;
 		descDepth.Usage = D3D11_USAGE_DEFAULT;
 		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+
 		HRESULT_ERROR(this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil), "Could Not Create Texture2D");
+
 		// Create Depth Stencil Texture View
 		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
 		descDSV.Format = DXGI_FORMAT_D32_FLOAT;
 		descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		descDSV.Texture2D.MipSlice = 0u;
+
 		HRESULT_ERROR(this->m_pDevice->CreateDepthStencilView(
 			pDepthStencil.Get(), &descDSV, &this->m_pDepthStencilView
 		), "Could Not Create DepthStencilView");
+	}
 
-		// Bind Depth Stencil
+	void bindDepthStencil()
+	{
 		this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), this->m_pDepthStencilView.Get());
 	}
 
@@ -1829,7 +1853,19 @@ private:
 		this->createDeviceAndSwapChain();
 		this->createRenderTarget();
 		this->createViewport();
-		this->createDepthBuffer();
+		this->createDepthStencilStates();
+		this->createDepthStencil();
+		this->bindDepthStencil();
+	}
+
+	void turnZBufferOn()
+	{
+		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOn.Get(), 1u);
+	}
+
+	void turnZBufferOff()
+	{
+		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOff.Get(), 1u);
 	}
 
 	void drawMesh(const size_t meshIndex)
@@ -1858,8 +1894,8 @@ private:
 	{
 		HRESULT_ERROR(this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u), "Could Not Present Frame");
 
-		// Clear Depth Buffer
-		this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
+		// Clear Depth Stencil
+		this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(),      D3D11_CLEAR_DEPTH, 1.0f, 0u);
 	}
 
 public:
@@ -2008,16 +2044,21 @@ public:
 		return { vertices, indices };
 	}
 
-	void queueMeshForRendering(const size_t mesh)
+	void queueMeshFor2dRendering(const size_t mesh)
 	{
-		this->renderPool.push_back(mesh);
+		this->renderPool2D.push_back(mesh);
+	}
+
+	void queueMeshFor3dRendering(const size_t mesh)
+	{
+		this->renderPool3D.push_back(mesh);
 	}
 
 	void fill(const Coloru8& color)
 	{
 		float colorf[4] = { color.red / 255.f, color.green / 255.f, color.blue / 255.f, color.alpha / 255.f };
 
-		this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&color);
+		this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&colorf);
 	}
 
 	void run(const bool useVSync = true, const uint16_t fps = 60)
@@ -2044,11 +2085,20 @@ public:
 
 			this->window->update();
 
-			this->renderPool.clear();
+			this->renderPool2D.clear();
+			this->renderPool3D.clear();
+
 			this->onRender(elapsed);
 
-			for (const size_t mesh : this->renderPool)
-				this->drawMesh(mesh);
+			this->turnZBufferOn();
+
+			for (const size_t mesh3D : this->renderPool3D)
+				this->drawMesh(mesh3D);
+
+			this->turnZBufferOff();
+
+			for (const size_t mesh2D : this->renderPool2D)
+				this->drawMesh(mesh2D);
 
 			this->presentFrame(useVSync);
 		}
