@@ -484,11 +484,21 @@ public:
 // --> D3D11 --> BUFFERS END
 
 // --> D3D11 --> SHADERS START
+// --> D3D11 --> SHADER UTIL STRUCTS/ENUMS... START
+
+enum class ShaderLoadingMethod {
+	FROM_BINARY_FILE, // (.cso file)
+	FROM_SOURCE_CODE  // (raw source code)
+};
+
+// --> D3D11 --> SHADER UTIL STRUCTS END
 // --> D3D11 --> SHADERS --> PIXEL SHADER START
 
 struct PixelShaderDescriptor
 {
+	const ShaderLoadingMethod loadingMethod;
 	const wchar_t* binaryFilename;
+	const char* sourceCode;
 };
 
 class PixelShader {
@@ -504,7 +514,19 @@ public:
 	{
 		Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
 
-		HRESULT_ERROR(D3DReadFileToBlob(descriptor.binaryFilename, &pBlob), "Could Not Read Pixel Shader File");
+		if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_BINARY_FILE)
+		{
+			HRESULT_ERROR(D3DReadFileToBlob(descriptor.binaryFilename, &pBlob), "Could Not Read Pixel Shader File");
+		}
+		else if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_SOURCE_CODE)
+		{
+			HRESULT_ERROR(D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "ps_5_0", 0, 0, &pBlob, NULL));
+		}
+		else
+		{
+			MESSAGE_BOX_ERROR("Your Specified Shader Loading Method Is Not Supported From Pixel Shaders");
+		}
+
 		HRESULT_ERROR(pDeviceRef->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pPixelShader), "Could Not Create Pixel Shader");
 	}
 
@@ -520,7 +542,9 @@ public:
 struct VertexShaderDescriptor
 {
 	const std::vector<std::pair<const char*, DXGI_FORMAT>> inputElementDescriptors;
-	const wchar_t* vertexShaderFilename;
+	const ShaderLoadingMethod loadingMethod;
+	const wchar_t* binaryFilename;
+	const char* sourceCode;
 };
 
 class VertexShader {
@@ -536,7 +560,20 @@ public:
 		: m_pDeviceContextRef(pDeviceContextRef)
 	{
 		Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
-		HRESULT_ERROR(D3DReadFileToBlob(descriptor.vertexShaderFilename, &pBlob), "Could Not Read Vertex Shader File");
+
+		if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_BINARY_FILE)
+		{
+			HRESULT_ERROR(D3DReadFileToBlob(descriptor.binaryFilename, &pBlob), "Could Not Read Vertex Shader File");
+		}
+		else if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_SOURCE_CODE)
+		{
+			HRESULT_ERROR(D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "vs_5_0", 0, 0, &pBlob, NULL));
+		}
+		else
+		{
+			MESSAGE_BOX_ERROR("Your Specified Shader Loading Method Is Not Supported From Vertex Shaders");
+		}
+
 		HRESULT_ERROR(pDeviceRef->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader), "Could Not Create Vertex Shader");
 
 		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescriptors(descriptor.inputElementDescriptors.size());
@@ -1752,21 +1789,21 @@ private:
 	void createDeviceAndSwapChain()
 	{
 		DXGI_SWAP_CHAIN_DESC scd{};
-		scd.BufferDesc.Width = 0;
+		scd.BufferDesc.Width  = 0;
 		scd.BufferDesc.Height = 0;
 		scd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		scd.BufferDesc.RefreshRate.Numerator = 0;
+		scd.BufferDesc.RefreshRate.Numerator   = 0;
 		scd.BufferDesc.RefreshRate.Denominator = 0;
-		scd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+		scd.BufferDesc.Scaling          = DXGI_MODE_SCALING_UNSPECIFIED;
 		scd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-		scd.SampleDesc.Count = 1;
+		scd.SampleDesc.Count   = 1;
 		scd.SampleDesc.Quality = 0;
-		scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		scd.BufferCount = 1;
+		scd.BufferUsage  = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		scd.BufferCount  = 1;
 		scd.OutputWindow = this->window->getHandle();
-		scd.Windowed = TRUE;
-		scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-		scd.Flags = 0;
+		scd.Windowed     = TRUE;
+		scd.SwapEffect   = DXGI_SWAP_EFFECT_DISCARD;
+		scd.Flags        = 0;
 
 		HRESULT_ERROR(D3D11CreateDeviceAndSwapChain(
 			nullptr,
@@ -1807,20 +1844,20 @@ private:
 
 	void createDepthStencilStates()
 	{
-		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
-		dsDesc.DepthEnable = TRUE;
-		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
-		dsDesc.StencilReadMask = 0xFF;
-		dsDesc.StencilWriteMask = 0xFF;
-		dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		D3D11_DEPTH_STENCIL_DESC dsDesc     = {};
+		dsDesc.DepthEnable                  = TRUE;
+		dsDesc.DepthWriteMask               = D3D11_DEPTH_WRITE_MASK_ALL;
+		dsDesc.DepthFunc                    = D3D11_COMPARISON_LESS;
+		dsDesc.StencilReadMask              = 0xFF;
+		dsDesc.StencilWriteMask             = 0xFF;
+		dsDesc.FrontFace.StencilFailOp      = D3D11_STENCIL_OP_KEEP;
 		dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-		dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-		dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-		dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-		dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-		dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-		dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		dsDesc.FrontFace.StencilPassOp      = D3D11_STENCIL_OP_KEEP;
+		dsDesc.FrontFace.StencilFunc        = D3D11_COMPARISON_ALWAYS;
+		dsDesc.BackFace.StencilFailOp       = D3D11_STENCIL_OP_KEEP;
+		dsDesc.BackFace.StencilDepthFailOp  = D3D11_STENCIL_OP_DECR;
+		dsDesc.BackFace.StencilPassOp       = D3D11_STENCIL_OP_KEEP;
+		dsDesc.BackFace.StencilFunc         = D3D11_COMPARISON_ALWAYS;
 		
 		HRESULT_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOn), "Could Not Create DepthStencilState");
 		
@@ -1834,14 +1871,14 @@ private:
 		// Create Detph Texture
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
 		D3D11_TEXTURE2D_DESC descDepth = {};
-		descDepth.Width = this->window->getClientWidth();
-		descDepth.Height = this->window->getClientHeight();
+		descDepth.Width     = this->window->getClientWidth();
+		descDepth.Height    = this->window->getClientHeight();
 		descDepth.MipLevels = 1u;
 		descDepth.ArraySize = 1u;
-		descDepth.Format = DXGI_FORMAT_D32_FLOAT;
-		descDepth.SampleDesc.Count = 1u;
+		descDepth.Format    = DXGI_FORMAT_D32_FLOAT;
+		descDepth.SampleDesc.Count   = 1u;
 		descDepth.SampleDesc.Quality = 0u;
-		descDepth.Usage = D3D11_USAGE_DEFAULT;
+		descDepth.Usage     = D3D11_USAGE_DEFAULT;
 		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
 		HRESULT_ERROR(this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil), "Could Not Create Texture2D");
@@ -1923,7 +1960,7 @@ private:
 	 * This function loads default shaders which are used by different parts of Weiss such as the GUI Components
 	 * Please refer to section [--> ENGINE --> ENGINE DEFINES] before making any changes
 	 */
-	void initDefaultShaders()
+	void loadDefaultShaders()
 	{
 		std::vector<std::pair<const char*, DXGI_FORMAT>> ieds
 		{
@@ -1931,8 +1968,13 @@ private:
 			{ "BACKGROUND_COLOR", DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT },
 		};
 
-		this->loadVertexShaderFromFile({ ieds, L"engine/gui_panel_vs.cso" });
-		this->loadPixelShaderFromFile({ L"engine/gui_panel_ps.cso" });
+		const char* vsSource = "struct VSoutput\n{\nfloat4 bgColor : BACKGROUND_COLOR;\nfloat4 position : SV_Position;\n};\nVSoutput main(float2 pos : POSITION, float4 bgColor : BACKGROUND_COLOR)\n{\nVSoutput output;\noutput.bgColor = bgColor;\noutput.position = float4(pos, 0.0f, 1.0f);return output;\n}";
+
+		this->loadVertexShader({ ieds, ShaderLoadingMethod::FROM_SOURCE_CODE, L"engine/gui_panel_vs.cso", vsSource });
+
+		const char* psSource = "float4 main(float4 color : BACKGROUND_COLOR) : SV_TARGET\n{\nreturn color;\n}\n";
+
+		this->loadPixelShader({ ShaderLoadingMethod::FROM_SOURCE_CODE, L"", psSource });
 	}
 
 public:
@@ -1949,7 +1991,7 @@ public:
 		this->keyboard = &(this->window->getKeyboard());
 
 		this->initGraphics();
-		this->initDefaultShaders();
+		this->loadDefaultShaders();
 
 		this->window->onResize([this](const Vec2u16 dimensions)
 		{
@@ -1979,14 +2021,14 @@ public:
 		this->mouse->hide();
 	}
 
-	size_t loadVertexShaderFromFile(const VertexShaderDescriptor& descriptor)
+	size_t loadVertexShader(const VertexShaderDescriptor& descriptor)
 	{
 		this->vertexShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->vertexShaders.size() - 1;
 	}
 
-	size_t loadPixelShaderFromFile(const PixelShaderDescriptor& descriptor)
+	size_t loadPixelShader(const PixelShaderDescriptor& descriptor)
 	{
 		this->pixelShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
@@ -2169,18 +2211,26 @@ protected:
 
 public:
 	GUIElementDescriptor descriptor;
+	
+	std::vector<GUIElement> children;
 
 public:
 	GUIElement(const GUIElementDescriptor descriptor)
-		: descriptor(descriptor) {}
+		: descriptor(descriptor)
+	{
+
+	}
+
 
 	void render() const noexcept
 	{
 		descriptor.engine.queueMeshFor2dRendering(this->m_meshIndex);
+
+		for (const GUIElement& child : this->children)
+			child.render();
 	}
 
 private:
-
 public:
 };
 
@@ -2211,7 +2261,7 @@ public:
 			2, 3, 1
 		};
 
-		MeshDescriptorFromVertices mdfv = {
+		const MeshDescriptorFromVertices mdfv {
 			vbd, indices, WEISS_GUI_PANEL_VS_INDEX, WEISS_GUI_PANEL_PS_INDEX, {}, {}, {}, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
 		};
 
