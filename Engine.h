@@ -23,17 +23,28 @@
 
 
 
-//          //    //////////////    //////////    //////////////    //////////////
-//          //    //                    //        //                //
-//          //    //                    //        //                //
-//    //    //    //////////////        //        //////////////    //////////////
-//    //    //    //                    //                    //                //
-//  //  //  //    //                    //                    //                //
-  //      //      //////////////    //////////    //////////////    //////////////
+//          //    //////////////      //////////      //////////////    //////////////
+//          //    //                      //          //                //
+//          //    //                      //          //                //
+//    //    //    //////////////          //          //////////////    //////////////
+//    //    //    //                      //                      //                //
+//  //  //  //    //                      //                      //                //
+  //      //      //////////////      //////////      //////////////    //////////////
+
+//////////////    //          //    //////////////      //////////      //          //    //////////////
+//                ////        //    //                      //          ////        //    //
+//                //  //      //    //                      //          //  //      //    //
+//////////////    //    //    //    //    //////            //          //    //    //    //////////////
+//                //      //  //    //          //          //          //      //  //    //
+//                //        ////    //          //          //          //        ////    //
+//////////////    //          //    ////////////        //////////      //          //    //////////////
 
 
 
 // --> INCLUDES START
+
+#define NOMINMAX
+
 // --> INCLUDES --> STANDARD LIBRARY START
 
 #include <array>
@@ -71,6 +82,8 @@
 #pragma comment(lib, "D3DCompiler.lib")
 #pragma comment(lib, "windowscodecs.lib")
 
+#undef NOMINMAX
+
 // --> LIBRARY LINKING END
 // --> ERROR HANDLING START
 
@@ -89,6 +102,12 @@
 }
 
 // --> ERROR HANDLING END
+
+// --> WEISS DEFINES START
+
+constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0u;
+
+// --> WEISS DEFINES END
 
 // --> MATH START
 // --> MATH --> CONSTANTS START
@@ -1777,13 +1796,6 @@ struct PhysicsObject
 // --> PHYSICS END
 
 // --> ENGINE START
-// --> ENGINE --> ENGINE DEFINES START
-
-constexpr const size_t WEISS_2D_TRIANGLE_VS_INDEX = 0;
-constexpr const size_t WEISS_2D_TRIANGLE_PS_INDEX = 0;
-constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0;
-
-// --> ENGINE --> ENGINE DEFINES END
 // --> ENGINE --> ENGINE DESCRIPTORS START
 struct MeshDescriptorFromVertices
 {
@@ -2018,41 +2030,6 @@ private:
 		this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
 	}
 
-	/*
-	 * This function loads default shaders which are used by different parts of Weiss such as the GUI Components
-	 * Please refer to section [--> ENGINE --> ENGINE DEFINES] before making any changes
-	 */
-	void loadDefaultShaders()
-	{
-		std::vector<std::pair<const char*, DXGI_FORMAT>> ieds
-		{
-			{ "POSITION",         DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT },
-			{ "BACKGROUND_COLOR", DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT },
-		};
-
-		const char* vsSource = "struct VSoutput\n\
-								{\n\
-									float4 bgColor : BACKGROUND_COLOR;\n\
-									float4 position : SV_Position;\n\
-								};\n\
-								VSoutput main(float2 pos : POSITION, float4 bgColor : BACKGROUND_COLOR)\n\
-								{\n\
-									VSoutput output;\n\
-									output.bgColor = bgColor;\n\
-									output.position = float4(pos, 0.0f, 1.0f);\n\
-									return output;\n\
-								}\n";
-
-		ASSERT_ERROR(WEISS_2D_TRIANGLE_VS_INDEX == this->loadVertexShader({ ieds, ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, vsSource }), "Could Not Create Default Vertex Shader #0 In Target Position");
-
-		const char* psSource = "float4 main(float4 color : BACKGROUND_COLOR) : SV_TARGET\n\
-								{\n\
-									return color;\n\
-								}\n";
-
-		ASSERT_ERROR(WEISS_2D_TRIANGLE_PS_INDEX == this->loadPixelShader({ ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, psSource }), "Could Not Create Default Pixel Shader #0 In Target Position");
-	}
-
 	void createDefaultConstantBuffers()
 	{
 		const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), 0u, 0u };
@@ -2100,7 +2077,6 @@ public:
 		this->perspectiveCamera  = new PerspectiveCamera (*this->window, descriptor.perspectiveCameraDesc);
 
 		this->initGraphics();
-		this->loadDefaultShaders();
 		this->createDefaultConstantBuffers();
 
 		this->window->onResize([this](const Vec2u16 dimensions)
@@ -2317,5 +2293,4 @@ public:
 	}
 };
 // --> ENGINE --> ENGINE CLASS END
-
 // --> ENGINE END
