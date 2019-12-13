@@ -338,6 +338,11 @@ enum class ShaderBindingType {
 // --> D3D11 --> BUFFERS START
 // --> D3D11 --> BUFFERS --> INDEX BUFFER START
 
+struct IndexBufferDescriptor
+{
+	const std::vector<uint32_t> indices;
+};
+
 class IndexBuffer {
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pIndexBuffer;
@@ -346,10 +351,10 @@ private:
 	size_t m_nBytes;
 
 public:
-	IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef, const std::vector<uint32_t>& indices)
+	IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef, const IndexBufferDescriptor& descriptor)
 		: m_pDeviceContextRef(pDeviceContextRef)
 	{
-		this->m_nBytes = static_cast<uint64_t>(sizeof(uint32_t) * indices.size());
+		this->m_nBytes = static_cast<uint64_t>(sizeof(uint32_t) * descriptor.indices.size());
 
 		D3D11_BUFFER_DESC ibd = {};
 		ibd.BindFlags = D3D11_BIND_INDEX_BUFFER;
@@ -359,7 +364,7 @@ public:
 		ibd.ByteWidth = static_cast<UINT>(this->m_nBytes);
 
 		D3D11_SUBRESOURCE_DATA isd = {};
-		isd.pSysMem = indices.data();
+		isd.pSysMem = descriptor.indices.data();
 
 		HRESULT_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer), "Unable To Create Index Buffer");
 	}
@@ -380,10 +385,10 @@ public:
 
 struct VertexBufferDescriptor
 {
-	const void* memoryPtr;
-	const size_t nElements;
-	const size_t elementSize;
-	const bool isUpdatable;
+	const void* memoryPtr    = nullptr;
+	const size_t nElements   = 0;
+	const size_t elementSize = 0;
+	const bool isUpdatable   = false;
 };
 
 class VertexBuffer {
@@ -434,10 +439,10 @@ public:
 
 struct ConstantBufferDescriptor
 {
-	const ShaderBindingType bindingType;
-	const size_t objSize;
-	const UINT slotVS;
-	const UINT slotPS;
+	const ShaderBindingType bindingType = ShaderBindingType::VERTEX;
+	const size_t            objSize     = 0u;
+	const UINT              slotVS      = 0u; // Ignored if ShaderBindingType is PIXEL
+	const UINT              slotPS      = 0u; // Ignored if ShaderBindingType is VERTEX
 };
 
 class ConstantBuffer {
@@ -520,7 +525,7 @@ public:
 		}
 		else if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_SOURCE_CODE)
 		{
-			HRESULT_ERROR(D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "ps_5_0", 0, 0, &pBlob, NULL));
+			HRESULT_ERROR(D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "ps_5_0", 0, 0, &pBlob, NULL), "Could Not Compile Pixel Shader");
 		}
 		else
 		{
@@ -541,10 +546,10 @@ public:
 
 struct VertexShaderDescriptor
 {
-	const std::vector<std::pair<const char*, DXGI_FORMAT>> inputElementDescriptors;
-	const ShaderLoadingMethod loadingMethod;
-	const wchar_t* binaryFilename;
-	const char* sourceCode;
+	const std::vector<std::pair<const char*, DXGI_FORMAT>> inputElementDescriptors = {};
+	const ShaderLoadingMethod loadingMethod  = ShaderLoadingMethod::FROM_BINARY_FILE;
+	const wchar_t*            binaryFilename = nullptr; // Ignore if ShaderLoadingMethod is FROM_SOURCE_CODE
+	const char*               sourceCode     = nullptr; // Ignore if ShaderLoadingMethod is FROM_BINARY_FILE
 };
 
 class VertexShader {
@@ -567,7 +572,7 @@ public:
 		}
 		else if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_SOURCE_CODE)
 		{
-			HRESULT_ERROR(D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "vs_5_0", 0, 0, &pBlob, NULL));
+			HRESULT_ERROR(D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "vs_5_0", 0, 0, &pBlob, NULL), "Could Not Compile Vertex Shader");
 		}
 		else
 		{
@@ -609,18 +614,18 @@ public:
 // --> MESHES --> MESH START
 
 struct Mesh {
-	VertexBuffer vb;
-	IndexBuffer ib;
+	size_t vertexBufferIndex;
+	size_t indexBufferIndex;
 
 	size_t vsIndex;
 	size_t psIndex;
 
-	std::vector<size_t> t2dIndices;
-	std::optional<size_t> tsIndex;
+	std::vector<size_t> textureIndices;
+	std::vector<size_t> textureSamplerIndices;
 
-	std::vector<size_t> cbIndices;
+	std::vector<size_t> constantBufferIndices;
 
-	D3D_PRIMITIVE_TOPOLOGY pt;
+	D3D_PRIMITIVE_TOPOLOGY primitiveTopologyType;
 };
 
 // --> MESHES --> MESH END
@@ -673,24 +678,12 @@ public:
 };
 
 // --> PERIPHERAL DEVICES --> PERIPHERAL DEVICE END
-// --> PERIPHERAL DEVICES --> MOUSE START
 
-class Mouse : PeripheralDevice
+// --> PERIPHERAL DEVICES --> MOUSE EVENT INTERFACES START
+
+class MouseEventInterface
 {
-private:
-	Vec2u16 m_position{ 0, 0 };
-	Vec2i16 m_deltaPosition{ 0, 0 };
-
-	int16_t m_wheelDelta = 0;
-
-	bool m_isLeftButtonDown = false;
-	bool m_isRightButtonDown = false;
-
-	bool m_wasMouseMovedDuringUpdate = false;
-	bool m_wasCursorMovedDuringUpdate = false;
-
-	bool m_isCursorInWindow = false;
-
+protected:
 	std::vector<std::function<void(const Vec2u16)>> m_onLeftButtonUpFunctors;
 	std::vector<std::function<void(const Vec2u16)>> m_onLeftButtonDownFunctors;
 
@@ -703,17 +696,6 @@ private:
 	std::vector<std::function<void(const Vec2u16, const Vec2i16)>> m_onCursorMoveFunctors;
 
 public:
-	Mouse()
-	{
-		RAWINPUTDEVICE mouseInputDevice;
-		mouseInputDevice.usUsagePage = 0x01;
-		mouseInputDevice.usUsage = 0x02;
-		mouseInputDevice.dwFlags = 0;
-		mouseInputDevice.hwndTarget = nullptr;
-
-		RegisterRawInputDevices(&mouseInputDevice, 1, sizeof(RAWINPUTDEVICE));
-	}
-
 	void onLeftButtonUp(const std::function<void(Vec2u16)>& functor)
 	{
 		this->m_onLeftButtonUpFunctors.push_back(functor);
@@ -747,6 +729,39 @@ public:
 	void onCursorMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor)
 	{
 		this->m_onCursorMoveFunctors.push_back(functor);
+	}
+};
+
+// --> PERIPHERAL DEVICES --> MOUSE EVENT INTERFACES END
+
+// --> PERIPHERAL DEVICES --> MOUSE START
+
+class Mouse : PeripheralDevice, public MouseEventInterface
+{
+private:
+	Vec2u16 m_position{ 0, 0 };
+	Vec2i16 m_deltaPosition{ 0, 0 };
+
+	int16_t m_wheelDelta = 0;
+
+	bool m_isLeftButtonDown = false;
+	bool m_isRightButtonDown = false;
+
+	bool m_wasMouseMovedDuringUpdate = false;
+	bool m_wasCursorMovedDuringUpdate = false;
+
+	bool m_isCursorInWindow = false;
+
+public:
+	Mouse()
+	{
+		RAWINPUTDEVICE mouseInputDevice;
+		mouseInputDevice.usUsagePage = 0x01;
+		mouseInputDevice.usUsage = 0x02;
+		mouseInputDevice.dwFlags = 0;
+		mouseInputDevice.hwndTarget = nullptr;
+
+		RegisterRawInputDevices(&mouseInputDevice, 1, sizeof(RAWINPUTDEVICE));
 	}
 
 	bool isLeftButtonUp()   const
@@ -981,11 +996,12 @@ inline LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam
 
 struct WindowDescriptor
 {
-	const uint16_t windowPositionX, windowPositionY;
+	const uint16_t windowPositionX = 0u;
+	const uint16_t windowPositionY = 0u;
 	const uint16_t width, height;
-	const char* title;
-	const char* iconPath;
-	const bool isResizable;
+	const char* title      = nullptr;
+	const char* iconPath   = nullptr;
+	const bool isResizable = true;
 	const HINSTANCE hInstance;
 };
 
@@ -1175,7 +1191,7 @@ public:
 			return 0;
 			case WM_DESTROY:
 				this->destroy();
-
+				
 				return 0;
 		}
 
@@ -1273,18 +1289,24 @@ public:
 // --> CAMERAS --> CAMERA END
 // --> CAMERAS --> ORTHOGRAPHIC CAMERA START 
 
+struct OrthographicCameraDescriptor
+{
+	const Vec2f position;
+	const float ratation;
+};
+
 class OrthographicCamera : public Camera
 {
 private:
 	float m_InvAspectRatio = 0.0f;
 
 public:
-	OrthographicCamera(const Vec2f& position, Window& window, const float ratation)
+	OrthographicCamera(Window& window, const OrthographicCameraDescriptor& descriptor)
 	{
-		this->m_position = DirectX::XMVectorSet(position[0], position[1], 0.0f, 0.0f);
-		this->m_rotation = DirectX::XMVectorSet(0.0f, 0.0f, ratation, 0.0f);
+		this->m_position = DirectX::XMVectorSet(descriptor.position[0], descriptor.position[1], 0.0f, 0.0f);
+		this->m_rotation = DirectX::XMVectorSet(0.0f, 0.0f, descriptor.ratation, 0.0f);
 
-		auto recalculateInvAspectRatio = [this, &window](const Vec2u16& clientDims)
+		auto recalculateInvAspectRatio = [this](const Vec2u16& clientDims)
 		{
 			this->m_InvAspectRatio = clientDims[1] / static_cast<float>(clientDims[0]);
 		};
@@ -1340,6 +1362,16 @@ public:
 // --> CAMERAS --> ORTHOGRAPHIC CAMERA END
 // --> CAMERAS --> PERSPECTIVE  CAMERA START
 
+struct PerspectiveCameraDescriptor
+{
+	const Vec3f position;
+	const Vec3f rotation;
+
+	const float fov;
+	const float zNear;
+	const float zFar;
+};
+
 class PerspectiveCamera : public Camera
 {
 private:
@@ -1353,13 +1385,13 @@ private:
 	float m_fov = 0.0f, m_aspectRatio = 0.0f, m_zNear = 0.0f, m_zFar = 0.0f;
 
 public:
-	PerspectiveCamera(const Vec3f& position, const Vec3f& rotation, const float fov, Window& window, const float zNear, const float zFar)
-		: m_fov(fov), m_zNear(zNear), m_zFar(zFar)
+	PerspectiveCamera(Window& window, const PerspectiveCameraDescriptor& descriptor)
+		: m_fov(descriptor.fov), m_zNear(descriptor.zNear), m_zFar(descriptor.zFar)
 	{
-		this->m_position = DirectX::XMVectorSet(position[0], position[1], position[2], 0.0f);
-		this->m_rotation = DirectX::XMVectorSet(rotation[0], rotation[1], rotation[2], 0.0f);
+		this->m_position = DirectX::XMVectorSet(descriptor.position[0], descriptor.position[1], descriptor.position[2], 0.0f);
+		this->m_rotation = DirectX::XMVectorSet(descriptor.rotation[0], descriptor.rotation[1], descriptor.rotation[2], 0.0f);
 
-		auto recalculateAspectRatio = [this, &window](const Vec2u16& clientDims)
+		auto recalculateAspectRatio = [this](const Vec2u16& clientDims)
 		{
 			this->m_aspectRatio = clientDims[0] / static_cast<float>(clientDims[1]);
 		};
@@ -1534,7 +1566,7 @@ public:
 			&bitmapDecoder
 		), "Could Not Read/Open Image");
 
-		HRESULT_ERROR(bitmapDecoder->GetFrame(0, &frameDecoder));
+		HRESULT_ERROR(bitmapDecoder->GetFrame(0, &frameDecoder), "Could Not Get First Frame Of Image");
 
 		HRESULT_ERROR(frameDecoder->GetSize(
 			(UINT*)&this->m_width,
@@ -1728,28 +1760,24 @@ struct PhysicsObject
 // --> PHYSICS END
 
 // --> ENGINE START
-// --> ENGINE DEFINES START
+// --> ENGINE --> ENGINE DEFINES START
 
-constexpr const size_t WEISS_GUI_PANEL_VS_INDEX = 0;
-constexpr const size_t WEISS_GUI_PANEL_PS_INDEX = 0;
+constexpr const size_t WEISS_2D_TRIANGLE_VS_INDEX = 0;
+constexpr const size_t WEISS_2D_TRIANGLE_PS_INDEX = 0;
+constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0;
 
-// --> ENGINE DEFINES END
-
+// --> ENGINE --> ENGINE DEFINES END
+// --> ENGINE --> ENGINE DESCRIPTORS START
 struct MeshDescriptorFromVertices
 {
-	const VertexBufferDescriptor vertexBufferDescriptor;
-	const std::vector<uint32_t> indices;
+	const size_t vertexBufferIndex;
+	const size_t indexBufferIndex;
 	const size_t vertexShaderIndex;
 	const size_t pixelShaderIndex;
 	const std::vector<size_t> t2dIndices;
-	const std::optional<size_t> tsIndex;
+	const std::vector<size_t> tsIndices;
 	const std::vector<size_t> constantBufferIndices;
-	const D3D_PRIMITIVE_TOPOLOGY primitiveTopology;
-};
-
-struct MeshDescriptorFromFile
-{
-	const char* filename;
+	const D3D_PRIMITIVE_TOPOLOGY primitiveTopology = D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 };
 
 struct DataFromMeshFile
@@ -1757,6 +1785,16 @@ struct DataFromMeshFile
 	std::vector<Vec3f> vertices;
 	std::vector<uint32_t> indices;
 };
+
+struct EngineDescriptor
+{
+	WindowDescriptor windowDesc;
+	OrthographicCameraDescriptor orthographicCameraDesc;
+	PerspectiveCameraDescriptor  perspectiveCameraDesc;
+};
+
+// --> ENGINE --> ENGINE DESCRIPTORS END
+// --> ENGINE --> ENGINE CLASS START
 
 class Engine
 {
@@ -1770,20 +1808,27 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_pDepthStencilStateForZBufferOn;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_pDepthStencilStateForZBufferOff;
 
-public:
-	Window* window;
-	Mouse* mouse;
-	Keyboard* keyboard;
-
 	std::vector<size_t> renderPool2D;
 	std::vector<size_t> renderPool3D;
 
 	std::vector<Mesh>           meshes;
-	std::vector<Texture2D>      textures;
+		
 	std::vector<PixelShader>    pixelShaders;
 	std::vector<VertexShader>   vertexShaders;
+
+	std::vector<VertexBuffer>   vertexBuffers;
+	std::vector<IndexBuffer>    indexBuffers;
 	std::vector<ConstantBuffer> constantBuffers;
+
+	std::vector<Texture2D>      textures;
 	std::vector<TextureSampler> textureSamplers;
+
+	Window*   window   = nullptr;
+	Mouse*    mouse    = nullptr;
+	Keyboard* keyboard = nullptr;
+	
+	OrthographicCamera* orthographicCamera = nullptr;
+	PerspectiveCamera*  perspectiveCamera  = nullptr;
 
 private:
 	void createDeviceAndSwapChain()
@@ -1926,22 +1971,22 @@ private:
 	{
 		Mesh& mesh = this->meshes[meshIndex];
 
-		mesh.vb.Bind();
-		mesh.ib.Bind();
+		this->vertexBuffers[mesh.vertexBufferIndex].Bind();
+		this->indexBuffers[mesh.indexBufferIndex].Bind();
 		this->vertexShaders[mesh.vsIndex].Bind();
 		this->pixelShaders[mesh.psIndex].Bind();
 
-		for (size_t textureIndex : mesh.t2dIndices)
+		for (const size_t textureIndex : mesh.textureIndices)
 			this->textures[textureIndex].bind();
 
-		if (mesh.tsIndex.has_value())
-			this->textureSamplers[mesh.tsIndex.value()].bind();
+		for (const size_t textureSamplerIndex : mesh.textureSamplerIndices)
+			this->textureSamplers[textureSamplerIndex].bind();
 
-		for (const size_t cbIndex : mesh.cbIndices)
+		for (const size_t cbIndex : mesh.constantBufferIndices)
 			this->constantBuffers[cbIndex].Bind();
 
-		this->m_pDeviceContext->IASetPrimitiveTopology(mesh.pt);
-		this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(mesh.ib.getSize()), 0u, 0u);
+		this->m_pDeviceContext->IASetPrimitiveTopology(mesh.primitiveTopologyType);
+		this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex].getSize()), 0u, 0u);
 	}
 
 	/*
@@ -1970,11 +2015,17 @@ private:
 
 		const char* vsSource = "struct VSoutput\n{\nfloat4 bgColor : BACKGROUND_COLOR;\nfloat4 position : SV_Position;\n};\nVSoutput main(float2 pos : POSITION, float4 bgColor : BACKGROUND_COLOR)\n{\nVSoutput output;\noutput.bgColor = bgColor;\noutput.position = float4(pos, 0.0f, 1.0f);return output;\n}";
 
-		this->loadVertexShader({ ieds, ShaderLoadingMethod::FROM_SOURCE_CODE, L"engine/gui_panel_vs.cso", vsSource });
+		ASSERT_ERROR(WEISS_2D_TRIANGLE_VS_INDEX == this->loadVertexShader({ ieds, ShaderLoadingMethod::FROM_SOURCE_CODE, L"engine/gui_panel_vs.cso", vsSource }), "Could Not Create Default Vertex Shader #0 In Target Position");
 
 		const char* psSource = "float4 main(float4 color : BACKGROUND_COLOR) : SV_TARGET\n{\nreturn color;\n}\n";
 
-		this->loadPixelShader({ ShaderLoadingMethod::FROM_SOURCE_CODE, L"", psSource });
+		ASSERT_ERROR(WEISS_2D_TRIANGLE_PS_INDEX == this->loadPixelShader({ ShaderLoadingMethod::FROM_SOURCE_CODE, L"", psSource }), "Could Not Create Default Pixel Shader #0 In Target Position");
+	}
+
+	void createDefaultConstantBuffers()
+	{
+		const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), 0u, 0u };
+		ASSERT_ERROR(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX == this->createConstantBuffer(cbd), "Could Not Create Default Constant Buffer #0 In Target Position");
 	}
 
 public:
@@ -1983,15 +2034,43 @@ public:
 		HRESULT_ERROR(CoInitialize(NULL), "Could Not Initialize COM");
 	}
 
-	void createWindow(const WindowDescriptor& windowDesc)
+	~Engine()
 	{
-		this->window = WindowManager::createWindow(windowDesc);
+		// No Need To Destroy Window Because It Destroys Itself
+		delete this->orthographicCamera;
+		delete this->perspectiveCamera;
+	}
 
-		this->mouse = &(this->window->getMouse());
+	[[nodiscard]] Mesh&           getMesh          (const size_t index) noexcept { return this->meshes[index];          }
+	[[nodiscard]] Texture2D&      getTexture       (const size_t index) noexcept { return this->textures[index];        }
+	[[nodiscard]] VertexShader&   getVertexShader  (const size_t index) noexcept { return this->vertexShaders[index];   }
+	[[nodiscard]] PixelShader&    getPixelShader   (const size_t index) noexcept { return this->pixelShaders[index];    }
+	[[nodiscard]] ConstantBuffer& getConstantBuffer(const size_t index) noexcept { return this->constantBuffers[index]; }
+	[[nodiscard]] VertexBuffer&   getVertexBuffer  (const size_t index) noexcept { return this->vertexBuffers[index];   }
+	[[nodiscard]] IndexBuffer&    getIndexBuffer   (const size_t index) noexcept { return this->indexBuffers[index];    }
+	[[nodiscard]] TextureSampler& getTextureSampler(const size_t index) noexcept { return this->textureSamplers[index]; }
+
+	[[nodiscard]] Window&   getWindow()   noexcept { return *this->window;   }
+	[[nodiscard]] Mouse&    getMouse()    noexcept { return *this->mouse;    }
+	[[nodiscard]] Keyboard& getKeybaord() noexcept { return *this->keyboard; }
+	[[nodiscard]] Engine&   getEngine()   noexcept { return *this;           }
+
+	[[nodiscard]] OrthographicCamera& getOrthographicCamera() noexcept { return *this->orthographicCamera; }
+	[[nodiscard]] PerspectiveCamera&  getPerspectiveCamera()  noexcept { return *this->perspectiveCamera;  }
+
+	void init(const EngineDescriptor& descriptor)
+	{
+		this->window = WindowManager::createWindow(descriptor.windowDesc);
+
+		this->mouse    = &(this->window->getMouse());
 		this->keyboard = &(this->window->getKeyboard());
+
+		this->orthographicCamera = new OrthographicCamera(*this->window, descriptor.orthographicCameraDesc);
+		this->perspectiveCamera  = new PerspectiveCamera (*this->window, descriptor.perspectiveCameraDesc);
 
 		this->initGraphics();
 		this->loadDefaultShaders();
+		this->createDefaultConstantBuffers();
 
 		this->window->onResize([this](const Vec2u16 dimensions)
 		{
@@ -2021,50 +2100,64 @@ public:
 		this->mouse->hide();
 	}
 
-	size_t loadVertexShader(const VertexShaderDescriptor& descriptor)
+	[[nodiscard]] size_t loadVertexShader(const VertexShaderDescriptor& descriptor)
 	{
 		this->vertexShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->vertexShaders.size() - 1;
 	}
 
-	size_t loadPixelShader(const PixelShaderDescriptor& descriptor)
+	[[nodiscard]] size_t loadPixelShader(const PixelShaderDescriptor& descriptor)
 	{
 		this->pixelShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->pixelShaders.size() - 1;
 	}
 
-	size_t loadTextureFromImage(const Texture2DDescriptor& descriptor)
+	[[nodiscard]] size_t createTextureFromImage(const Texture2DDescriptor& descriptor)
 	{
 		this->textures.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->textures.size() - 1;
 	}
 
-	size_t loadTextureSampler(const TextureSamplerDescriptor& descriptor)
+	[[nodiscard]] size_t createTextureSampler(const TextureSamplerDescriptor& descriptor)
 	{
 		this->textureSamplers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->textureSamplers.size() - 1;
 	}
 
-	size_t createConstantBuffer(const ConstantBufferDescriptor& descriptor)
+	[[nodiscard]] size_t createConstantBuffer(const ConstantBufferDescriptor& descriptor)
 	{
 		this->constantBuffers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->constantBuffers.size() - 1;
 	}
 
-	size_t createMeshFromVertices(const MeshDescriptorFromVertices& descriptor)
+	[[nodiscard]] size_t createVertexBuffer(const VertexBufferDescriptor& descriptor)
+	{
+		this->vertexBuffers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
+	
+		return this->vertexBuffers.size() - 1;
+	}
+
+	[[nodiscard]] size_t createIndexBuffer(const IndexBufferDescriptor& descriptor)
+	{
+		this->indexBuffers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
+
+		return this->indexBuffers.size() - 1;
+	}
+
+	[[nodiscard]] size_t createMeshFromVertices(const MeshDescriptorFromVertices& descriptor)
 	{
 		this->meshes.emplace_back(Mesh{
-			VertexBuffer(this->m_pDevice, this->m_pDeviceContext, descriptor.vertexBufferDescriptor),
-			IndexBuffer(this->m_pDevice, this->m_pDeviceContext, descriptor.indices),
+			descriptor.vertexBufferIndex,
+			descriptor.indexBufferIndex,
 			descriptor.vertexShaderIndex,
 			descriptor.pixelShaderIndex,
 			descriptor.t2dIndices,
-			descriptor.tsIndex,
+			descriptor.tsIndices,
 			descriptor.constantBufferIndices,
 			descriptor.primitiveTopology
 		});
@@ -2072,9 +2165,9 @@ public:
 		return this->meshes.size() - 1;
 	}
 
-	DataFromMeshFile loadDataFromMeshFile(const MeshDescriptorFromFile& descriptor)
+	[[nodiscard]] DataFromMeshFile loadDataFromMeshFile(const char* filename)
 	{
-		std::ifstream infile(descriptor.filename);
+		std::ifstream infile(filename);
 
 		std::vector<Vec3f>    vertices;
 		std::vector<uint32_t> indices;
@@ -2124,14 +2217,14 @@ public:
 		return { vertices, indices };
 	}
 
-	void queueMeshFor2dRendering(const size_t mesh)
+	void queueMeshFor2dRendering(const size_t meshIndex)
 	{
-		this->renderPool2D.push_back(mesh);
+		this->renderPool2D.push_back(meshIndex);
 	}
 
-	void queueMeshFor3dRendering(const size_t mesh)
+	void queueMeshFor3dRendering(const size_t meshIndex)
 	{
-		this->renderPool3D.push_back(mesh);
+		this->renderPool3D.push_back(meshIndex);
 	}
 
 	void fill(const Coloru8& color)
@@ -2143,6 +2236,9 @@ public:
 
 	void run(const bool useVSync = true, const uint16_t fps = 60)
 	{
+		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
+		cameraTransformConstantBuffer.Bind();
+
 		Timer timer;
 		uint32_t frames = 0;
 
@@ -2170,12 +2266,17 @@ public:
 
 			this->onRender(elapsed);
 
+			const DirectX::XMMATRIX perspectiveCameraTransposedTransform  = this->perspectiveCamera->getTransposedTransform();
+			const DirectX::XMMATRIX orthographicCameraTransposedTransform = this->orthographicCamera->getTransposedTransform();
+
 			this->turnZBufferOn();
+			cameraTransformConstantBuffer.setData(&perspectiveCameraTransposedTransform);
 
 			for (const size_t mesh3D : this->renderPool3D)
 				this->drawMesh(mesh3D);
 
 			this->turnZBufferOff();
+			cameraTransformConstantBuffer.setData(&orthographicCameraTransposedTransform);
 
 			for (const size_t mesh2D : this->renderPool2D)
 				this->drawMesh(mesh2D);
@@ -2184,95 +2285,6 @@ public:
 		}
 	}
 };
+// --> ENGINE --> ENGINE CLASS END
 
 // --> ENGINE END
-
-// --> GUI START
-// --> GUI --> GUIELEMENTDESCRIPTOR START
-
-struct GUIElementDescriptor
-{
-	Vec2f position;
-	Vec2f dimensions;
-
-	Colorf16 foregroundColor;
-	Colorf16 backgroundColor;
-
-	Engine& engine;
-};
-
-// --> GUI --> GUIELEMENTDESCRIPTOR END
-// --> GUI --> GUIELEMENT START
-
-class GUIElement
-{
-protected:
-	size_t m_meshIndex = 0u;
-
-public:
-	GUIElementDescriptor descriptor;
-	
-	std::vector<GUIElement> children;
-
-public:
-	GUIElement(const GUIElementDescriptor descriptor)
-		: descriptor(descriptor)
-	{
-
-	}
-
-
-	void render() const noexcept
-	{
-		descriptor.engine.queueMeshFor2dRendering(this->m_meshIndex);
-
-		for (const GUIElement& child : this->children)
-			child.render();
-	}
-
-private:
-public:
-};
-
-// --> GUI --> PANEL START
-
-struct Vertex2dColorf
-{
-	Vec2f position;
-	Colorf16 color;
-};
-
-class Panel : public GUIElement
-{
-public:
-	Panel(const GUIElementDescriptor descriptor) : GUIElement(descriptor)
-	{
-		Engine& engine = descriptor.engine;
-
-		const Vertex2dColorf vertices[4] = {
-			{ descriptor.position,                                            descriptor.backgroundColor }, { descriptor.position + Vec2f { descriptor.dimensions[0], 0.0f }, descriptor.backgroundColor },
-			{ descriptor.position + Vec2f { 0.0f, descriptor.dimensions[1] }, descriptor.backgroundColor }, { descriptor.position + descriptor.dimensions,                    descriptor.backgroundColor }
-		};
-
-		VertexBufferDescriptor vbd = { vertices, 4, sizeof(Vertex2dColorf), true };
-
-		const std::vector<uint32_t> indices {
-			2, 1, 0,
-			2, 3, 1
-		};
-
-		const MeshDescriptorFromVertices mdfv {
-			vbd, indices, WEISS_GUI_PANEL_VS_INDEX, WEISS_GUI_PANEL_PS_INDEX, {}, {}, {}, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST
-		};
-
-		this->m_meshIndex = descriptor.engine.createMeshFromVertices(mdfv);
-	}
-};
-
-// --> GUI --> PANEL END
-// --> GUI --> GUIELEMENT END
-
-// Future : Panels, Buttons, Sliders, Text Input ...
-// Events : onClick, onHover, onMouseLeave ...
-
-// --> GUI END
