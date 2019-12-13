@@ -15,7 +15,7 @@
 // to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
 // and /or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions :
 //
-// The above copyright noticeand this permission notice shall be included in all copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
@@ -144,7 +144,7 @@ typedef std::array<uint8_t,  4> Vec4u8;
 // --> MATH --> VECTORS --> OPERATOR OVERLOADING START
 
 template <typename T, size_t S>
-std::array<T, S> operator+(const std::array<T, S>& a, const std::array<T, S>& b)
+[[nodiscard]] std::array<T, S> operator+(const std::array<T, S>& a, const std::array<T, S>& b)
 {
 	std::array<T, S> result(a);
 	
@@ -155,7 +155,7 @@ std::array<T, S> operator+(const std::array<T, S>& a, const std::array<T, S>& b)
 }
 
 template <typename T, size_t S>
-std::array<T, S> operator-(const std::array<T, S>& a, const std::array<T, S>& b)
+[[nodiscard]] std::array<T, S> operator-(const std::array<T, S>& a, const std::array<T, S>& b)
 {
 	std::array<T, S> result(a);
 
@@ -166,7 +166,7 @@ std::array<T, S> operator-(const std::array<T, S>& a, const std::array<T, S>& b)
 }
 
 template <typename T, size_t S>
-std::array<T, S> operator*(const std::array<T, S>& a, const std::array<T, S>& b)
+[[nodiscard]] std::array<T, S> operator*(const std::array<T, S>& a, const std::array<T, S>& b)
 {
 	std::array<T, S> result(a);
 
@@ -177,7 +177,7 @@ std::array<T, S> operator*(const std::array<T, S>& a, const std::array<T, S>& b)
 }
 
 template <typename T, size_t S>
-std::array<T, S> operator/(const std::array<T, S>& a, const std::array<T, S>& b)
+[[nodiscard]] std::array<T, S> operator/(const std::array<T, S>& a, const std::array<T, S>& b)
 {
 	std::array<T, S> result(a);
 	
@@ -188,7 +188,7 @@ std::array<T, S> operator/(const std::array<T, S>& a, const std::array<T, S>& b)
 }
 
 template <typename T, size_t S>
-std::array<T, S> operator/(const std::array<T, S>& a, const float n)
+[[nodiscard]] std::array<T, S> operator/(const std::array<T, S>& a, const float n)
 {
 	std::array<T, S> result(a);
 	
@@ -272,25 +272,26 @@ std::ostream& operator<<(std::ostream& stream, const std::array<T, S>& v)
 
 namespace Conversions
 {
-	inline float degreesToRadians(const float degrees)
+	[[nodiscard]] inline float degreesToRadians(const float degrees)
 	{
 		return degrees * PI_DIV_180;
 	}
 
-	inline float radiansToDegrees(const float radians)
+	[[nodiscard]] inline float radiansToDegrees(const float radians)
 	{
 		return radians * PI_DIV_180_INV;
 	}
 
 	// If a polar point is stored as (θ, r)
-	inline Vec2f polarToCartesian(const Vec2f polar)
+	[[nodiscard]] inline Vec2f polarToCartesian(const Vec2f polar)
 	{
 		const float x = polar[1] * std::cos(polar[0]);
 		const float y = polar[1] * std::sin(polar[0]);
+
 		return Vec2f{ x, y };
 	}
 
-	inline Vec2f cartesianToPolar(const Vec2f cartesian)
+	[[nodiscard]] inline Vec2f cartesianToPolar(const Vec2f cartesian)
 	{
 		float a = std::atan(cartesian[1] / cartesian[0]);
 
@@ -308,7 +309,7 @@ namespace Conversions
 
 namespace Misc
 {
-	inline Vec3f getTriangleSurfaceNormal(const Vec3f& a, const Vec3f& b, const Vec3f& c)
+	[[nodiscard]] inline Vec3f getTriangleSurfaceNormal(const Vec3f& a, const Vec3f& b, const Vec3f& c)
 	{
 		const Vec3f U = b - a;
 		const Vec3f V = c - a;
@@ -369,7 +370,7 @@ public:
 		HRESULT_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer), "Unable To Create Index Buffer");
 	}
 
-	size_t getSize() const
+	[[nodiscard]] size_t getSize() const
 	{
 		return this->m_nBytes;
 	}
@@ -644,7 +645,7 @@ public:
 		this->m_start = std::chrono::system_clock::now();
 	}
 
-	float getElapsedTimeMs()
+	[[nodiscard]] float getElapsedTimeMs()
 	{
 		const auto end = std::chrono::system_clock::now();
 		const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - this->m_start);
@@ -764,27 +765,27 @@ public:
 		RegisterRawInputDevices(&mouseInputDevice, 1, sizeof(RAWINPUTDEVICE));
 	}
 
-	bool isLeftButtonUp()   const
+	[[nodiscard]] bool isLeftButtonUp()   const
 	{
 		return !this->m_isLeftButtonDown;
 	}
 
-	bool isLeftButtonDown() const
+	[[nodiscard]] bool isLeftButtonDown() const
 	{ 
 		return this->m_isLeftButtonDown;
 	}
 
-	bool isRightButtonUp()   const
+	[[nodiscard]] bool isRightButtonUp()   const
 	{
 		return !this->m_isRightButtonDown;
 	}
 
-	bool isRightButtonDown() const
+	[[nodiscard]] bool isRightButtonDown() const
 	{
 		return this->m_isRightButtonDown;
 	}
 
-	bool isCursorInWindow() const
+	[[nodiscard]] bool isCursorInWindow() const
 	{
 		return this->m_isCursorInWindow;
 	}
@@ -1066,7 +1067,7 @@ public:
 	}
 
 	// Getters
-	bool      isRunning()   const
+	[[nodiscard]] bool isRunning() const
 	{
 		return this->m_isRunning;
 	}
@@ -1076,54 +1077,70 @@ public:
 		return this->m_keyboard;
 	}
 
-	Mouse&    getMouse() 
+	[[nodiscard]] Mouse&    getMouse()
 	{
 		return this->m_mouse;
 	}
 
-	HWND      getHandle() const
+	[[nodiscard]] HWND      getHandle() const
 	{
 		return this->m_handle;
 	}
 
-	RECT getWindowRect() const
+	[[nodiscard]] RECT getWindowRect() const
 	{
-		RECT result; GetWindowRect(this->m_handle, &result); return result;
+		RECT result; GetWindowRect(this->m_handle, &result);
+		
+		return result;
 	}
 
-	RECT getClientRect() const
+	[[nodiscard]] RECT getClientRect() const
 	{
-		RECT result; GetClientRect(this->m_handle, &result); return result;
+		RECT result; GetClientRect(this->m_handle, &result);
+		
+		return result;
 	}
 
-	uint16_t getWindowPositionX() const
+	[[nodiscard]] uint16_t getWindowPositionX() const
 	{
-		const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.left);
+		const RECT rect = this->getWindowRect();
+		
+		return static_cast<uint16_t>(rect.left);
 	}
 
-	uint16_t getWindowPositionY() const
+	[[nodiscard]] uint16_t getWindowPositionY() const
 	{
-		const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.top);
+		const RECT rect = this->getWindowRect();
+		
+		return static_cast<uint16_t>(rect.top);
 	}
 
-	uint16_t getWindowWidth()  const
+	[[nodiscard]] uint16_t getWindowWidth()  const
 	{
-		const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.right - rect.left);
+		const RECT rect = this->getWindowRect();
+		
+		return static_cast<uint16_t>(rect.right - rect.left);
 	}
 
-	uint16_t getWindowHeight() const
+	[[nodiscard]] uint16_t getWindowHeight() const
 	{
-		const RECT rect = this->getWindowRect(); return static_cast<uint16_t>(rect.bottom - rect.top);
+		const RECT rect = this->getWindowRect();
+		
+		return static_cast<uint16_t>(rect.bottom - rect.top);
 	}
 
-	uint16_t getClientWidth()  const
+	[[nodiscard]] uint16_t getClientWidth()  const
 	{
-		const RECT rect = this->getClientRect(); return static_cast<uint16_t>(rect.right);
+		const RECT rect = this->getClientRect();
+		
+		return static_cast<uint16_t>(rect.right);
 	}
 	
-	uint16_t getClientHeight() const
+	[[nodiscard]] uint16_t getClientHeight() const
 	{
-		const RECT rect = this->getClientRect(); return static_cast<uint16_t>(rect.bottom);
+		const RECT rect = this->getClientRect();
+		
+		return static_cast<uint16_t>(rect.bottom);
 	}
 
 	// Setters
@@ -1171,7 +1188,7 @@ public:
 		this->m_keyboard.__onWindowUpdateEnd();
 	}
 
-	LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
+	[[nodiscard]] LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		switch (msg)
 		{
@@ -1263,22 +1280,22 @@ public:
 
 	}
 
-	DirectX::XMMATRIX getTransform()           const noexcept
+	[[nodiscard]] DirectX::XMMATRIX getTransform()           const noexcept
 	{
 		return this->m_transform;
 	}
 
-	DirectX::XMMATRIX getTransposedTransform() const noexcept
+	[[nodiscard]] DirectX::XMMATRIX getTransposedTransform() const noexcept
 	{
 		return DirectX::XMMatrixTranspose(this->m_transform);
 	}
 
-	Vec3f getPosition() const noexcept
+	[[nodiscard]] Vec3f getPosition() const noexcept
 	{
 		return Vec3f{ this->m_position.m128_f32[0], this->m_position.m128_f32[1], this->m_position.m128_f32[2] };
 	}
 
-	Vec3f getRotation() const noexcept
+	[[nodiscard]] Vec3f getRotation() const noexcept
 	{
 		return Vec3f{ this->m_rotation.m128_f32[0], this->m_rotation.m128_f32[1], this->m_rotation.m128_f32[2] };
 	}
@@ -1442,7 +1459,7 @@ public:
 		this->m_transform = getViewMatrix() * getProjectionMatrix();
 	}
 
-	DirectX::XMMATRIX getViewMatrix()
+	[[nodiscard]] DirectX::XMMATRIX getViewMatrix()
 	{
 		const DirectX::XMMATRIX rotationYMatrix = DirectX::XMMatrixRotationRollPitchYaw(0.0f, this->m_rotation.m128_f32[1], 0.0f);
 
@@ -1456,7 +1473,7 @@ public:
 		return DirectX::XMMatrixLookAtLH(this->m_position, lookAtPosition, upDirectionVec);
 	}
 
-	DirectX::XMMATRIX getProjectionMatrix()
+	[[nodiscard]] DirectX::XMMATRIX getProjectionMatrix()
 	{
 		return DirectX::XMMatrixPerspectiveFovLH(m_fov, m_aspectRatio, m_zNear, m_zFar);
 	}
@@ -1488,7 +1505,7 @@ public:
 			this->m_position = DirectX::XMVectorSubtract(this->m_position, DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
 	}
 
-	Vec3f getKeyboardInputsDelta(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down)
+	[[nodiscard]] Vec3f getKeyboardInputsDelta(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down)
 	{
 		DirectX::XMVECTOR delta = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 
@@ -1593,19 +1610,19 @@ public:
 		), "Could Not Copy Pixels From Bitmap");
 	}
 
-	uint16_t getWidth()   const { 
+	[[nodiscard]] uint16_t getWidth()   const {
 		return this->m_width;
 	}
 
-	uint16_t getHeight()  const { 
+	[[nodiscard]] uint16_t getHeight()  const {
 		return this->m_height;
 	}
 
-	uint32_t getNPixels() const { 
+	[[nodiscard]] uint32_t getNPixels() const {
 		return this->m_nPixels;
 	}
 
-	Coloru8 sample(const uint16_t x, const uint16_t y) const
+	[[nodiscard]] Coloru8 sample(const uint16_t x, const uint16_t y) const
 	{
 		return this->m_buff[y * this->m_width + x];
 	}
@@ -1615,7 +1632,7 @@ public:
 		this->m_buff[y * this->m_width + x] = color;
 	}
 
-	Coloru8* getBuffer() const
+	[[nodiscard]] Coloru8* getBuffer() const
 	{
 		return this->m_buff.get();
 	}
@@ -2013,13 +2030,27 @@ private:
 			{ "BACKGROUND_COLOR", DXGI_FORMAT::DXGI_FORMAT_R32G32B32A32_FLOAT },
 		};
 
-		const char* vsSource = "struct VSoutput\n{\nfloat4 bgColor : BACKGROUND_COLOR;\nfloat4 position : SV_Position;\n};\nVSoutput main(float2 pos : POSITION, float4 bgColor : BACKGROUND_COLOR)\n{\nVSoutput output;\noutput.bgColor = bgColor;\noutput.position = float4(pos, 0.0f, 1.0f);return output;\n}";
+		const char* vsSource = "struct VSoutput\n\
+								{\n\
+									float4 bgColor : BACKGROUND_COLOR;\n\
+									float4 position : SV_Position;\n\
+								};\n\
+								VSoutput main(float2 pos : POSITION, float4 bgColor : BACKGROUND_COLOR)\n\
+								{\n\
+									VSoutput output;\n\
+									output.bgColor = bgColor;\n\
+									output.position = float4(pos, 0.0f, 1.0f);\n\
+									return output;\n\
+								}\n";
 
-		ASSERT_ERROR(WEISS_2D_TRIANGLE_VS_INDEX == this->loadVertexShader({ ieds, ShaderLoadingMethod::FROM_SOURCE_CODE, L"engine/gui_panel_vs.cso", vsSource }), "Could Not Create Default Vertex Shader #0 In Target Position");
+		ASSERT_ERROR(WEISS_2D_TRIANGLE_VS_INDEX == this->loadVertexShader({ ieds, ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, vsSource }), "Could Not Create Default Vertex Shader #0 In Target Position");
 
-		const char* psSource = "float4 main(float4 color : BACKGROUND_COLOR) : SV_TARGET\n{\nreturn color;\n}\n";
+		const char* psSource = "float4 main(float4 color : BACKGROUND_COLOR) : SV_TARGET\n\
+								{\n\
+									return color;\n\
+								}\n";
 
-		ASSERT_ERROR(WEISS_2D_TRIANGLE_PS_INDEX == this->loadPixelShader({ ShaderLoadingMethod::FROM_SOURCE_CODE, L"", psSource }), "Could Not Create Default Pixel Shader #0 In Target Position");
+		ASSERT_ERROR(WEISS_2D_TRIANGLE_PS_INDEX == this->loadPixelShader({ ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, psSource }), "Could Not Create Default Pixel Shader #0 In Target Position");
 	}
 
 	void createDefaultConstantBuffers()
