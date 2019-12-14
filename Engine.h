@@ -1837,9 +1837,6 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_pDepthStencilStateForZBufferOn;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_pDepthStencilStateForZBufferOff;
 
-	std::vector<size_t> renderPool2D;
-	std::vector<size_t> renderPool3D;
-
 	std::vector<Mesh>           meshes;
 		
 	std::vector<PixelShader>    pixelShaders;
@@ -1986,38 +1983,6 @@ private:
 		this->bindDepthStencil();
 	}
 
-	void turnZBufferOn()
-	{
-		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOn.Get(), 1u);
-	}
-
-	void turnZBufferOff()
-	{
-		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOff.Get(), 1u);
-	}
-
-	void drawMesh(const size_t meshIndex)
-	{
-		Mesh& mesh = this->meshes[meshIndex];
-
-		this->vertexBuffers[mesh.vertexBufferIndex].Bind();
-		this->indexBuffers[mesh.indexBufferIndex].Bind();
-		this->vertexShaders[mesh.vsIndex].Bind();
-		this->pixelShaders[mesh.psIndex].Bind();
-
-		for (const size_t textureIndex : mesh.textureIndices)
-			this->textures[textureIndex].bind();
-
-		for (const size_t textureSamplerIndex : mesh.textureSamplerIndices)
-			this->textureSamplers[textureSamplerIndex].bind();
-
-		for (const size_t cbIndex : mesh.constantBufferIndices)
-			this->constantBuffers[cbIndex].Bind();
-
-		this->m_pDeviceContext->IASetPrimitiveTopology(mesh.primitiveTopologyType);
-		this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex].getSize()), 0u, 0u);
-	}
-
 	/*
 	 * This functions swaps the back buffer and the front buffer to show the frame to the user
 	 * It also clears the depthStencilView
@@ -2105,6 +2070,48 @@ public:
 		// Hide Cursor
 
 		this->mouse->hide();
+	}
+
+	void setRenderMode2D()
+	{
+		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
+		const DirectX::XMMATRIX orthographicCameraTransposedTransform = this->orthographicCamera->getTransposedTransform();
+		cameraTransformConstantBuffer.setData(&orthographicCameraTransposedTransform);
+		cameraTransformConstantBuffer.Bind();
+
+		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOff.Get(), 1u);
+	}
+
+	void setRenderMode3D()
+	{
+		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
+		const DirectX::XMMATRIX perspectiveCameraTransposedTransform = this->perspectiveCamera->getTransposedTransform();
+		cameraTransformConstantBuffer.setData(&perspectiveCameraTransposedTransform);
+		cameraTransformConstantBuffer.Bind();
+
+		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOn.Get(), 1u);
+	}
+
+	void drawMesh(const size_t meshIndex)
+	{
+		Mesh& mesh = this->meshes[meshIndex];
+
+		this->vertexBuffers[mesh.vertexBufferIndex].Bind();
+		this->indexBuffers[mesh.indexBufferIndex].Bind();
+		this->vertexShaders[mesh.vsIndex].Bind();
+		this->pixelShaders[mesh.psIndex].Bind();
+
+		for (const size_t textureIndex : mesh.textureIndices)
+			this->textures[textureIndex].bind();
+
+		for (const size_t textureSamplerIndex : mesh.textureSamplerIndices)
+			this->textureSamplers[textureSamplerIndex].bind();
+
+		for (const size_t cbIndex : mesh.constantBufferIndices)
+			this->constantBuffers[cbIndex].Bind();
+
+		this->m_pDeviceContext->IASetPrimitiveTopology(mesh.primitiveTopologyType);
+		this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex].getSize()), 0u, 0u);
 	}
 
 	[[nodiscard]] size_t loadVertexShader(const VertexShaderDescriptor& descriptor)
@@ -2224,16 +2231,6 @@ public:
 		return { vertices, indices };
 	}
 
-	void queueMeshFor2dRendering(const size_t meshIndex)
-	{
-		this->renderPool2D.push_back(meshIndex);
-	}
-
-	void queueMeshFor3dRendering(const size_t meshIndex)
-	{
-		this->renderPool3D.push_back(meshIndex);
-	}
-
 	void fill(const Coloru8& color)
 	{
 		float colorf[4] = { color.red / 255.f, color.green / 255.f, color.blue / 255.f, color.alpha / 255.f };
@@ -2243,9 +2240,6 @@ public:
 
 	void run(const bool useVSync = true, const uint16_t fps = 60)
 	{
-		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
-		cameraTransformConstantBuffer.Bind();
-
 		Timer timer;
 		uint32_t frames = 0;
 
@@ -2268,25 +2262,7 @@ public:
 
 			this->window->update();
 
-			this->renderPool2D.clear();
-			this->renderPool3D.clear();
-
 			this->onRender(elapsed);
-
-			const DirectX::XMMATRIX perspectiveCameraTransposedTransform  = this->perspectiveCamera->getTransposedTransform();
-			const DirectX::XMMATRIX orthographicCameraTransposedTransform = this->orthographicCamera->getTransposedTransform();
-
-			this->turnZBufferOn();
-			cameraTransformConstantBuffer.setData(&perspectiveCameraTransposedTransform);
-
-			for (const size_t mesh3D : this->renderPool3D)
-				this->drawMesh(mesh3D);
-
-			this->turnZBufferOff();
-			cameraTransformConstantBuffer.setData(&orthographicCameraTransposedTransform);
-
-			for (const size_t mesh2D : this->renderPool2D)
-				this->drawMesh(mesh2D);
 
 			this->presentFrame(useVSync);
 		}
