@@ -91,7 +91,7 @@
 	MessageBox(NULL, (std::string("Error in File: ") + std::string(__FILE__) + std::string("\nAt line: ") + std::to_string(__LINE__) + std::string("\nIn Function: ") + std::string(__FUNCTION__) + std::string("\nError: ") + std::string(errorMsg)).c_str(), "Weiss Engine Error", MB_ABORTRETRYIGNORE);\
 }
 
-#define ASSERT_ERROR(v, errorMsg) {\
+#define ASSERT(v, errorMsg) {\
 	if (!(v))\
 		MESSAGE_BOX_ERROR(errorMsg)\
 }
@@ -99,6 +99,11 @@
 #define HRESULT_ERROR(hr, errorMsg) {\
 	if (hr != S_OK)\
 		MESSAGE_BOX_ERROR(errorMsg)\
+}
+
+#define ENABLE_CONSOLE() {\
+	AllocConsole();\
+	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);\
 }
 
 // --> ERROR HANDLING END
@@ -1184,7 +1189,7 @@ public:
 	void setIcon(const char* pathname)
 	{
 		const HICON hIcon = (HICON)LoadImage(NULL, pathname, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
-		ASSERT_ERROR(hIcon != NULL, "Could Not Load Icon");
+		ASSERT(hIcon != NULL, "Could Not Load Icon");
 
 		SendMessage(this->m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 	}
@@ -1384,14 +1389,14 @@ public:
 	void handleKeyboardInputs(Keyboard& keyboard, const float speed, const char left, const char right, const char up, const char down)
 	{
 		if (keyboard.isKeyDown(right))
-			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] + speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
-		if (keyboard.isKeyDown(left))
 			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] - speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
+		if (keyboard.isKeyDown(left))
+			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] + speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
 
 		if (keyboard.isKeyDown(up))
-			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] + speed, 0.0f, 0.0f);
-		if (keyboard.isKeyDown(down))
 			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] - speed, 0.0f, 0.0f);
+		if (keyboard.isKeyDown(down))
+			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] + speed, 0.0f, 0.0f);
 	}
 };
 
@@ -1803,9 +1808,9 @@ struct MeshDescriptorFromVertices
 	const size_t indexBufferIndex;
 	const size_t vertexShaderIndex;
 	const size_t pixelShaderIndex;
-	const std::vector<size_t> t2dIndices;
-	const std::vector<size_t> tsIndices;
-	const std::vector<size_t> constantBufferIndices;
+	const std::vector<size_t> t2dIndices = std::vector<size_t>{};
+	const std::vector<size_t> tsIndices  = std::vector<size_t>{};
+	const std::vector<size_t> constantBufferIndices = std::vector<size_t>{};
 	const D3D_PRIMITIVE_TOPOLOGY primitiveTopology = D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 };
 
@@ -1998,7 +2003,7 @@ private:
 	void createDefaultConstantBuffers()
 	{
 		const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), 0u, 0u };
-		ASSERT_ERROR(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX == this->createConstantBuffer(cbd), "Could Not Create Default Constant Buffer #0 In Target Position");
+		ASSERT(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX == this->createConstantBuffer(cbd), "Could Not Create Default Constant Buffer #0 In Target Position");
 	}
 
 public:
@@ -2065,7 +2070,7 @@ public:
 		boundingRect.right  -= 10; // padding
 		boundingRect.bottom -= 10; // padding
 
-		this->window->getMouse().clip(boundingRect);
+		this->mouse->clip(boundingRect);
 
 		// Hide Cursor
 
@@ -2114,14 +2119,14 @@ public:
 		this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex].getSize()), 0u, 0u);
 	}
 
-	[[nodiscard]] size_t loadVertexShader(const VertexShaderDescriptor& descriptor)
+	[[nodiscard]] size_t createVertexShader(const VertexShaderDescriptor& descriptor)
 	{
 		this->vertexShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->vertexShaders.size() - 1;
 	}
 
-	[[nodiscard]] size_t loadPixelShader(const PixelShaderDescriptor& descriptor)
+	[[nodiscard]] size_t createPixelShader(const PixelShaderDescriptor& descriptor)
 	{
 		this->pixelShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
