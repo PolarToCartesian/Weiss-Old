@@ -1,4 +1,9 @@
-﻿#pragma once
+﻿#ifndef __WEISS__
+#define __WEISS__
+
+#ifndef _WIN32
+#error This Application Can Only Run On Windows
+#endif // _WIN32
 
 // Project      : Weiss Engine
 // Author       : Henry LE BERRE (PolarToCartesian)
@@ -40,58 +45,68 @@
 //////////////    //          //    ////////////        //////////      //          //    //////////////
 
 
+// Upcoming Features
+// --> Error Handling
+// --> Server Sockets
+// --> Abstracted 2D Renderer
 
 // --> INCLUDES START
+// --> INCLUDES
 
-#define NOMINMAX
+#define _WINSOCKAPI_ // Stops Windows.h from including winsock2
+#define _WINSOCK_DEPRECATED_NO_WARNINGS // Lets us use htons()
 
-// --> INCLUDES --> STANDARD LIBRARY START
-
+#include <wrl.h>
 #include <array>
 #include <thread>
 #include <chrono>
 #include <string>
 #include <vector>
 #include <memory>
+#include <d3d11.h>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <optional>
-#include <algorithm>
-#include <functional>
-
-// --> INCLUDES --> STANDARD LIBRARY END
-// --> INCLUDES --> WINDOWS SPECIFIC START
-
-#include <wrl.h>
-#include <d3d11.h>
+#include <exception>
 #include <strsafe.h>
 #include <Windows.h>
-#include <windowsx.h>
-//#include <winhttp.h>
+#include <algorithm>
+#include <winhttp.h>
+#include <functional>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #include <wincodec.h>
+#include <windowsx.h>
 #include <d3dcompiler.h>
 #include <DirectXMath.h>
 
-// --> INCLUDES --> WINDOWS SPECIFIC END
 // --> LIBRARY LINKING START
 
-#pragma comment(lib, "winmm.lib")
-#pragma comment(lib, "d3d11.lib")
-//#pragma comment(lib, "winhttp.lib")
-#pragma comment(lib, "D3DCompiler.lib")
-#pragma comment(lib, "windowscodecs.lib")
-
-#undef NOMINMAX
+#pragma comment (lib, "winmm.lib")
+#pragma comment (lib, "d3d11.lib")
+#pragma comment (lib, "user32.lib")
+#pragma comment (lib, "Ws2_32.lib")
+#pragma comment (lib, "Mswsock.lib")
+#pragma comment (lib, "winhttp.lib")
+#pragma comment (lib, "kernel32.lib")
+#pragma comment (lib, "AdvApi32.lib")
+#pragma comment (lib, "D3DCompiler.lib")
+#pragma comment (lib, "windowscodecs.lib")
 
 // --> LIBRARY LINKING END
 // --> ERROR HANDLING START
+
+#define ENABLE_CONSOLE() {\
+	AllocConsole();\
+	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);\
+}
 
 #define MESSAGE_BOX_ERROR(errorMsg) {\
 	MessageBox(NULL, (std::string("Error in File: ") + std::string(__FILE__) + std::string("\nAt line: ") + std::to_string(__LINE__) + std::string("\nIn Function: ") + std::string(__FUNCTION__) + std::string("\nError: ") + std::string(errorMsg)).c_str(), "Weiss Engine Error", MB_ABORTRETRYIGNORE);\
 }
 
-#define ASSERT_ERROR(v, errorMsg) {\
+#define ASSERT(v, errorMsg) {\
 	if (!(v))\
 		MESSAGE_BOX_ERROR(errorMsg)\
 }
@@ -108,6 +123,67 @@
 constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0u;
 
 // --> WEISS DEFINES END
+
+// --> SOCKETS START
+
+class ClientSocket {
+private:
+	SOCKET m_socket = INVALID_SOCKET;
+
+public:
+	ClientSocket()
+	{
+		WSADATA wsaData;
+		WSAStartup(MAKEWORD(2, 0), &wsaData);
+	}
+
+	~ClientSocket() { this->Disconnect(); }
+
+	void Connect(const char* host, const unsigned int port) noexcept
+	{
+		SOCKADDR_IN sockInfo;
+		sockInfo.sin_addr.s_addr = inet_addr(host);
+		sockInfo.sin_family = AF_INET;
+		sockInfo.sin_port = htons(port);
+
+		this->m_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+		if (this->m_socket == INVALID_SOCKET)
+		{
+			MESSAGE_BOX_ERROR("Socket Creation Failed");
+			this->Disconnect();
+		}
+
+		if (connect(this->m_socket, (SOCKADDR*)&sockInfo, sizeof(sockInfo)) == SOCKET_ERROR)
+		{
+			MESSAGE_BOX_ERROR("Unable To Connect To Server Socket");
+			this->Disconnect();
+		}
+	}
+
+	void Send(const char* data, int length = -1) noexcept
+	{
+		if (length < 0)
+			length = strlen(data) + 1;
+
+		ASSERT(send(this->m_socket, data, length, 0) != SOCKET_ERROR, "Error While Sending Data From Client Socket");
+	}
+
+	void RecieveMessage(char* buffer, const int bufferSize) noexcept
+	{
+		ASSERT(recv(this->m_socket, buffer, bufferSize, 0) != SOCKET_ERROR, "Error While Receiving Data From Server Socket");
+	}
+
+	void Disconnect()
+	{
+		this->m_socket = INVALID_SOCKET;
+
+		closesocket(this->m_socket);
+		WSACleanup();
+	}
+};
+
+// --> SOCKETS END
 
 // --> MATH START
 // --> MATH --> CONSTANTS START
@@ -291,18 +367,18 @@ std::ostream& operator<<(std::ostream& stream, const std::array<T, S>& v)
 
 namespace Conversions
 {
-	[[nodiscard]] inline float degreesToRadians(const float degrees)
+	[[nodiscard]] inline float DegreesToRadians(const float degrees)
 	{
 		return degrees * PI_DIV_180;
 	}
 
-	[[nodiscard]] inline float radiansToDegrees(const float radians)
+	[[nodiscard]] inline float RadiansToDegrees(const float radians)
 	{
 		return radians * PI_DIV_180_INV;
 	}
 
 	// If a polar point is stored as (θ, r)
-	[[nodiscard]] inline Vec2f polarToCartesian(const Vec2f polar)
+	[[nodiscard]] inline Vec2f PolarToCartesian(const Vec2f polar)
 	{
 		const float x = polar[1] * std::cos(polar[0]);
 		const float y = polar[1] * std::sin(polar[0]);
@@ -310,7 +386,7 @@ namespace Conversions
 		return Vec2f{ x, y };
 	}
 
-	[[nodiscard]] inline Vec2f cartesianToPolar(const Vec2f cartesian)
+	[[nodiscard]] inline Vec2f CartesianToPolar(const Vec2f cartesian)
 	{
 		float a = std::atan(cartesian[1] / cartesian[0]);
 
@@ -328,7 +404,7 @@ namespace Conversions
 
 namespace Misc
 {
-	[[nodiscard]] inline Vec3f getTriangleSurfaceNormal(const Vec3f& a, const Vec3f& b, const Vec3f& c)
+	[[nodiscard]] inline Vec3f GetTriangleSurfaceNormal(const Vec3f& a, const Vec3f& b, const Vec3f& c)
 	{
 		const Vec3f U = b - a;
 		const Vec3f V = c - a;
@@ -389,7 +465,7 @@ public:
 		HRESULT_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer), "Unable To Create Index Buffer");
 	}
 
-	[[nodiscard]] size_t getSize() const
+	[[nodiscard]] size_t GetSize() const
 	{
 		return this->m_nBytes;
 	}
@@ -490,7 +566,7 @@ public:
 		HRESULT_ERROR(pDeviceRef->CreateBuffer(&cbd, nullptr, &this->m_pConstantBuffer), "Unable To Create Constant Buffer");
 	}
 
-	void setData(const void* objPtr)
+	void SetData(const void* objPtr)
 	{
 		this->m_pDeviceContextRef->UpdateSubresource(this->m_pConstantBuffer.Get(), 0, 0, objPtr, 0, 0);
 	}
@@ -664,7 +740,7 @@ public:
 		this->m_start = std::chrono::system_clock::now();
 	}
 
-	[[nodiscard]] float getElapsedTimeMs()
+	[[nodiscard]] float GetElapsedTimeMs()
 	{
 		const auto end = std::chrono::system_clock::now();
 		const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(end - this->m_start);
@@ -675,26 +751,15 @@ public:
 
 // --> TIMERS END
 
-// --> AUDIO START
-
-namespace AudioHandler {
-	inline void playSoundFromFile(const char* filename)
-	{
-		HRESULT_ERROR(mciSendString(("play " + std::string(filename)).c_str(), 0, NULL, NULL), "Could Not Play Audio File");
-	}
-};
-
-// --> AUDIO END
-
 // --> PERIPHERAL DEVICES START
 // --> PERIPHERAL DEVICES --> PERIPHERAL DEVICE START
 
 class PeripheralDevice
 {
 public:
-	virtual void __onWindowUpdateBegin() = 0;
-	virtual bool __handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) = 0;
-	virtual void __onWindowUpdateEnd() = 0;
+	virtual void __OnWindowUpdateBegin() = 0;
+	virtual bool __HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) = 0;
+	virtual void __OnWindowUpdateEnd() = 0;
 };
 
 // --> PERIPHERAL DEVICES --> PERIPHERAL DEVICE END
@@ -716,37 +781,37 @@ protected:
 	std::vector<std::function<void(const Vec2u16, const Vec2i16)>> m_onCursorMoveFunctors;
 
 public:
-	void onLeftButtonUp(const std::function<void(Vec2u16)>& functor)
+	void OnLeftButtonUp(const std::function<void(Vec2u16)>& functor)
 	{
 		this->m_onLeftButtonUpFunctors.push_back(functor);
 	}
 
-	void onLeftButtonDown(const std::function<void(Vec2u16)>& functor)
+	void OnLeftButtonDown(const std::function<void(Vec2u16)>& functor)
 	{
 		this->m_onLeftButtonDownFunctors.push_back(functor);
 	}
 
-	void onRightButtonUp(const std::function<void(Vec2u16)>& functor)
+	void OnRightButtonUp(const std::function<void(Vec2u16)>& functor)
 	{
 		this->m_onRightButtonUpFunctors.push_back(functor);
 	}
 
-	void onRightButtonDown(const std::function<void(Vec2u16)>& functor)
+	void OnRightButtonDown(const std::function<void(Vec2u16)>& functor)
 	{
 		this->m_onRightButtonDownFunctors.push_back(functor);
 	}
 
-	void onWheelTurn(const std::function<void(const int16_t)>& functor)
+	void OnWheelTurn(const std::function<void(const int16_t)>& functor)
 	{
 		this->m_onWheelTurnFunctors.push_back(functor);
 	}
 
-	void onMouseMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor)
+	void OnMouseMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor)
 	{
 		this->m_onMouseMoveFunctors.push_back(functor);
 	}
 	
-	void onCursorMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor)
+	void OnCursorMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor)
 	{
 		this->m_onCursorMoveFunctors.push_back(functor);
 	}
@@ -784,47 +849,47 @@ public:
 		RegisterRawInputDevices(&mouseInputDevice, 1, sizeof(RAWINPUTDEVICE));
 	}
 
-	[[nodiscard]] bool isLeftButtonUp()   const
+	[[nodiscard]] bool IsLeftButtonUp()   const
 	{
 		return !this->m_isLeftButtonDown;
 	}
 
-	[[nodiscard]] bool isLeftButtonDown() const
+	[[nodiscard]] bool IsLeftButtonDown() const
 	{ 
 		return this->m_isLeftButtonDown;
 	}
 
-	[[nodiscard]] bool isRightButtonUp()   const
+	[[nodiscard]] bool IsRightButtonUp()   const
 	{
 		return !this->m_isRightButtonDown;
 	}
 
-	[[nodiscard]] bool isRightButtonDown() const
+	[[nodiscard]] bool IsRightButtonDown() const
 	{
 		return this->m_isRightButtonDown;
 	}
 
-	[[nodiscard]] bool isCursorInWindow() const
+	[[nodiscard]] bool IsCursorInWindow() const
 	{
 		return this->m_isCursorInWindow;
 	}
 
-	void show() const
+	void Show() const
 	{
 		ShowCursor(true);
 	}
 
-	void hide() const
+	void Hide() const
 	{
 		ShowCursor(false);
 	}
 
-	void clip(const RECT& rect) const
+	void Clip(const RECT& rect) const
 	{
 		ClipCursor(&rect);
 	}
 
-	virtual void __onWindowUpdateBegin() override
+	virtual void __OnWindowUpdateBegin() override
 	{
 		this->m_wheelDelta = 0;
 		this->m_deltaPosition = { 0, 0 };
@@ -832,7 +897,7 @@ public:
 		this->m_wasCursorMovedDuringUpdate = false;
 	}
 
-	virtual bool __handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override
+	virtual bool __HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override
 	{
 		switch (msg)
 		{
@@ -910,7 +975,7 @@ public:
 		}
 	}
 
-	virtual void __onWindowUpdateEnd() override
+	virtual void __OnWindowUpdateEnd() override
 	{
 		if (this->m_wasMouseMovedDuringUpdate)
 			for (auto& functor : this->m_onMouseMoveFunctors)
@@ -946,27 +1011,27 @@ public:
 
 	}
 
-	void onKeyUp(const std::function<void(const uint8_t)>& functor)
+	void OnKeyUp(const std::function<void(const uint8_t)>& functor)
 	{
 		this->m_onKeyUpFunctors.push_back(functor);
 	}
 
-	void onKeyDown(const std::function<void(const uint8_t)>& functor)
+	void OnKeyDown(const std::function<void(const uint8_t)>& functor)
 	{
 		this->m_onKeyDownFunctors.push_back(functor);
 	}
 
-	bool isKeyDown(const uint8_t key)
+	bool IsKeyDown(const uint8_t key)
 	{
 		return this->m_downKeys.end() != std::find(this->m_downKeys.begin(), this->m_downKeys.end(), key);
 	}
 
-	virtual void __onWindowUpdateBegin() override
+	virtual void __OnWindowUpdateBegin() override
 	{
 
 	}
 
-	virtual bool __handleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override
+	virtual bool __HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override
 	{
 		switch (msg)
 		{
@@ -1001,7 +1066,7 @@ public:
 		return false;
 	}
 
-	virtual void __onWindowUpdateEnd()
+	virtual void __OnWindowUpdateEnd()
 	{
 
 	}
@@ -1075,125 +1140,127 @@ public:
 			this->m_isRunning = true;
 
 			if (descriptor.iconPath != nullptr)
-				this->setIcon(descriptor.iconPath);
+				this->SetIcon(descriptor.iconPath);
 		}
 	}
 
 	// Misc
-	void onResize(const std::function<void(const Vec2u16)>& functor)
+	void OnResize(const std::function<void(const Vec2u16)>& functor)
 	{
 		this->m_onResizeFunctors.push_back(functor);
 	}
 
 	// Getters
-	[[nodiscard]] bool isRunning() const
+	[[nodiscard]] bool IsRunning() const
 	{
 		return this->m_isRunning;
 	}
 
-	Keyboard& getKeyboard()
+	Keyboard& GetKeyboard()
 	{
 		return this->m_keyboard;
 	}
 
-	[[nodiscard]] Mouse&    getMouse()
+	[[nodiscard]] Mouse&    GetMouse()
 	{
 		return this->m_mouse;
 	}
 
-	[[nodiscard]] HWND      getHandle() const
+	[[nodiscard]] HWND      GetHandle() const
 	{
 		return this->m_handle;
 	}
 
-	[[nodiscard]] RECT getWindowRect() const
+	[[nodiscard]] RECT GetWindowRectangle() const
 	{
-		RECT result; GetWindowRect(this->m_handle, &result);
+		RECT result;
+		GetWindowRect(this->m_handle, &result);
 		
 		return result;
 	}
 
-	[[nodiscard]] RECT getClientRect() const
+	[[nodiscard]] RECT GetClientRectangle() const
 	{
-		RECT result; GetClientRect(this->m_handle, &result);
+		RECT result;
+		GetClientRect(this->m_handle, &result);
 		
 		return result;
 	}
 
-	[[nodiscard]] uint16_t getWindowPositionX() const
+	[[nodiscard]] uint16_t GetWindowPositionX() const
 	{
-		const RECT rect = this->getWindowRect();
+		const RECT rect = this->GetWindowRectangle();
 		
 		return static_cast<uint16_t>(rect.left);
 	}
 
-	[[nodiscard]] uint16_t getWindowPositionY() const
+	[[nodiscard]] uint16_t GetWindowPositionY() const
 	{
-		const RECT rect = this->getWindowRect();
+		const RECT rect = this->GetWindowRectangle();
 		
 		return static_cast<uint16_t>(rect.top);
 	}
 
-	[[nodiscard]] uint16_t getWindowWidth()  const
+	[[nodiscard]] uint16_t GetWindowWidth()  const
 	{
-		const RECT rect = this->getWindowRect();
+		const RECT rect = this->GetWindowRectangle();
 		
 		return static_cast<uint16_t>(rect.right - rect.left);
 	}
 
-	[[nodiscard]] uint16_t getWindowHeight() const
+	[[nodiscard]] uint16_t GetWindowHeight() const
 	{
-		const RECT rect = this->getWindowRect();
+		const RECT rect = this->GetWindowRectangle();
 		
 		return static_cast<uint16_t>(rect.bottom - rect.top);
 	}
 
-	[[nodiscard]] uint16_t getClientWidth()  const
+	[[nodiscard]] uint16_t GetClientWidth()  const
 	{
-		const RECT rect = this->getClientRect();
+		const RECT rect = this->GetClientRectangle();
 		
 		return static_cast<uint16_t>(rect.right);
 	}
 	
-	[[nodiscard]] uint16_t getClientHeight() const
+	[[nodiscard]] uint16_t GetClientHeight() const
 	{
-		const RECT rect = this->getClientRect();
+		const RECT rect = this->GetClientRectangle();
 		
 		return static_cast<uint16_t>(rect.bottom);
 	}
 
 	// Setters
-	void setWindowSize(const uint16_t width, const uint16_t height)
+	void SetWindowSize(const uint16_t width, const uint16_t height)
 	{
 		SetWindowPos(this->m_handle, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOOWNERZORDER);
 	}
 
-	void setClientSize(const uint16_t width, const uint16_t height)
+	void SetClientSize(const uint16_t width, const uint16_t height)
 	{
-		const uint16_t topBottomWindowPadding = this->getWindowHeight() - this->getClientHeight();
-		const uint16_t leftRightWindowPadding = this->getWindowWidth() - this->getClientWidth();
+		const uint16_t topBottomWindowPadding = this->GetWindowHeight() - this->GetClientHeight();
+		const uint16_t leftRightWindowPadding = this->GetWindowWidth()  - this->GetClientWidth();
 
-		this->setWindowSize(width + leftRightWindowPadding, height + topBottomWindowPadding);
+		this->SetWindowSize(width + leftRightWindowPadding, height + topBottomWindowPadding);
 	}
 
-	void setTitle(const char* title)
+	void SetTitle(const char* title)
 	{
 		SetWindowTextA(this->m_handle, title);
 	}
 
-	void setIcon(const char* pathname)
+	void SetIcon(const char* pathname)
 	{
 		const HICON hIcon = (HICON)LoadImage(NULL, pathname, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
-		ASSERT_ERROR(hIcon != NULL, "Could Not Load Icon");
+		ASSERT(hIcon != NULL, "Could Not Load Icon");
 
 		SendMessage(this->m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 	}
 
 	// MESSAGE HANDLING
-	void update()
+	void Update()
 	{
-		this->m_mouse.__onWindowUpdateBegin();
-		this->m_keyboard.__onWindowUpdateBegin();
+		this->m_mouse.__OnWindowUpdateBegin();
+		this->m_keyboard.__OnWindowUpdateBegin();
 
 		MSG msg;
 
@@ -1203,11 +1270,11 @@ public:
 			DispatchMessage(&msg);
 		}
 
-		this->m_mouse.__onWindowUpdateEnd();
-		this->m_keyboard.__onWindowUpdateEnd();
+		this->m_mouse.__OnWindowUpdateEnd();
+		this->m_keyboard.__OnWindowUpdateEnd();
 	}
 
-	[[nodiscard]] LRESULT handleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
+	[[nodiscard]] LRESULT HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
 	{
 		switch (msg)
 		{
@@ -1226,28 +1293,28 @@ public:
 
 			return 0;
 			case WM_DESTROY:
-				this->destroy();
+				this->Destroy();
 				
 				return 0;
 		}
 
 		// Dispatch Message To Peripheral Devices
-		if (this->m_mouse.__handleMessage(msg, wParam, lParam)) return 0;
-		if (this->m_keyboard.__handleMessage(msg, wParam, lParam)) return 0;
+		if (this->m_mouse.__HandleMessage(msg, wParam, lParam)) return 0;
+		if (this->m_keyboard.__HandleMessage(msg, wParam, lParam)) return 0;
 
 		// Otherwise Let Windows Handle The Message
 		return DefWindowProc(this->m_handle, msg, wParam, lParam);
 	}
 
 	// DESTROYING
-	void destroy()
+	void Destroy()
 	{
 		this->m_isRunning = !DestroyWindow(this->m_handle);
 	}
 
 	~Window()
 	{
-		this->destroy();
+		this->Destroy();
 	}
 };
 // --> WINDOW END
@@ -1257,7 +1324,7 @@ namespace WindowManager
 {
 	inline std::vector<Window> windows;
 
-	inline Window* createWindow(const WindowDescriptor& descriptor)
+	inline Window* CreateNewWindow(const WindowDescriptor& descriptor)
 	{
 		windows.emplace_back(descriptor);
 
@@ -1273,7 +1340,7 @@ LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 	});
 
 	if (it != WindowManager::windows.end())
-		return it->handleMessage(msg, wParam, lParam);
+		return it->HandleMessage(msg, wParam, lParam);
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
@@ -1299,27 +1366,27 @@ public:
 
 	}
 
-	[[nodiscard]] DirectX::XMMATRIX getTransform()           const noexcept
+	[[nodiscard]] DirectX::XMMATRIX GetTransform()           const noexcept
 	{
 		return this->m_transform;
 	}
 
-	[[nodiscard]] DirectX::XMMATRIX getTransposedTransform() const noexcept
+	[[nodiscard]] DirectX::XMMATRIX GetTransposedTransform() const noexcept
 	{
 		return DirectX::XMMatrixTranspose(this->m_transform);
 	}
 
-	[[nodiscard]] Vec3f getPosition() const noexcept
+	[[nodiscard]] Vec3f GetPosition() const noexcept
 	{
 		return Vec3f{ this->m_position.m128_f32[0], this->m_position.m128_f32[1], this->m_position.m128_f32[2] };
 	}
 
-	[[nodiscard]] Vec3f getRotation() const noexcept
+	[[nodiscard]] Vec3f GetRotation() const noexcept
 	{
 		return Vec3f{ this->m_rotation.m128_f32[0], this->m_rotation.m128_f32[1], this->m_rotation.m128_f32[2] };
 	}
 
-	virtual void calculateTransform() = 0;
+	virtual void CalculateTransform() = 0;
 };
 
 // --> CAMERAS --> CAMERA END
@@ -1347,51 +1414,51 @@ public:
 			this->m_InvAspectRatio = clientDims[1] / static_cast<float>(clientDims[0]);
 		};
 
-		recalculateInvAspectRatio({ window.getClientWidth(), window.getClientHeight() });
+		recalculateInvAspectRatio({ window.GetClientWidth(), window.GetClientHeight() });
 
-		window.onResize(recalculateInvAspectRatio);
+		window.OnResize(recalculateInvAspectRatio);
 	}
 
-	void rotate(const float angle)
+	void Rotate(const float angle)
 	{
 		this->m_rotation.m128_f32[2] += angle;
 	}
 
-	void setPosition(const Vec2f& v)
+	void SetPosition(const Vec2f& v)
 	{
 		this->m_position = DirectX::XMVectorSet(v[0], v[1], 0.0f, 0.0f);
 	}
 
-	void setRotation(const Vec2f& v)
+	void SetRotation(const Vec2f& v)
 	{
 		this->m_rotation.m128_f32[0] += v[0];
 		this->m_rotation.m128_f32[1] += v[1];
 	}
 
-	void translate(const Vec2f& v)
+	void Translate(const Vec2f& v)
 	{
 		this->m_position.m128_f32[0] += v[0];
 		this->m_position.m128_f32[1] += v[1];
 	}
 
-	virtual void calculateTransform() override
+	virtual void CalculateTransform() override
 	{
 		this->m_transform = DirectX::XMMatrixRotationZ(this->m_rotation.m128_f32[2]) // Rotate
 			* DirectX::XMMatrixTranslation(-this->m_position.m128_f32[0], -this->m_position.m128_f32[1], 0.0f) // Translate
 			* DirectX::XMMatrixScaling(this->m_InvAspectRatio, 1.0f, 1.0f); // Correct For Aspect Ratio
 	}
 
-	void handleKeyboardInputs(Keyboard& keyboard, const float speed, const char left, const char right, const char up, const char down)
+	void HandleKeyboardInputs(Keyboard& keyboard, const float speed, const char left, const char right, const char up, const char down)
 	{
-		if (keyboard.isKeyDown(right))
-			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] + speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
-		if (keyboard.isKeyDown(left))
+		if (keyboard.IsKeyDown(right))
 			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] - speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
+		if (keyboard.IsKeyDown(left))
+			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] + speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
 
-		if (keyboard.isKeyDown(up))
-			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] + speed, 0.0f, 0.0f);
-		if (keyboard.isKeyDown(down))
+		if (keyboard.IsKeyDown(up))
 			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] - speed, 0.0f, 0.0f);
+		if (keyboard.IsKeyDown(down))
+			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] + speed, 0.0f, 0.0f);
 	}
 };
 
@@ -1432,22 +1499,22 @@ public:
 			this->m_aspectRatio = clientDims[0] / static_cast<float>(clientDims[1]);
 		};
 
-		recalculateAspectRatio({ window.getClientWidth(), window.getClientHeight() });
+		recalculateAspectRatio({ window.GetClientWidth(), window.GetClientHeight() });
 
-		window.onResize(recalculateAspectRatio);
+		window.OnResize(recalculateAspectRatio);
 	}
 
-	void translate(const Vec3f& v)
+	void Translate(const Vec3f& v)
 	{
 		this->m_position = DirectX::XMVectorAdd(this->m_position, DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f));
 	}
 
-	void setPosition(const Vec3f& v)
+	void SetPosition(const Vec3f& v)
 	{
 		this->m_position = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f);
 	}
 
-	void rotate(const Vec3f& v)
+	void Rotate(const Vec3f& v)
 	{
 		const DirectX::XMVECTOR rotationDeltaVector = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f);
 
@@ -1461,7 +1528,7 @@ public:
 			this->m_rotation.m128_f32[0] = -HALF_PI;
 	}
 
-	void setRotation(const Vec3f& v)
+	void SetRotation(const Vec3f& v)
 	{
 		this->m_rotation = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f);
 
@@ -1473,12 +1540,12 @@ public:
 			this->m_rotation.m128_f32[0] = -HALF_PI;
 	}
 
-	virtual void calculateTransform() override
+	virtual void CalculateTransform() override
 	{
-		this->m_transform = getViewMatrix() * getProjectionMatrix();
+		this->m_transform = this->GetViewMatrix() * this->GetProjectionMatrix();
 	}
 
-	[[nodiscard]] DirectX::XMMATRIX getViewMatrix()
+	[[nodiscard]] DirectX::XMMATRIX GetViewMatrix()
 	{
 		const DirectX::XMMATRIX rotationYMatrix = DirectX::XMMatrixRotationRollPitchYaw(0.0f, this->m_rotation.m128_f32[1], 0.0f);
 
@@ -1492,55 +1559,55 @@ public:
 		return DirectX::XMMatrixLookAtLH(this->m_position, lookAtPosition, upDirectionVec);
 	}
 
-	[[nodiscard]] DirectX::XMMATRIX getProjectionMatrix()
+	[[nodiscard]] DirectX::XMMATRIX GetProjectionMatrix()
 	{
 		return DirectX::XMMatrixPerspectiveFovLH(m_fov, m_aspectRatio, m_zNear, m_zFar);
 	}
 
-	void handleMouseMovements(Mouse& mouse, const float sensitivity)
+	void HandleMouseMovements(Mouse& mouse, const float sensitivity)
 	{
-		mouse.onMouseMove([sensitivity, this, &mouse](const Vec2u16 position, const Vec2i16 delta)
+		mouse.OnMouseMove([sensitivity, this, &mouse](const Vec2u16 position, const Vec2i16 delta)
 			{
-				if (mouse.isCursorInWindow())
-					this->rotate({ sensitivity * delta[1], sensitivity * delta[0], 0.0f });
+				if (mouse.IsCursorInWindow())
+					this->Rotate({ sensitivity * delta[1], sensitivity * delta[0], 0.0f });
 			});
 	}
 
-	void handleKeyboardInputs(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down)
+	void HandleKeyboardInputs(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down)
 	{
-		if (keyboard.isKeyDown(forward))
+		if (keyboard.IsKeyDown(forward))
 			this->m_position = DirectX::XMVectorAdd(this->m_position, DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
-		if (keyboard.isKeyDown(backward))
+		if (keyboard.IsKeyDown(backward))
 			this->m_position = DirectX::XMVectorSubtract(this->m_position, DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
 
-		if (keyboard.isKeyDown(right))
+		if (keyboard.IsKeyDown(right))
 			this->m_position = DirectX::XMVectorAdd(this->m_position, DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
-		if (keyboard.isKeyDown(left))
+		if (keyboard.IsKeyDown(left))
 			this->m_position = DirectX::XMVectorSubtract(this->m_position, DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
 
-		if (keyboard.isKeyDown(up))
+		if (keyboard.IsKeyDown(up))
 			this->m_position = DirectX::XMVectorAdd(this->m_position, DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
-		if (keyboard.isKeyDown(down))
+		if (keyboard.IsKeyDown(down))
 			this->m_position = DirectX::XMVectorSubtract(this->m_position, DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(speed, speed, speed, 0.0f)));
 	}
 
-	[[nodiscard]] Vec3f getKeyboardInputsDelta(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down)
+	[[nodiscard]] Vec3f GetKeyboardInputsDelta(Keyboard& keyboard, const float speed, const char forward, const char backward, const char left, const char right, const char up, const char down)
 	{
 		DirectX::XMVECTOR delta = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 
-		if (keyboard.isKeyDown(forward))
+		if (keyboard.IsKeyDown(forward))
 			delta = DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f));
-		if (keyboard.isKeyDown(backward))
+		if (keyboard.IsKeyDown(backward))
 			delta = DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f));
 
-		if (keyboard.isKeyDown(right))
+		if (keyboard.IsKeyDown(right))
 			delta = DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f));
-		if (keyboard.isKeyDown(left))
+		if (keyboard.IsKeyDown(left))
 			delta = DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f));
 
-		if (keyboard.isKeyDown(up))
+		if (keyboard.IsKeyDown(up))
 			delta = DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f));
-		if (keyboard.isKeyDown(down))
+		if (keyboard.IsKeyDown(down))
 			delta = DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f));
 
 		return Vec3f{ delta.m128_f32[0], delta.m128_f32[1], delta.m128_f32[2] };
@@ -1629,29 +1696,29 @@ public:
 		), "Could Not Copy Pixels From Bitmap");
 	}
 
-	[[nodiscard]] uint16_t getWidth()   const {
+	[[nodiscard]] uint16_t GetWidth()   const {
 		return this->m_width;
 	}
 
-	[[nodiscard]] uint16_t getHeight()  const {
+	[[nodiscard]] uint16_t GetHeight()  const {
 		return this->m_height;
 	}
 
-	[[nodiscard]] uint32_t getNPixels() const {
+	[[nodiscard]] uint32_t GetPixelCount() const {
 		return this->m_nPixels;
 	}
 
-	[[nodiscard]] Coloru8 sample(const uint16_t x, const uint16_t y) const
+	[[nodiscard]] Coloru8 Sample(const uint16_t x, const uint16_t y) const
 	{
 		return this->m_buff[y * this->m_width + x];
 	}
 
-	void    set(const uint16_t x, const uint16_t y, const Coloru8& color)
+	void    Set(const uint16_t x, const uint16_t y, const Coloru8& color)
 	{
 		this->m_buff[y * this->m_width + x] = color;
 	}
 
-	[[nodiscard]] Coloru8* getBuffer() const
+	[[nodiscard]] Coloru8* GetBuffer() const
 	{
 		return this->m_buff.get();
 	}
@@ -1680,13 +1747,13 @@ public:
 	Texture2D(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef, const Texture2DDescriptor& descriptor) : m_pDeviceContextRef(pDeviceContextRef), m_descriptor(descriptor)
 	{
 		D3D11_SUBRESOURCE_DATA subResourceData;
-		subResourceData.pSysMem = static_cast<void*>(descriptor.image.getBuffer());
-		subResourceData.SysMemPitch = this->m_descriptor.image.getWidth() * sizeof(Coloru8);
+		subResourceData.pSysMem = static_cast<void*>(descriptor.image.GetBuffer());
+		subResourceData.SysMemPitch = this->m_descriptor.image.GetWidth() * sizeof(Coloru8);
 		subResourceData.SysMemSlicePitch = 0;
 
 		D3D11_TEXTURE2D_DESC texture2DDescriptor = {};
-		texture2DDescriptor.Width = this->m_descriptor.image.getWidth();
-		texture2DDescriptor.Height = this->m_descriptor.image.getHeight();
+		texture2DDescriptor.Width = this->m_descriptor.image.GetWidth();
+		texture2DDescriptor.Height = this->m_descriptor.image.GetHeight();
 		texture2DDescriptor.MipLevels = this->m_descriptor.useMipMaps ? 0 : 1;
 		texture2DDescriptor.ArraySize = 1;
 		texture2DDescriptor.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -1714,7 +1781,7 @@ public:
 			this->m_pDeviceContextRef->GenerateMips(m_pShaderResourceView.Get());
 	}
 
-	void bind() const noexcept
+	void Bind() const noexcept
 	{
 		if (this->m_descriptor.bindingType == ShaderBindingType::VERTEX || this->m_descriptor.bindingType == ShaderBindingType::BOTH)
 			this->m_pDeviceContextRef->VSSetShaderResources(this->m_descriptor.slotVS, 1u, this->m_pShaderResourceView.GetAddressOf());
@@ -1760,7 +1827,7 @@ public:
 		pDeviceRef->CreateSamplerState(&samplerDescriptor, &this->m_pSamplerState);
 	}
 
-	void bind() const noexcept
+	void Bind() const noexcept
 	{
 		if (this->m_descriptor.bindingType == ShaderBindingType::VERTEX || this->m_descriptor.bindingType == ShaderBindingType::BOTH)
 			this->m_pDeviceContextRef->VSSetSamplers(this->m_descriptor.slotVS, 1u, this->m_pSamplerState.GetAddressOf());
@@ -1782,7 +1849,7 @@ struct PhysicsObject
 	Vec3f velocity{ 0.f, 0.f, 0.f };
 	Vec3f acceleration{ 0.f, 0.f, 0.f };
 
-	void updatePhysicsObject(const float friction = 0.9f)
+	void UpdatePhysicsObject(const float friction = 0.9f)
 	{
 		this->velocity += this->acceleration;
 		this->velocity *= 0.9f;
@@ -1803,9 +1870,9 @@ struct MeshDescriptorFromVertices
 	const size_t indexBufferIndex;
 	const size_t vertexShaderIndex;
 	const size_t pixelShaderIndex;
-	const std::vector<size_t> t2dIndices;
-	const std::vector<size_t> tsIndices;
-	const std::vector<size_t> constantBufferIndices;
+	const std::vector<size_t> t2dIndices = std::vector<size_t>{};
+	const std::vector<size_t> tsIndices  = std::vector<size_t>{};
+	const std::vector<size_t> constantBufferIndices = std::vector<size_t>{};
 	const D3D_PRIMITIVE_TOPOLOGY primitiveTopology = D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 };
 
@@ -1857,7 +1924,7 @@ private:
 	PerspectiveCamera*  perspectiveCamera  = nullptr;
 
 private:
-	void createDeviceAndSwapChain()
+	void CreateDeviceAndSwapChain()
 	{
 		DXGI_SWAP_CHAIN_DESC scd{};
 		scd.BufferDesc.Width  = 0;
@@ -1871,7 +1938,7 @@ private:
 		scd.SampleDesc.Quality = 0;
 		scd.BufferUsage  = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		scd.BufferCount  = 1;
-		scd.OutputWindow = this->window->getHandle();
+		scd.OutputWindow = this->window->GetHandle();
 		scd.Windowed     = TRUE;
 		scd.SwapEffect   = DXGI_SWAP_EFFECT_DISCARD;
 		scd.Flags        = 0;
@@ -1892,7 +1959,7 @@ private:
 		), "Could Not Create Device And SwapChain");
 	}
 
-	void createRenderTarget()
+	void CreateRenderTarget()
 	{
 		Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
 
@@ -1900,11 +1967,11 @@ private:
 		HRESULT_ERROR(this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget), "Could Not Create RenderTargetView");
 	}
 
-	void createViewport()
+	void CreateViewport()
 	{
 		D3D11_VIEWPORT vp;
-		vp.Width    = static_cast<FLOAT>(this->window->getClientWidth());
-		vp.Height   = static_cast<FLOAT>(this->window->getClientHeight());
+		vp.Width    = static_cast<FLOAT>(this->window->GetClientWidth());
+		vp.Height   = static_cast<FLOAT>(this->window->GetClientHeight());
 		vp.MinDepth = 0;
 		vp.MaxDepth = 1;
 		vp.TopLeftX = 0;
@@ -1913,7 +1980,7 @@ private:
 		this->m_pDeviceContext->RSSetViewports(1u, &vp);
 	}
 
-	void createDepthStencilStates()
+	void CreateDepthStencilStates()
 	{
 		D3D11_DEPTH_STENCIL_DESC dsDesc     = {};
 		dsDesc.DepthEnable                  = TRUE;
@@ -1937,13 +2004,13 @@ private:
 		HRESULT_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOff), "Could Not Create EmptyDepthStencilState");
 	}
 
-	void createDepthStencil()
+	void CreateDepthStencil()
 	{
 		// Create Detph Texture
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
 		D3D11_TEXTURE2D_DESC descDepth = {};
-		descDepth.Width     = this->window->getClientWidth();
-		descDepth.Height    = this->window->getClientHeight();
+		descDepth.Width     = this->window->GetClientWidth();
+		descDepth.Height    = this->window->GetClientHeight();
 		descDepth.MipLevels = 1u;
 		descDepth.ArraySize = 1u;
 		descDepth.Format    = DXGI_FORMAT_D32_FLOAT;
@@ -1965,7 +2032,7 @@ private:
 		), "Could Not Create DepthStencilView");
 	}
 
-	void bindDepthStencil()
+	void BindDepthStencil()
 	{
 		this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), this->m_pDepthStencilView.Get());
 	}
@@ -1973,21 +2040,21 @@ private:
 	/*
 	 * This function initiliazes directx and creates key components
 	*/
-	void initGraphics()
+	void InitGraphics()
 	{
-		this->createDeviceAndSwapChain();
-		this->createRenderTarget();
-		this->createViewport();
-		this->createDepthStencilStates();
-		this->createDepthStencil();
-		this->bindDepthStencil();
+		this->CreateDeviceAndSwapChain();
+		this->CreateRenderTarget();
+		this->CreateViewport();
+		this->CreateDepthStencilStates();
+		this->CreateDepthStencil();
+		this->BindDepthStencil();
 	}
 
 	/*
 	 * This functions swaps the back buffer and the front buffer to show the frame to the user
 	 * It also clears the depthStencilView
 	 */
-	void presentFrame(const bool useVSync)
+	void PresentFrame(const bool useVSync)
 	{
 		HRESULT_ERROR(this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u), "Could Not Present Frame");
 
@@ -1995,10 +2062,10 @@ private:
 		this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
 	}
 
-	void createDefaultConstantBuffers()
+	void CreateDefaultConstantBuffers()
 	{
 		const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), 0u, 0u };
-		ASSERT_ERROR(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX == this->createConstantBuffer(cbd), "Could Not Create Default Constant Buffer #0 In Target Position");
+		ASSERT(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX == this->CreateConstantBuffer(cbd), "Could Not Create Default Constant Buffer #0 In Target Position");
 	}
 
 public:
@@ -2014,49 +2081,55 @@ public:
 		delete this->perspectiveCamera;
 	}
 
-	[[nodiscard]] Mesh&           getMesh          (const size_t index) noexcept { return this->meshes[index];          }
-	[[nodiscard]] Texture2D&      getTexture       (const size_t index) noexcept { return this->textures[index];        }
-	[[nodiscard]] VertexShader&   getVertexShader  (const size_t index) noexcept { return this->vertexShaders[index];   }
-	[[nodiscard]] PixelShader&    getPixelShader   (const size_t index) noexcept { return this->pixelShaders[index];    }
-	[[nodiscard]] ConstantBuffer& getConstantBuffer(const size_t index) noexcept { return this->constantBuffers[index]; }
-	[[nodiscard]] VertexBuffer&   getVertexBuffer  (const size_t index) noexcept { return this->vertexBuffers[index];   }
-	[[nodiscard]] IndexBuffer&    getIndexBuffer   (const size_t index) noexcept { return this->indexBuffers[index];    }
-	[[nodiscard]] TextureSampler& getTextureSampler(const size_t index) noexcept { return this->textureSamplers[index]; }
-
-	[[nodiscard]] Window&   getWindow()   noexcept { return *this->window;   }
-	[[nodiscard]] Mouse&    getMouse()    noexcept { return *this->mouse;    }
-	[[nodiscard]] Keyboard& getKeybaord() noexcept { return *this->keyboard; }
-	[[nodiscard]] Engine&   getEngine()   noexcept { return *this;           }
-
-	[[nodiscard]] OrthographicCamera& getOrthographicCamera() noexcept { return *this->orthographicCamera; }
-	[[nodiscard]] PerspectiveCamera&  getPerspectiveCamera()  noexcept { return *this->perspectiveCamera;  }
-
-	void init(const EngineDescriptor& descriptor)
+	void PlaySoundFromFile(const char* filename)
 	{
-		this->window = WindowManager::createWindow(descriptor.windowDesc);
+		ASSERT(PlaySound(TEXT(filename), NULL, SND_ASYNC | SND_FILENAME), "Could Not Play Sound From File");
+		//HRESULT_ERROR(mciSendString(("play " + std::string(filename)).c_str(), 0, NULL, NULL), "Could Not Play Audio File");
+	}
 
-		this->mouse    = &(this->window->getMouse());
-		this->keyboard = &(this->window->getKeyboard());
+	[[nodiscard]] Mesh&           GetMesh          (const size_t index) noexcept { return this->meshes[index];          }
+	[[nodiscard]] Texture2D&      GetTexture       (const size_t index) noexcept { return this->textures[index];        }
+	[[nodiscard]] VertexShader&   GetVertexShader  (const size_t index) noexcept { return this->vertexShaders[index];   }
+	[[nodiscard]] PixelShader&    GetPixelShader   (const size_t index) noexcept { return this->pixelShaders[index];    }
+	[[nodiscard]] ConstantBuffer& GetConstantBuffer(const size_t index) noexcept { return this->constantBuffers[index]; }
+	[[nodiscard]] VertexBuffer&   GetVertexBuffer  (const size_t index) noexcept { return this->vertexBuffers[index];   }
+	[[nodiscard]] IndexBuffer&    GetIndexBuffer   (const size_t index) noexcept { return this->indexBuffers[index];    }
+	[[nodiscard]] TextureSampler& GetTextureSampler(const size_t index) noexcept { return this->textureSamplers[index]; }
+
+	[[nodiscard]] Window&   GetWindow()   noexcept { return *this->window;   }
+	[[nodiscard]] Mouse&    GetMouse()    noexcept { return *this->mouse;    }
+	[[nodiscard]] Keyboard& GetKeybaord() noexcept { return *this->keyboard; }
+	[[nodiscard]] Engine&   GetEngine()   noexcept { return *this;           }
+
+	[[nodiscard]] OrthographicCamera& GetOrthographicCamera() noexcept { return *this->orthographicCamera; }
+	[[nodiscard]] PerspectiveCamera&  GetPerspectiveCamera()  noexcept { return *this->perspectiveCamera;  }
+
+	void Init(const EngineDescriptor& descriptor)
+	{
+		this->window = WindowManager::CreateNewWindow(descriptor.windowDesc);
+
+		this->mouse = &(this->window->GetMouse());
+		this->keyboard = &(this->window->GetKeyboard());
 
 		this->orthographicCamera = new OrthographicCamera(*this->window, descriptor.orthographicCameraDesc);
 		this->perspectiveCamera  = new PerspectiveCamera (*this->window, descriptor.perspectiveCameraDesc);
 
-		this->initGraphics();
-		this->createDefaultConstantBuffers();
+		this->InitGraphics();
+		this->CreateDefaultConstantBuffers();
 
-		this->window->onResize([this](const Vec2u16 dimensions)
+		this->window->OnResize([this](const Vec2u16 dimensions)
 		{
-			this->initGraphics();
+			this->InitGraphics();
 		});
 	}
 
-	virtual void onRender(const float elapsed) = 0;
+	virtual void OnRender(const float elapsed) = 0;
 
-	void captureCursor()
+	void CaptureCursor()
 	{
 		// Clip Cursor
-		const RECT windowRect = this->window->getWindowRect();
-		const RECT clientRect = this->window->getClientRect();
+		const RECT windowRect = this->window->GetWindowRectangle();
+		const RECT clientRect = this->window->GetClientRectangle();
 
 		RECT boundingRect = windowRect;
 
@@ -2065,34 +2138,34 @@ public:
 		boundingRect.right  -= 10; // padding
 		boundingRect.bottom -= 10; // padding
 
-		this->window->getMouse().clip(boundingRect);
+		this->mouse->Clip(boundingRect);
 
 		// Hide Cursor
 
-		this->mouse->hide();
+		this->mouse->Hide();
 	}
 
-	void setRenderMode2D()
+	void SetRenderMode2D()
 	{
 		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
-		const DirectX::XMMATRIX orthographicCameraTransposedTransform = this->orthographicCamera->getTransposedTransform();
-		cameraTransformConstantBuffer.setData(&orthographicCameraTransposedTransform);
+		const DirectX::XMMATRIX orthographicCameraTransposedTransform = this->orthographicCamera->GetTransposedTransform();
+		cameraTransformConstantBuffer.SetData(&orthographicCameraTransposedTransform);
 		cameraTransformConstantBuffer.Bind();
 
 		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOff.Get(), 1u);
 	}
 
-	void setRenderMode3D()
+	void SetRenderMode3D()
 	{
 		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
-		const DirectX::XMMATRIX perspectiveCameraTransposedTransform = this->perspectiveCamera->getTransposedTransform();
-		cameraTransformConstantBuffer.setData(&perspectiveCameraTransposedTransform);
+		const DirectX::XMMATRIX perspectiveCameraTransposedTransform = this->perspectiveCamera->GetTransposedTransform();
+		cameraTransformConstantBuffer.SetData(&perspectiveCameraTransposedTransform);
 		cameraTransformConstantBuffer.Bind();
 
 		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOn.Get(), 1u);
 	}
 
-	void drawMesh(const size_t meshIndex)
+	void DrawMesh(const size_t meshIndex)
 	{
 		Mesh& mesh = this->meshes[meshIndex];
 
@@ -2102,68 +2175,68 @@ public:
 		this->pixelShaders[mesh.psIndex].Bind();
 
 		for (const size_t textureIndex : mesh.textureIndices)
-			this->textures[textureIndex].bind();
+			this->textures[textureIndex].Bind();
 
 		for (const size_t textureSamplerIndex : mesh.textureSamplerIndices)
-			this->textureSamplers[textureSamplerIndex].bind();
+			this->textureSamplers[textureSamplerIndex].Bind();
 
 		for (const size_t cbIndex : mesh.constantBufferIndices)
 			this->constantBuffers[cbIndex].Bind();
 
 		this->m_pDeviceContext->IASetPrimitiveTopology(mesh.primitiveTopologyType);
-		this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex].getSize()), 0u, 0u);
+		this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex].GetSize()), 0u, 0u);
 	}
 
-	[[nodiscard]] size_t loadVertexShader(const VertexShaderDescriptor& descriptor)
+	[[nodiscard]] size_t CreateVertexShader(const VertexShaderDescriptor& descriptor)
 	{
 		this->vertexShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->vertexShaders.size() - 1;
 	}
 
-	[[nodiscard]] size_t loadPixelShader(const PixelShaderDescriptor& descriptor)
+	[[nodiscard]] size_t CreatePixelShader(const PixelShaderDescriptor& descriptor)
 	{
 		this->pixelShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->pixelShaders.size() - 1;
 	}
 
-	[[nodiscard]] size_t createTextureFromImage(const Texture2DDescriptor& descriptor)
+	[[nodiscard]] size_t CreateTextureFromImage(const Texture2DDescriptor& descriptor)
 	{
 		this->textures.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->textures.size() - 1;
 	}
 
-	[[nodiscard]] size_t createTextureSampler(const TextureSamplerDescriptor& descriptor)
+	[[nodiscard]] size_t CreateTextureSampler(const TextureSamplerDescriptor& descriptor)
 	{
 		this->textureSamplers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->textureSamplers.size() - 1;
 	}
 
-	[[nodiscard]] size_t createConstantBuffer(const ConstantBufferDescriptor& descriptor)
+	[[nodiscard]] size_t CreateConstantBuffer(const ConstantBufferDescriptor& descriptor)
 	{
 		this->constantBuffers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->constantBuffers.size() - 1;
 	}
 
-	[[nodiscard]] size_t createVertexBuffer(const VertexBufferDescriptor& descriptor)
+	[[nodiscard]] size_t CreateVertexBuffer(const VertexBufferDescriptor& descriptor)
 	{
 		this->vertexBuffers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 	
 		return this->vertexBuffers.size() - 1;
 	}
 
-	[[nodiscard]] size_t createIndexBuffer(const IndexBufferDescriptor& descriptor)
+	[[nodiscard]] size_t CreateIndexBuffer(const IndexBufferDescriptor& descriptor)
 	{
 		this->indexBuffers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->indexBuffers.size() - 1;
 	}
 
-	[[nodiscard]] size_t createMeshFromVertices(const MeshDescriptorFromVertices& descriptor)
+	[[nodiscard]] size_t CreateMeshFromVertices(const MeshDescriptorFromVertices& descriptor)
 	{
 		this->meshes.emplace_back(Mesh{
 			descriptor.vertexBufferIndex,
@@ -2179,7 +2252,7 @@ public:
 		return this->meshes.size() - 1;
 	}
 
-	[[nodiscard]] DataFromMeshFile loadDataFromMeshFile(const char* filename)
+	[[nodiscard]] DataFromMeshFile LoadDataFromMeshFile(const char* filename)
 	{
 		std::ifstream infile(filename);
 
@@ -2231,21 +2304,21 @@ public:
 		return { vertices, indices };
 	}
 
-	void fill(const Coloru8& color)
+	void Fill(const Coloru8& color)
 	{
 		float colorf[4] = { color.red / 255.f, color.green / 255.f, color.blue / 255.f, color.alpha / 255.f };
 
 		this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&colorf);
 	}
 
-	void run(const bool useVSync = true, const uint16_t fps = 60)
+	void Run(const bool useVSync = true, const uint16_t fps = 60)
 	{
 		Timer timer;
 		uint32_t frames = 0;
 
-		while (this->window->isRunning())
+		while (this->window->IsRunning())
 		{
-			const float elapsed = timer.getElapsedTimeMs();
+			const float elapsed = timer.GetElapsedTimeMs();
 
 			if (!useVSync)
 			{
@@ -2260,13 +2333,14 @@ public:
 				}
 			}
 
-			this->window->update();
+			this->window->Update();
 
-			this->onRender(elapsed);
+			this->OnRender(elapsed);
 
-			this->presentFrame(useVSync);
+			this->PresentFrame(useVSync);
 		}
 	}
 };
 // --> ENGINE --> ENGINE CLASS END
 // --> ENGINE END
+#endif // __WEISS__

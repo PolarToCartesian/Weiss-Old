@@ -26,7 +26,6 @@ Start Coding!
   + [x] Misc
 	+ [x] Texturing
     + [x] Rotation Around Point
-    + [ ] Visual Timers
   + [ ] Advanced
     + [ ] Multithreaded Rendering
 + [ ] Audio
@@ -36,3 +35,8 @@ Start Coding!
     + [ ] Volume Control
 	+ [ ] Play/Pause
 + [ ] Networking
+  + [ ] Sockets
+    + [x] Client Sockets
+	+ [ ] Server Sockets
+  + [ ] HTTP
+  + [ ] HTTPS
