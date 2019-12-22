@@ -116,6 +116,11 @@
 		MESSAGE_BOX_ERROR(errorMsg)\
 }
 
+#define ENABLE_CONSOLE() {\
+	AllocConsole();\
+	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);\
+}
+
 // --> ERROR HANDLING END
 
 // --> WEISS DEFINES START
@@ -1450,6 +1455,7 @@ public:
 
 	void HandleKeyboardInputs(Keyboard& keyboard, const float speed, const char left, const char right, const char up, const char down)
 	{
+<<<<<<< HEAD
 		if (keyboard.IsKeyDown(right))
 			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] - speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
 		if (keyboard.IsKeyDown(left))
@@ -1458,6 +1464,16 @@ public:
 		if (keyboard.IsKeyDown(up))
 			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] - speed, 0.0f, 0.0f);
 		if (keyboard.IsKeyDown(down))
+=======
+		if (keyboard.isKeyDown(right))
+			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] - speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
+		if (keyboard.isKeyDown(left))
+			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] + speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
+
+		if (keyboard.isKeyDown(up))
+			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] - speed, 0.0f, 0.0f);
+		if (keyboard.isKeyDown(down))
+>>>>>>> fc9320a58b9c5ba3fd2c5a3329b5257bf5972dc3
 			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] + speed, 0.0f, 0.0f);
 	}
 };
@@ -2065,7 +2081,11 @@ private:
 	void CreateDefaultConstantBuffers()
 	{
 		const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), 0u, 0u };
+<<<<<<< HEAD
 		ASSERT(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX == this->CreateConstantBuffer(cbd), "Could Not Create Default Constant Buffer #0 In Target Position");
+=======
+		ASSERT(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX == this->createConstantBuffer(cbd), "Could Not Create Default Constant Buffer #0 In Target Position");
+>>>>>>> fc9320a58b9c5ba3fd2c5a3329b5257bf5972dc3
 	}
 
 public:
@@ -2138,7 +2158,11 @@ public:
 		boundingRect.right  -= 10; // padding
 		boundingRect.bottom -= 10; // padding
 
+<<<<<<< HEAD
 		this->mouse->Clip(boundingRect);
+=======
+		this->mouse->clip(boundingRect);
+>>>>>>> fc9320a58b9c5ba3fd2c5a3329b5257bf5972dc3
 
 		// Hide Cursor
 
@@ -2187,14 +2211,22 @@ public:
 		this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex].GetSize()), 0u, 0u);
 	}
 
+<<<<<<< HEAD
 	[[nodiscard]] size_t CreateVertexShader(const VertexShaderDescriptor& descriptor)
+=======
+	[[nodiscard]] size_t createVertexShader(const VertexShaderDescriptor& descriptor)
+>>>>>>> fc9320a58b9c5ba3fd2c5a3329b5257bf5972dc3
 	{
 		this->vertexShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->vertexShaders.size() - 1;
 	}
 
+<<<<<<< HEAD
 	[[nodiscard]] size_t CreatePixelShader(const PixelShaderDescriptor& descriptor)
+=======
+	[[nodiscard]] size_t createPixelShader(const PixelShaderDescriptor& descriptor)
+>>>>>>> fc9320a58b9c5ba3fd2c5a3329b5257bf5972dc3
 	{
 		this->pixelShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
