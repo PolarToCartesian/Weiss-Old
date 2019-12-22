@@ -126,10 +126,48 @@
 // --> WEISS DEFINES START
 
 constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0u;
+constexpr const size_t WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE      = 1024;
 
 // --> WEISS DEFINES END
 
 // --> SOCKETS START
+// --> SOCKETS --> CLIENT START
+// --> SOCKETS --> CLIENT --> EXCEPTIONS START
+
+enum class ClientSocketCreationExceptionErrorType
+{
+	CREATION_FAILED = 0,
+	CONNECTION_FAILED = 1
+};
+
+class ClientSocketCreationException : public std::exception
+{
+private:
+	const ClientSocketCreationExceptionErrorType m_errorType;
+
+public:
+	ClientSocketCreationException(const ClientSocketCreationExceptionErrorType errorType)
+		: m_errorType(errorType)
+	{
+	}
+
+	ClientSocketCreationExceptionErrorType getErrorType() const
+	{
+		return this->m_errorType;
+	}
+};
+
+class ClientSocketReceiveException : public std::exception
+{
+
+};
+
+class ClientSocketSendException : public std::exception
+{
+
+};
+
+// --> SOCKETS --> CLIENT --> EXCEPTIONS END
 
 class ClientSocket {
 private:
@@ -142,9 +180,12 @@ public:
 		WSAStartup(MAKEWORD(2, 0), &wsaData);
 	}
 
-	~ClientSocket() { this->Disconnect(); }
+	~ClientSocket()
+	{
+		this->Disconnect();
+	}
 
-	void Connect(const char* host, const unsigned int port) noexcept
+	void Connect(const char* host, const unsigned int port)
 	{
 		SOCKADDR_IN sockInfo;
 		sockInfo.sin_addr.s_addr = inet_addr(host);
@@ -155,14 +196,24 @@ public:
 
 		if (this->m_socket == INVALID_SOCKET)
 		{
-			MESSAGE_BOX_ERROR("Socket Creation Failed");
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+				MESSAGE_BOX_ERROR("Socket Creation Failed");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
 			this->Disconnect();
+
+			throw ClientSocketCreationException(ClientSocketCreationExceptionErrorType::CREATION_FAILED);
 		}
 
 		if (connect(this->m_socket, (SOCKADDR*)&sockInfo, sizeof(sockInfo)) == SOCKET_ERROR)
 		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
 			MESSAGE_BOX_ERROR("Unable To Connect To Server Socket");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
 			this->Disconnect();
+
+			throw ClientSocketCreationException(ClientSocketCreationExceptionErrorType::CONNECTION_FAILED);
 		}
 	}
 
@@ -171,15 +222,36 @@ public:
 		if (length < 0)
 			length = strlen(data) + 1;
 
-		ASSERT(send(this->m_socket, data, length, 0) != SOCKET_ERROR, "Error While Sending Data From Client Socket");
+		if (send(this->m_socket, data, length, 0) == SOCKET_ERROR)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("Error While Sending Data From Client Socket");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw ClientSocketSendException();
+		}
 	}
 
-	void RecieveMessage(char* buffer, const int bufferSize) noexcept
+	[[nodiscard]] std::pair<std::array<char, WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE>, size_t> Receive()
 	{
-		ASSERT(recv(this->m_socket, buffer, bufferSize, 0) != SOCKET_ERROR, "Error While Receiving Data From Server Socket");
+		std::array<char, WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE> buffer;
+
+		const int iResult = recv(this->m_socket, buffer.data(), WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE, 0);
+
+		if (iResult == 0 || iResult == SOCKET_ERROR) {
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("[CLIENT SOCKET] Error While Receiving Data From Server");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			this->Disconnect();
+
+			throw ClientSocketReceiveException();
+		}
+
+		return { buffer, (size_t)iResult };
 	}
 
-	void Disconnect()
+	void Disconnect() noexcept
 	{
 		this->m_socket = INVALID_SOCKET;
 
@@ -188,6 +260,7 @@ public:
 	}
 };
 
+// --> SOCKETS --> CLIENT END
 // --> SOCKETS END
 
 // --> MATH START
@@ -1455,7 +1528,6 @@ public:
 
 	void HandleKeyboardInputs(Keyboard& keyboard, const float speed, const char left, const char right, const char up, const char down)
 	{
-<<<<<<< HEAD
 		if (keyboard.IsKeyDown(right))
 			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] - speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
 		if (keyboard.IsKeyDown(left))
@@ -1464,16 +1536,6 @@ public:
 		if (keyboard.IsKeyDown(up))
 			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] - speed, 0.0f, 0.0f);
 		if (keyboard.IsKeyDown(down))
-=======
-		if (keyboard.isKeyDown(right))
-			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] - speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
-		if (keyboard.isKeyDown(left))
-			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0] + speed, this->m_position.m128_f32[1], 0.0f, 0.0f);
-
-		if (keyboard.isKeyDown(up))
-			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] - speed, 0.0f, 0.0f);
-		if (keyboard.isKeyDown(down))
->>>>>>> fc9320a58b9c5ba3fd2c5a3329b5257bf5972dc3
 			this->m_position = DirectX::XMVectorSet(this->m_position.m128_f32[0], this->m_position.m128_f32[1] + speed, 0.0f, 0.0f);
 	}
 };
@@ -2081,11 +2143,7 @@ private:
 	void CreateDefaultConstantBuffers()
 	{
 		const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), 0u, 0u };
-<<<<<<< HEAD
 		ASSERT(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX == this->CreateConstantBuffer(cbd), "Could Not Create Default Constant Buffer #0 In Target Position");
-=======
-		ASSERT(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX == this->createConstantBuffer(cbd), "Could Not Create Default Constant Buffer #0 In Target Position");
->>>>>>> fc9320a58b9c5ba3fd2c5a3329b5257bf5972dc3
 	}
 
 public:
@@ -2158,11 +2216,7 @@ public:
 		boundingRect.right  -= 10; // padding
 		boundingRect.bottom -= 10; // padding
 
-<<<<<<< HEAD
 		this->mouse->Clip(boundingRect);
-=======
-		this->mouse->clip(boundingRect);
->>>>>>> fc9320a58b9c5ba3fd2c5a3329b5257bf5972dc3
 
 		// Hide Cursor
 
@@ -2211,22 +2265,14 @@ public:
 		this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex].GetSize()), 0u, 0u);
 	}
 
-<<<<<<< HEAD
 	[[nodiscard]] size_t CreateVertexShader(const VertexShaderDescriptor& descriptor)
-=======
-	[[nodiscard]] size_t createVertexShader(const VertexShaderDescriptor& descriptor)
->>>>>>> fc9320a58b9c5ba3fd2c5a3329b5257bf5972dc3
 	{
 		this->vertexShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
 		return this->vertexShaders.size() - 1;
 	}
 
-<<<<<<< HEAD
 	[[nodiscard]] size_t CreatePixelShader(const PixelShaderDescriptor& descriptor)
-=======
-	[[nodiscard]] size_t createPixelShader(const PixelShaderDescriptor& descriptor)
->>>>>>> fc9320a58b9c5ba3fd2c5a3329b5257bf5972dc3
 	{
 		this->pixelShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
 
