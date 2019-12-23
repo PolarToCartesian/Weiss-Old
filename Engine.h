@@ -47,7 +47,7 @@
 
 // Upcoming Features
 // --> Error Handling (Exceptions)  : DONE
-// --> Server Sockets               : TODO
+// --> Server Sockets               : DONE
 // --> Better Sound Engine          : TODO
 // --> Abstracted 2D Renderer       : TODO
 // --> ...
@@ -125,7 +125,6 @@
 }
 
 // --> ERROR HANDLING END
-
 // --> WEISS DEFINES START
 
 constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0u;
@@ -190,10 +189,10 @@ public:
 
 	void Connect(const char* host, const unsigned int port)
 	{
-		SOCKADDR_IN sockInfo;
-		sockInfo.sin_addr.s_addr = inet_addr(host);
-		sockInfo.sin_family = AF_INET;
-		sockInfo.sin_port = htons(port);
+		SOCKADDR_IN sockAddr;
+		sockAddr.sin_addr.s_addr = inet_addr(host);
+		sockAddr.sin_family = AF_INET;
+		sockAddr.sin_port = htons(port);
 
 		this->m_socket = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -203,24 +202,20 @@ public:
 			MESSAGE_BOX_ERROR("[CLIENT SOCKET] Socket Creation Failed");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-			this->Disconnect();
-
 			throw ClientSocketCreationException(ClientSocketCreationExceptionErrorType::CREATION_FAILED);
 		}
 
-		if (connect(this->m_socket, (SOCKADDR*)&sockInfo, sizeof(sockInfo)) == SOCKET_ERROR)
+		if (connect(this->m_socket, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
 		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 			MESSAGE_BOX_ERROR("[CLIENT SOCKET] Unable To Connect To Server Socket");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-			this->Disconnect();
-
 			throw ClientSocketCreationException(ClientSocketCreationExceptionErrorType::CONNECTION_FAILED);
 		}
 	}
 
-	void Send(const char* data, int length = -1) noexcept
+	void Send(const char* data, int length = -1)
 	{
 		if (length < 0)
 			length = strlen(data) + 1;
@@ -246,8 +241,6 @@ public:
 			MESSAGE_BOX_ERROR("[CLIENT SOCKET] Error While Receiving Data From Server");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-			this->Disconnect();
-
 			throw ClientSocketReceiveException();
 		}
 
@@ -266,7 +259,157 @@ public:
 // --> SOCKETS --> CLIENT END
 // --> SOCKETS --> SERVER START
 
+// --> SOCKETS --> SERVER --> EXCEPTIONS START
 
+enum class ServerSocketCreationExceptionErrorType
+{
+	CREATION_FAILED  = 0,
+	BINDING_FAILED   = 1,
+	LISTENING_FAILED = 2
+};
+
+class ServerSocketCreationException : public std::exception
+{
+private:
+	const ServerSocketCreationExceptionErrorType m_errorType;
+
+public:
+	ServerSocketCreationException(const ServerSocketCreationExceptionErrorType errorType)
+		: m_errorType(errorType)
+	{
+	}
+
+	ServerSocketCreationExceptionErrorType getErrorType() const
+	{
+		return this->m_errorType;
+	}
+};
+
+class ServerSocketReceiveException : public std::exception
+{
+
+};
+
+class ServerSocketSendException : public std::exception
+{
+
+};
+
+// --> SOCKETS --> SERVER --> EXCEPTIONS END
+
+class ServerSocket
+{
+private:
+	SOCKET m_socket = INVALID_SOCKET;
+
+	std::vector<SOCKET> m_clients;
+
+public:
+	ServerSocket()
+	{
+		WSADATA wsaData;
+		WSAStartup(MAKEWORD(2, 0), &wsaData);
+	}
+
+	~ServerSocket()
+	{
+		this->Disconnect();
+	}
+
+	void Bind(const unsigned int port)
+	{
+		this->m_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+		if (this->m_socket == INVALID_SOCKET)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("[SERVER SOCKET] Socket Creation Failed");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw ServerSocketCreationException(ServerSocketCreationExceptionErrorType::CREATION_FAILED);
+		}
+
+		SOCKADDR_IN sockAddr;
+		sockAddr.sin_addr.s_addr = INADDR_ANY;
+		sockAddr.sin_family      = AF_INET;
+		sockAddr.sin_port        = htons(5555);
+
+		if (bind(this->m_socket, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("[SERVER SOCKET] Could Not Bind Socket");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw ServerSocketCreationException(ServerSocketCreationExceptionErrorType::BINDING_FAILED);
+		}
+
+		if (listen(this->m_socket, 0) == SOCKET_ERROR)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("[SERVER SOCKET] Could Make The Socket Listen");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw ServerSocketCreationException(ServerSocketCreationExceptionErrorType::LISTENING_FAILED);
+		}
+	}
+
+	[[nodiscard]] int Accept() noexcept
+	{
+		SOCKADDR_IN clientAddr;
+		int clientAddrSize = 0;
+
+		const SOCKET client = accept(this->m_socket, (SOCKADDR*)&clientAddr, &clientAddrSize);
+
+		if (client != INVALID_SOCKET)
+		{
+			this->m_clients.push_back(client);
+
+			return this->m_clients.size() - 1;
+		}
+
+		return -1;
+	}
+
+	void Send(const int clientID, const char* data, int length = -1)
+	{
+		if (length < 0)
+			length = strlen(data) + 1;
+
+		if (send(this->m_clients[clientID], data, length, 0) == SOCKET_ERROR)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("[SERVER SOCKET] Could Not Send Data To Client Socket");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw ServerSocketSendException();
+		}
+	}
+
+	[[nodiscard]] std::pair<std::array<char, WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE>, size_t> Receive(const int clientID)
+	{
+		std::array<char, WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE> buffer;
+
+		const int iResult = recv(this->m_clients[clientID], buffer.data(), WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE, 0);
+
+		if (iResult == 0 || iResult == SOCKET_ERROR) {
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("[SERVER SOCKET] Error While Receiving Data From Client");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw ServerSocketReceiveException();
+		}
+
+		return { buffer, (size_t)iResult };
+	}
+
+	void Disconnect() noexcept
+	{
+		this->m_socket = INVALID_SOCKET;
+
+		closesocket(this->m_socket);
+		WSACleanup();
+	}
+};
 
 // --> SOCKETS --> SERVER END
 // --> SOCKETS END
@@ -553,13 +696,14 @@ public:
 		D3D11_SUBRESOURCE_DATA isd = {};
 		isd.pSysMem = descriptor.indices.data();
 
-		const bool wasError = pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer) != S_OK;
-
+		if (pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Unable To Create Index Buffer");
+			MESSAGE_BOX_ERROR("Unable To Create Index Buffer");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw IndexBufferCreationException();
+			throw IndexBufferCreationException();
+		}
 	}
 
 	[[nodiscard]] size_t GetSize() const
@@ -619,27 +763,30 @@ public:
 		D3D11_SUBRESOURCE_DATA sd = {};
 		sd.pSysMem = descriptor.memoryPtr;
 
-		const bool wasError = pDeviceRef->CreateBuffer(&bd, &sd, &this->m_pVertexBuffer) != S_OK;
-
+		if (pDeviceRef->CreateBuffer(&bd, &sd, &this->m_pVertexBuffer) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Unable To Create Vertex Buffer");
+			MESSAGE_BOX_ERROR("Unable To Create Vertex Buffer");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw VertexBufferCreationException();
+			throw VertexBufferCreationException();
+		}
 	}
 
-	void SetData(const void* memoryPtr, const size_t nElements, const size_t elementSize) const noexcept {
+	void SetData(const void* memoryPtr, const size_t nElements, const size_t elementSize) const {
 		D3D11_MAPPED_SUBRESOURCE resource;
 
-		const bool wasError = this->m_pDeviceContextRef->Map(this->m_pVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource) != S_OK;
-		
+		if (this->m_pDeviceContextRef->Map(this->m_pVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Map VertexBuffer Memory");
+			MESSAGE_BOX_ERROR("Could Not Map VertexBuffer Memory");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw VertexBufferDataSettingException();
+			throw VertexBufferDataSettingException();
+		}
 		
 		memcpy(resource.pData, memoryPtr, nElements * elementSize);
+
 		this->m_pDeviceContextRef->Unmap(this->m_pVertexBuffer.Get(), 0);
 	}
 
@@ -691,13 +838,14 @@ public:
 
 		cbd.StructureByteStride = 0u;
 
-		const bool wasError = pDeviceRef->CreateBuffer(&cbd, nullptr, &this->m_pConstantBuffer) != S_OK;
-
+		if (pDeviceRef->CreateBuffer(&cbd, nullptr, &this->m_pConstantBuffer) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Unable To Create Constant Buffer");
+			MESSAGE_BOX_ERROR("Unable To Create Constant Buffer");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw ConstantBufferCreationException();
+			throw ConstantBufferCreationException();
+		}
 	}
 
 	void SetData(const void* objPtr)
@@ -756,23 +904,25 @@ public:
 
 		if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_BINARY_FILE)
 		{
-			const bool wasError = D3DReadFileToBlob(descriptor.binaryFilename, &pBlob) != S_OK;
-
+			if (D3DReadFileToBlob(descriptor.binaryFilename, &pBlob) != S_OK)
+			{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-			if (wasError) MESSAGE_BOX_ERROR("Could Not Read Pixel Shader File");
+				MESSAGE_BOX_ERROR("Could Not Read Pixel Shader File");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-			if (wasError) throw PixelShaderCreationException();
+				throw PixelShaderCreationException();
+			}
 		}
 		else if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_SOURCE_CODE)
 		{
-			const bool wasError = D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "ps_5_0", 0, 0, &pBlob, NULL) != S_OK;
-
+			if (D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "ps_5_0", 0, 0, &pBlob, NULL) != S_OK)
+			{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-			if (wasError) MESSAGE_BOX_ERROR("Could Not Compile Pixel Shader");
+				MESSAGE_BOX_ERROR("Could Not Compile Pixel Shader");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-			if (wasError) throw PixelShaderCreationException();
+				throw PixelShaderCreationException();
+			}
 		}
 		else
 		{
@@ -783,13 +933,14 @@ public:
 			throw PixelShaderCreationException();
 		}
 
-		const bool wasError = pDeviceRef->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pPixelShader) != S_OK;
-
+		if (pDeviceRef->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pPixelShader) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Pixel Shader");
+			MESSAGE_BOX_ERROR("Could Not Create Pixel Shader");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw PixelShaderCreationException();
+			throw PixelShaderCreationException();
+		}
 	}
 
 	void Bind() const noexcept
@@ -830,23 +981,25 @@ public:
 
 		if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_BINARY_FILE)
 		{
-			const bool wasError = D3DReadFileToBlob(descriptor.binaryFilename, &pBlob) != S_OK;
-
+			if (D3DReadFileToBlob(descriptor.binaryFilename, &pBlob) != S_OK)
+			{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-			if (wasError) MESSAGE_BOX_ERROR("Could Not Read Vertex Shader File");
+				MESSAGE_BOX_ERROR("Could Not Read Vertex Shader File");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-			if (wasError) throw VertexShaderCreationException();
+				throw VertexShaderCreationException();
+			}
 		}
 		else if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_SOURCE_CODE)
 		{
-			const bool wasError = D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "vs_5_0", 0, 0, &pBlob, NULL) != S_OK;
-
+			if (D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "vs_5_0", 0, 0, &pBlob, NULL) != S_OK)
+			{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-			if (wasError) MESSAGE_BOX_ERROR("Could Not Compile Vertex Shader");
+				MESSAGE_BOX_ERROR("Could Not Compile Vertex Shader");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-			if (wasError) throw VertexShaderCreationException();
+				throw VertexShaderCreationException();
+			}
 		}
 		else
 		{
@@ -857,13 +1010,14 @@ public:
 			throw VertexShaderCreationException();
 		}
 
-		bool wasError = pDeviceRef->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader) != S_OK;
-
+		if (pDeviceRef->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Vertex Shader");
+			MESSAGE_BOX_ERROR("Could Not Create Vertex Shader");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw VertexShaderCreationException();
+			throw VertexShaderCreationException();
+		}
 
 		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescriptors(descriptor.inputElementDescriptors.size());
 		for (uint32_t i = 0; i < inputElementDescriptors.size(); i++)
@@ -875,13 +1029,14 @@ public:
 			inputElementDescriptors[i].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
 		}
 
-		wasError = pDeviceRef->CreateInputLayout(inputElementDescriptors.data(), (UINT)inputElementDescriptors.size(), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &m_pInputLayout) != S_OK;
-
+		if (pDeviceRef->CreateInputLayout(inputElementDescriptors.data(), (UINT)inputElementDescriptors.size(), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &m_pInputLayout) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Input Layout");
+			MESSAGE_BOX_ERROR("Could Not Create Input Layout");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw VertexShaderCreationException();
+			throw VertexShaderCreationException();
+		}
 	}
 
 	void Bind() const noexcept
@@ -1446,13 +1601,14 @@ public:
 	{
 		const HICON hIcon = (HICON)LoadImage(NULL, pathname, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
 
-		const bool wasError = hIcon == NULL;
-
+		if (hIcon == NULL)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Load Icon");
+			MESSAGE_BOX_ERROR("Could Not Load Icon");
 #endif
 
-		if (wasError) throw IconLoadingException();
+			throw IconLoadingException();
+		}
 
 		SendMessage(this->m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 	}
@@ -1860,59 +2016,67 @@ public:
 		Microsoft::WRL::ComPtr<IWICImagingFactory>    factory;
 		Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frameDecoder;
 		
-		bool wasError = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory)) != S_OK;
-
+		if (CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory)) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create IWICImagingFactory")
+			MESSAGE_BOX_ERROR("Could Not Create IWICImagingFactory")
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw ImageLoadingException();
+			throw ImageLoadingException();
+		}
 
-		wasError = factory->CreateDecoderFromFilename(filename, NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &bitmapDecoder) != S_OK;
-		
+		if (factory->CreateDecoderFromFilename(filename, NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &bitmapDecoder) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Read/Open Image");
+			MESSAGE_BOX_ERROR("Could Not Read/Open Image");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw ImageLoadingException();
+			throw ImageLoadingException();
+		}
 
-		wasError = bitmapDecoder->GetFrame(0, &frameDecoder) != S_OK;
+		if (bitmapDecoder->GetFrame(0, &frameDecoder) != S_OK)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("Could Not Get First Frame Of Image");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw ImageLoadingException();
+		}
+
+		if (frameDecoder->GetSize((UINT*)&this->m_width, (UINT*)&this->m_height) != S_OK)
+		{
 
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Get First Frame Of Image");
+			MESSAGE_BOX_ERROR("Could Not Get Image Width/Height");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
-		
-		if (wasError) throw ImageLoadingException();
+			
+			throw ImageLoadingException();
+		}
 
-		wasError = frameDecoder->GetSize((UINT*)&this->m_width, (UINT*)&this->m_height) != S_OK;
-
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Get Image Width/Height");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-		
 		this->m_nPixels = this->m_width * this->m_height;
 
-		if (wasError) throw ImageLoadingException();
-
-		wasError = WICConvertBitmapSource(GUID_WICPixelFormat32bppRGBA, frameDecoder.Get(), &decodedConvertedFrame) != S_OK;
+		if (WICConvertBitmapSource(GUID_WICPixelFormat32bppRGBA, frameDecoder.Get(), &decodedConvertedFrame) != S_OK)
+		{
 
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Bitmap Converter");
+			MESSAGE_BOX_ERROR("Could Not Create Bitmap Converter");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw ImageLoadingException();
+			throw ImageLoadingException();
+		}
 
 		this->m_buff = std::make_unique<Coloru8[]>(this->m_nPixels * sizeof(Coloru8));
 
 		const WICRect sampleRect{ 0, 0, this->m_width, this->m_height };
 
-		wasError = decodedConvertedFrame->CopyPixels(&sampleRect, this->m_width * sizeof(Coloru8), this->m_nPixels * sizeof(Coloru8), (BYTE*)this->m_buff.get()) != S_OK;
-
+		if (decodedConvertedFrame->CopyPixels(&sampleRect, this->m_width * sizeof(Coloru8), this->m_nPixels * sizeof(Coloru8), (BYTE*)this->m_buff.get()) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Copy Pixels From Bitmap");
+			MESSAGE_BOX_ERROR("Could Not Copy Pixels From Bitmap");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw ImageLoadingException();
+			throw ImageLoadingException();
+		}
 	}
 
 	[[nodiscard]] uint16_t GetWidth()   const {
@@ -1989,13 +2153,14 @@ public:
 
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2D;
 
-		bool wasError = pDeviceRef->CreateTexture2D(&texture2DDescriptor, this->m_descriptor.useMipMaps ? nullptr : &subResourceData, &texture2D) != S_OK;
-
+		if (pDeviceRef->CreateTexture2D(&texture2DDescriptor, this->m_descriptor.useMipMaps ? nullptr : &subResourceData, &texture2D) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Texture 2D");
+			MESSAGE_BOX_ERROR("Could Not Create Texture 2D");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw Texture2DCreationException();
+			throw Texture2DCreationException();
+		}
 
 		if (this->m_descriptor.useMipMaps)
 			this->m_pDeviceContextRef->UpdateSubresource(texture2D.Get(), 0u, nullptr, subResourceData.pSysMem, subResourceData.SysMemPitch, 0u);
@@ -2006,13 +2171,14 @@ public:
 		SRVDescriptor.Texture2D.MostDetailedMip = 0;
 		SRVDescriptor.Texture2D.MipLevels = this->m_descriptor.useMipMaps ? -1 : 1;
 
-		wasError = pDeviceRef->CreateShaderResourceView(texture2D.Get(), &SRVDescriptor, this->m_pShaderResourceView.GetAddressOf()) != S_OK;
-		
+		if (pDeviceRef->CreateShaderResourceView(texture2D.Get(), &SRVDescriptor, this->m_pShaderResourceView.GetAddressOf()) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create ShaderResourceView");
+			MESSAGE_BOX_ERROR("Could Not Create ShaderResourceView");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw Texture2DCreationException();
+			throw Texture2DCreationException();
+		}
 
 		if (this->m_descriptor.useMipMaps)
 			this->m_pDeviceContextRef->GenerateMips(m_pShaderResourceView.Get());
@@ -2185,34 +2351,37 @@ private:
 		scd.SwapEffect   = DXGI_SWAP_EFFECT_DISCARD;
 		scd.Flags        = 0;
 
-		const bool wasError = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &scd, &m_pSwapChain, &m_pDevice, nullptr, &m_pDeviceContext) != S_OK;
-
+		if (D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &scd, &m_pSwapChain, &m_pDevice, nullptr, &m_pDeviceContext) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Device And SwapChain");
+			MESSAGE_BOX_ERROR("Could Not Create Device And SwapChain");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw EngineInitializationException();
+			throw EngineInitializationException();
+		}
 	}
 
 	void CreateRenderTarget()
 	{
 		Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
 
-		bool wasError = this->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer) != S_OK;
-
+		if (this->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Get BackBuffer");
+			MESSAGE_BOX_ERROR("Could Not Get BackBuffer");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw EngineInitializationException();
+			throw EngineInitializationException();
+		}
 
-		wasError = this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget) != S_OK;
-
+		if (this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create RenderTargetView");
+			MESSAGE_BOX_ERROR("Could Not Create RenderTargetView");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw EngineInitializationException();
+			throw EngineInitializationException();
+		}
 	}
 
 	void CreateViewport()
@@ -2245,23 +2414,25 @@ private:
 		dsDesc.BackFace.StencilPassOp       = D3D11_STENCIL_OP_KEEP;
 		dsDesc.BackFace.StencilFunc         = D3D11_COMPARISON_ALWAYS;
 		
-		bool wasError = this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOn) != S_OK;
-
+		if (this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOn) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create DepthStencilState");
+			MESSAGE_BOX_ERROR("Could Not Create DepthStencilState");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
-		
-		if (wasError) throw EngineInitializationException();
+
+			throw EngineInitializationException();
+		}
 
 		dsDesc.DepthEnable = FALSE;
 		
-		wasError = this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOff) != S_OK;
-
+		if (this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOff) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create EmptyDepthStencilState");
+			MESSAGE_BOX_ERROR("Could Not Create EmptyDepthStencilState");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw EngineInitializationException();
+			throw EngineInitializationException();
+		}
 	}
 
 	void CreateDepthStencil()
@@ -2279,13 +2450,14 @@ private:
 		descDepth.Usage     = D3D11_USAGE_DEFAULT;
 		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-		bool wasError = this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil) != S_OK;
-
+		if (this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Texture2D");
+			MESSAGE_BOX_ERROR("Could Not Create Texture2D");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw EngineInitializationException();
+			throw EngineInitializationException();
+		}
 
 		// Create Depth Stencil Texture View
 		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
@@ -2293,13 +2465,14 @@ private:
 		descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		descDSV.Texture2D.MipSlice = 0u;
 
-		wasError = this->m_pDevice->CreateDepthStencilView(pDepthStencil.Get(), &descDSV, &this->m_pDepthStencilView) != S_OK;
-
+		if (this->m_pDevice->CreateDepthStencilView(pDepthStencil.Get(), &descDSV, &this->m_pDepthStencilView) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create DepthStencilView");
+			MESSAGE_BOX_ERROR("Could Not Create DepthStencilView");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw EngineInitializationException();
+			throw EngineInitializationException();
+		}
 	}
 
 	void BindDepthStencil()
@@ -2326,13 +2499,14 @@ private:
 	 */
 	void PresentFrame(const bool useVSync)
 	{
-		const bool wasError = this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u) != S_OK;
-
+		if (this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Present Frame");
+			MESSAGE_BOX_ERROR("Could Not Present Frame");
 #endif
 
-		if (wasError) throw EngineInitializationException();
+			throw EngineInitializationException();
+		}
 
 		// Clear Depth Stencil
 		this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
@@ -2342,25 +2516,27 @@ private:
 	{
 		const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), 0u, 0u };
 
-		const bool wasError = WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX != this->CreateConstantBuffer(cbd);
-
+		if (this->CreateConstantBuffer(cbd) != WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Default Constant Buffer #0 In Target Position");
+			MESSAGE_BOX_ERROR("Could Not Create Default Constant Buffer #0 In Target Position");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw EngineInitializationException();
+			throw EngineInitializationException();
+		}
 	}
 
 public:
 	Engine()
 	{
-		const bool wasError = CoInitialize(NULL) != S_OK;
-
+		if (CoInitialize(NULL) != S_OK)
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Initialize COM");
+			MESSAGE_BOX_ERROR("Could Not Initialize COM");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		if (wasError) throw EngineInitializationException();
+			throw EngineInitializationException();
+		}
 	}
 
 	~Engine()
@@ -2372,11 +2548,12 @@ public:
 
 	void PlayWavFile(const char* filename)
 	{
-		const bool wasError = !PlaySound(TEXT(filename), NULL, SND_ASYNC | SND_FILENAME);
-
+		if (!PlaySound(TEXT(filename), NULL, SND_ASYNC | SND_FILENAME))
+		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		if (wasError) MESSAGE_BOX_ERROR("Could Not Play Sound From File");
+			MESSAGE_BOX_ERROR("Could Not Play Sound From File");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
+		}
 	}
 
 	[[nodiscard]] Mesh&           GetMesh          (const size_t index) noexcept { return this->meshes[index];          }

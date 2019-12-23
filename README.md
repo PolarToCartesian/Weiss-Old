@@ -32,8 +32,8 @@ Start Coding!
   + [ ] Advanced
     + [ ] Volume Control
 + [ ] Networking
-  + [ ] Sockets
+  + [x] Sockets
     + [x] Client Sockets
-    + [ ] Server Sockets
+    + [x] Server Sockets
   + [ ] HTTP
   + [ ] HTTPS
