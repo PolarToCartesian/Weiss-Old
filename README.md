@@ -23,9 +23,7 @@ Start Coding!
       + [ ] Point Light
       + [ ] Directional Light
     + [ ] Materials
-  + [x] Misc
-	+ [x] Texturing
-    + [x] Rotation Around Point
+	+ [x] 2D Texturing
   + [ ] Advanced
     + [ ] Multithreaded Rendering
 + [ ] Audio
@@ -33,10 +31,9 @@ Start Coding!
 	+ [x] Play
   + [ ] Advanced
     + [ ] Volume Control
-	+ [ ] Play/Pause
 + [ ] Networking
   + [ ] Sockets
     + [x] Client Sockets
-	+ [ ] Server Sockets
+    + [ ] Server Sockets
   + [ ] HTTP
   + [ ] HTTPS

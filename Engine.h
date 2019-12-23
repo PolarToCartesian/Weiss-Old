@@ -46,9 +46,12 @@
 
 
 // Upcoming Features
-// --> Error Handling
-// --> Server Sockets
-// --> Abstracted 2D Renderer
+// --> Error Handling (Exceptions)  : DONE
+// --> Server Sockets               : TODO
+// --> Better Sound Engine          : TODO
+// --> Abstracted 2D Renderer       : TODO
+// --> ...
+// --> Physics???
 
 // --> INCLUDES START
 // --> INCLUDES
@@ -197,7 +200,7 @@ public:
 		if (this->m_socket == INVALID_SOCKET)
 		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-				MESSAGE_BOX_ERROR("Socket Creation Failed");
+			MESSAGE_BOX_ERROR("[CLIENT SOCKET] Socket Creation Failed");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
 			this->Disconnect();
@@ -208,7 +211,7 @@ public:
 		if (connect(this->m_socket, (SOCKADDR*)&sockInfo, sizeof(sockInfo)) == SOCKET_ERROR)
 		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-			MESSAGE_BOX_ERROR("Unable To Connect To Server Socket");
+			MESSAGE_BOX_ERROR("[CLIENT SOCKET] Unable To Connect To Server Socket");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
 			this->Disconnect();
@@ -225,7 +228,7 @@ public:
 		if (send(this->m_socket, data, length, 0) == SOCKET_ERROR)
 		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-			MESSAGE_BOX_ERROR("Error While Sending Data From Client Socket");
+			MESSAGE_BOX_ERROR("[CLIENT SOCKET] Error While Sending Data From Client Socket");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
 			throw ClientSocketSendException();
@@ -261,6 +264,11 @@ public:
 };
 
 // --> SOCKETS --> CLIENT END
+// --> SOCKETS --> SERVER START
+
+
+
+// --> SOCKETS --> SERVER END
 // --> SOCKETS END
 
 // --> MATH START
@@ -517,6 +525,11 @@ struct IndexBufferDescriptor
 	const std::vector<uint32_t> indices;
 };
 
+class IndexBufferCreationException : public std::exception
+{
+
+};
+
 class IndexBuffer {
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pIndexBuffer;
@@ -540,7 +553,13 @@ public:
 		D3D11_SUBRESOURCE_DATA isd = {};
 		isd.pSysMem = descriptor.indices.data();
 
-		HRESULT_ERROR(pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer), "Unable To Create Index Buffer");
+		const bool wasError = pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Unable To Create Index Buffer");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw IndexBufferCreationException();
 	}
 
 	[[nodiscard]] size_t GetSize() const
@@ -560,9 +579,19 @@ public:
 struct VertexBufferDescriptor
 {
 	const void* memoryPtr    = nullptr;
-	const size_t nElements   = 0;
-	const size_t elementSize = 0;
+	const size_t nElements   = 0u;
+	const size_t elementSize = 0u;
 	const bool isUpdatable   = false;
+};
+
+class VertexBufferCreationException : public std::exception
+{
+
+};
+
+class VertexBufferDataSettingException : public std::exception
+{
+
 };
 
 class VertexBuffer {
@@ -589,12 +618,27 @@ public:
 
 		D3D11_SUBRESOURCE_DATA sd = {};
 		sd.pSysMem = descriptor.memoryPtr;
-		HRESULT_ERROR(pDeviceRef->CreateBuffer(&bd, &sd, &this->m_pVertexBuffer), "Unable To Create Vertex Buffer");
+
+		const bool wasError = pDeviceRef->CreateBuffer(&bd, &sd, &this->m_pVertexBuffer) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Unable To Create Vertex Buffer");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw VertexBufferCreationException();
 	}
 
 	void SetData(const void* memoryPtr, const size_t nElements, const size_t elementSize) const noexcept {
 		D3D11_MAPPED_SUBRESOURCE resource;
-		this->m_pDeviceContextRef->Map(this->m_pVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource);
+
+		const bool wasError = this->m_pDeviceContextRef->Map(this->m_pVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource) != S_OK;
+		
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Map VertexBuffer Memory");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw VertexBufferDataSettingException();
+		
 		memcpy(resource.pData, memoryPtr, nElements * elementSize);
 		this->m_pDeviceContextRef->Unmap(this->m_pVertexBuffer.Get(), 0);
 	}
@@ -619,6 +663,11 @@ struct ConstantBufferDescriptor
 	const UINT              slotPS      = 0u; // Ignored if ShaderBindingType is VERTEX
 };
 
+class ConstantBufferCreationException : public std::exception
+{
+
+};
+
 class ConstantBuffer {
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pConstantBuffer;
@@ -641,7 +690,14 @@ public:
 		cbd.ByteWidth = static_cast<UINT>(this->m_descriptor.objSize);
 
 		cbd.StructureByteStride = 0u;
-		HRESULT_ERROR(pDeviceRef->CreateBuffer(&cbd, nullptr, &this->m_pConstantBuffer), "Unable To Create Constant Buffer");
+
+		const bool wasError = pDeviceRef->CreateBuffer(&cbd, nullptr, &this->m_pConstantBuffer) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Unable To Create Constant Buffer");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw ConstantBufferCreationException();
 	}
 
 	void SetData(const void* objPtr)
@@ -680,6 +736,11 @@ struct PixelShaderDescriptor
 	const char* sourceCode;
 };
 
+class PixelShaderCreationException : public std::exception
+{
+
+};
+
 class PixelShader {
 private:
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pPixelShader;
@@ -695,18 +756,40 @@ public:
 
 		if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_BINARY_FILE)
 		{
-			HRESULT_ERROR(D3DReadFileToBlob(descriptor.binaryFilename, &pBlob), "Could Not Read Pixel Shader File");
+			const bool wasError = D3DReadFileToBlob(descriptor.binaryFilename, &pBlob) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			if (wasError) MESSAGE_BOX_ERROR("Could Not Read Pixel Shader File");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			if (wasError) throw PixelShaderCreationException();
 		}
 		else if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_SOURCE_CODE)
 		{
-			HRESULT_ERROR(D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "ps_5_0", 0, 0, &pBlob, NULL), "Could Not Compile Pixel Shader");
+			const bool wasError = D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "ps_5_0", 0, 0, &pBlob, NULL) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			if (wasError) MESSAGE_BOX_ERROR("Could Not Compile Pixel Shader");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			if (wasError) throw PixelShaderCreationException();
 		}
 		else
 		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
 			MESSAGE_BOX_ERROR("Your Specified Shader Loading Method Is Not Supported From Pixel Shaders");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw PixelShaderCreationException();
 		}
 
-		HRESULT_ERROR(pDeviceRef->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pPixelShader), "Could Not Create Pixel Shader");
+		const bool wasError = pDeviceRef->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pPixelShader) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Pixel Shader");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw PixelShaderCreationException();
 	}
 
 	void Bind() const noexcept
@@ -726,6 +809,11 @@ struct VertexShaderDescriptor
 	const char*               sourceCode     = nullptr; // Ignore if ShaderLoadingMethod is FROM_BINARY_FILE
 };
 
+class VertexShaderCreationException : public std::exception
+{
+
+};
+
 class VertexShader {
 private:
 	Microsoft::WRL::ComPtr<ID3D11VertexShader>   m_pVertexShader;
@@ -742,18 +830,40 @@ public:
 
 		if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_BINARY_FILE)
 		{
-			HRESULT_ERROR(D3DReadFileToBlob(descriptor.binaryFilename, &pBlob), "Could Not Read Vertex Shader File");
+			const bool wasError = D3DReadFileToBlob(descriptor.binaryFilename, &pBlob) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			if (wasError) MESSAGE_BOX_ERROR("Could Not Read Vertex Shader File");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			if (wasError) throw VertexShaderCreationException();
 		}
 		else if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_SOURCE_CODE)
 		{
-			HRESULT_ERROR(D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "vs_5_0", 0, 0, &pBlob, NULL), "Could Not Compile Vertex Shader");
+			const bool wasError = D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "vs_5_0", 0, 0, &pBlob, NULL) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			if (wasError) MESSAGE_BOX_ERROR("Could Not Compile Vertex Shader");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			if (wasError) throw VertexShaderCreationException();
 		}
 		else
 		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
 			MESSAGE_BOX_ERROR("Your Specified Shader Loading Method Is Not Supported From Vertex Shaders");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw VertexShaderCreationException();
 		}
 
-		HRESULT_ERROR(pDeviceRef->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader), "Could Not Create Vertex Shader");
+		bool wasError = pDeviceRef->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Vertex Shader");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw VertexShaderCreationException();
 
 		std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescriptors(descriptor.inputElementDescriptors.size());
 		for (uint32_t i = 0; i < inputElementDescriptors.size(); i++)
@@ -765,12 +875,13 @@ public:
 			inputElementDescriptors[i].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
 		}
 
-		HRESULT_ERROR(pDeviceRef->CreateInputLayout(
-			inputElementDescriptors.data(), (UINT)inputElementDescriptors.size(),
-			pBlob->GetBufferPointer(),
-			pBlob->GetBufferSize(),
-			&m_pInputLayout
-		), "Could Not Create Input Layout");
+		wasError = pDeviceRef->CreateInputLayout(inputElementDescriptors.data(), (UINT)inputElementDescriptors.size(), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &m_pInputLayout) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Input Layout");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw VertexShaderCreationException();
 	}
 
 	void Bind() const noexcept
@@ -1168,6 +1279,11 @@ struct WindowDescriptor
 	const HINSTANCE hInstance;
 };
 
+class IconLoadingException : public std::exception
+{
+
+};
+
 class Window
 {
 	friend LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
@@ -1329,7 +1445,14 @@ public:
 	void SetIcon(const char* pathname)
 	{
 		const HICON hIcon = (HICON)LoadImage(NULL, pathname, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
-		ASSERT(hIcon != NULL, "Could Not Load Icon");
+
+		const bool wasError = hIcon == NULL;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Load Icon");
+#endif
+
+		if (wasError) throw IconLoadingException();
 
 		SendMessage(this->m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
 	}
@@ -1717,6 +1840,11 @@ struct Colorf16
 // --> IMAGES --> COLOR STRUCTS END
 // --> IMAGES --> IMAGE START
 
+class ImageLoadingException : public std::exception
+{
+
+};
+
 class Image {
 private:
 	std::unique_ptr<Coloru8[]> m_buff;
@@ -1731,47 +1859,60 @@ public:
 		Microsoft::WRL::ComPtr<IWICBitmapDecoder>     bitmapDecoder;
 		Microsoft::WRL::ComPtr<IWICImagingFactory>    factory;
 		Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frameDecoder;
+		
+		bool wasError = CoCreateInstance(CLSID_WICImagingFactory, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&factory)) != S_OK;
 
-		HRESULT_ERROR(CoCreateInstance(
-			CLSID_WICImagingFactory,
-			NULL,
-			CLSCTX_INPROC_SERVER,
-			IID_PPV_ARGS(&factory)
-		), "Could Not Create IWICImagingFactory");
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create IWICImagingFactory")
+#endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		HRESULT_ERROR(factory->CreateDecoderFromFilename(
-			filename,
-			NULL,
-			GENERIC_READ,
-			WICDecodeMetadataCacheOnLoad,
-			&bitmapDecoder
-		), "Could Not Read/Open Image");
+		if (wasError) throw ImageLoadingException();
 
-		HRESULT_ERROR(bitmapDecoder->GetFrame(0, &frameDecoder), "Could Not Get First Frame Of Image");
+		wasError = factory->CreateDecoderFromFilename(filename, NULL, GENERIC_READ, WICDecodeMetadataCacheOnLoad, &bitmapDecoder) != S_OK;
+		
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Read/Open Image");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		HRESULT_ERROR(frameDecoder->GetSize(
-			(UINT*)&this->m_width,
-			(UINT*)&this->m_height
-		), "Could Not Get Image Width/Height");
+		if (wasError) throw ImageLoadingException();
 
+		wasError = bitmapDecoder->GetFrame(0, &frameDecoder) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Get First Frame Of Image");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+		
+		if (wasError) throw ImageLoadingException();
+
+		wasError = frameDecoder->GetSize((UINT*)&this->m_width, (UINT*)&this->m_height) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Get Image Width/Height");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+		
 		this->m_nPixels = this->m_width * this->m_height;
 
-		HRESULT_ERROR(WICConvertBitmapSource(
-			GUID_WICPixelFormat32bppRGBA,
-			frameDecoder.Get(),
-			&decodedConvertedFrame
-		), "Could Not Create Bitmap Converter");
+		if (wasError) throw ImageLoadingException();
+
+		wasError = WICConvertBitmapSource(GUID_WICPixelFormat32bppRGBA, frameDecoder.Get(), &decodedConvertedFrame) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Bitmap Converter");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw ImageLoadingException();
 
 		this->m_buff = std::make_unique<Coloru8[]>(this->m_nPixels * sizeof(Coloru8));
 
 		const WICRect sampleRect{ 0, 0, this->m_width, this->m_height };
 
-		HRESULT_ERROR(decodedConvertedFrame->CopyPixels(
-			&sampleRect,
-			this->m_width * sizeof(Coloru8),
-			this->m_nPixels * sizeof(Coloru8),
-			(BYTE*)this->m_buff.get()
-		), "Could Not Copy Pixels From Bitmap");
+		wasError = decodedConvertedFrame->CopyPixels(&sampleRect, this->m_width * sizeof(Coloru8), this->m_nPixels * sizeof(Coloru8), (BYTE*)this->m_buff.get()) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Copy Pixels From Bitmap");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw ImageLoadingException();
 	}
 
 	[[nodiscard]] uint16_t GetWidth()   const {
@@ -1814,6 +1955,11 @@ struct Texture2DDescriptor
 	const bool useMipMaps;
 };
 
+class Texture2DCreationException : public std::exception
+{
+
+};
+
 class Texture2D {
 private:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_pShaderResourceView;
@@ -1842,7 +1988,14 @@ public:
 		texture2DDescriptor.MiscFlags = this->m_descriptor.useMipMaps ? D3D11_RESOURCE_MISC_GENERATE_MIPS : 0;
 
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> texture2D;
-		HRESULT_ERROR(pDeviceRef->CreateTexture2D(&texture2DDescriptor, this->m_descriptor.useMipMaps ? nullptr : &subResourceData, &texture2D), "Could Not Create Texture 2D");
+
+		bool wasError = pDeviceRef->CreateTexture2D(&texture2DDescriptor, this->m_descriptor.useMipMaps ? nullptr : &subResourceData, &texture2D) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Texture 2D");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw Texture2DCreationException();
 
 		if (this->m_descriptor.useMipMaps)
 			this->m_pDeviceContextRef->UpdateSubresource(texture2D.Get(), 0u, nullptr, subResourceData.pSysMem, subResourceData.SysMemPitch, 0u);
@@ -1853,7 +2006,13 @@ public:
 		SRVDescriptor.Texture2D.MostDetailedMip = 0;
 		SRVDescriptor.Texture2D.MipLevels = this->m_descriptor.useMipMaps ? -1 : 1;
 
-		HRESULT_ERROR(pDeviceRef->CreateShaderResourceView(texture2D.Get(), &SRVDescriptor, this->m_pShaderResourceView.GetAddressOf()), "Could Not Create ShaderResourceView");
+		wasError = pDeviceRef->CreateShaderResourceView(texture2D.Get(), &SRVDescriptor, this->m_pShaderResourceView.GetAddressOf()) != S_OK;
+		
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create ShaderResourceView");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw Texture2DCreationException();
 
 		if (this->m_descriptor.useMipMaps)
 			this->m_pDeviceContextRef->GenerateMips(m_pShaderResourceView.Get());
@@ -1970,6 +2129,11 @@ struct EngineDescriptor
 // --> ENGINE --> ENGINE DESCRIPTORS END
 // --> ENGINE --> ENGINE CLASS START
 
+class EngineInitializationException : public std::exception
+{
+
+};
+
 class Engine
 {
 private:
@@ -2021,28 +2185,34 @@ private:
 		scd.SwapEffect   = DXGI_SWAP_EFFECT_DISCARD;
 		scd.Flags        = 0;
 
-		HRESULT_ERROR(D3D11CreateDeviceAndSwapChain(
-			nullptr,
-			D3D_DRIVER_TYPE_HARDWARE,
-			nullptr,
-			0,
-			nullptr,
-			0,
-			D3D11_SDK_VERSION,
-			&scd,
-			&m_pSwapChain,
-			&m_pDevice,
-			nullptr,
-			&m_pDeviceContext
-		), "Could Not Create Device And SwapChain");
+		const bool wasError = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &scd, &m_pSwapChain, &m_pDevice, nullptr, &m_pDeviceContext) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Device And SwapChain");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw EngineInitializationException();
 	}
 
 	void CreateRenderTarget()
 	{
 		Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
 
-		HRESULT_ERROR(this->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer), "Could Not Get BackBuffer");
-		HRESULT_ERROR(this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget), "Could Not Create RenderTargetView");
+		bool wasError = this->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Get BackBuffer");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw EngineInitializationException();
+
+		wasError = this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create RenderTargetView");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw EngineInitializationException();
 	}
 
 	void CreateViewport()
@@ -2075,11 +2245,23 @@ private:
 		dsDesc.BackFace.StencilPassOp       = D3D11_STENCIL_OP_KEEP;
 		dsDesc.BackFace.StencilFunc         = D3D11_COMPARISON_ALWAYS;
 		
-		HRESULT_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOn), "Could Not Create DepthStencilState");
+		bool wasError = this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOn) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create DepthStencilState");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
 		
+		if (wasError) throw EngineInitializationException();
+
 		dsDesc.DepthEnable = FALSE;
 		
-		HRESULT_ERROR(this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOff), "Could Not Create EmptyDepthStencilState");
+		wasError = this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOff) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create EmptyDepthStencilState");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw EngineInitializationException();
 	}
 
 	void CreateDepthStencil()
@@ -2097,7 +2279,13 @@ private:
 		descDepth.Usage     = D3D11_USAGE_DEFAULT;
 		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
-		HRESULT_ERROR(this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil), "Could Not Create Texture2D");
+		bool wasError = this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Texture2D");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw EngineInitializationException();
 
 		// Create Depth Stencil Texture View
 		D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
@@ -2105,9 +2293,13 @@ private:
 		descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
 		descDSV.Texture2D.MipSlice = 0u;
 
-		HRESULT_ERROR(this->m_pDevice->CreateDepthStencilView(
-			pDepthStencil.Get(), &descDSV, &this->m_pDepthStencilView
-		), "Could Not Create DepthStencilView");
+		wasError = this->m_pDevice->CreateDepthStencilView(pDepthStencil.Get(), &descDSV, &this->m_pDepthStencilView) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create DepthStencilView");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw EngineInitializationException();
 	}
 
 	void BindDepthStencil()
@@ -2134,7 +2326,13 @@ private:
 	 */
 	void PresentFrame(const bool useVSync)
 	{
-		HRESULT_ERROR(this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u), "Could Not Present Frame");
+		const bool wasError = this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Present Frame");
+#endif
+
+		if (wasError) throw EngineInitializationException();
 
 		// Clear Depth Stencil
 		this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
@@ -2143,13 +2341,26 @@ private:
 	void CreateDefaultConstantBuffers()
 	{
 		const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), 0u, 0u };
-		ASSERT(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX == this->CreateConstantBuffer(cbd), "Could Not Create Default Constant Buffer #0 In Target Position");
+
+		const bool wasError = WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX != this->CreateConstantBuffer(cbd);
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Create Default Constant Buffer #0 In Target Position");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw EngineInitializationException();
 	}
 
 public:
 	Engine()
 	{
-		HRESULT_ERROR(CoInitialize(NULL), "Could Not Initialize COM");
+		const bool wasError = CoInitialize(NULL) != S_OK;
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Initialize COM");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+		if (wasError) throw EngineInitializationException();
 	}
 
 	~Engine()
@@ -2159,10 +2370,13 @@ public:
 		delete this->perspectiveCamera;
 	}
 
-	void PlaySoundFromFile(const char* filename)
+	void PlayWavFile(const char* filename)
 	{
-		ASSERT(PlaySound(TEXT(filename), NULL, SND_ASYNC | SND_FILENAME), "Could Not Play Sound From File");
-		//HRESULT_ERROR(mciSendString(("play " + std::string(filename)).c_str(), 0, NULL, NULL), "Could Not Play Audio File");
+		const bool wasError = !PlaySound(TEXT(filename), NULL, SND_ASYNC | SND_FILENAME);
+
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		if (wasError) MESSAGE_BOX_ERROR("Could Not Play Sound From File");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
 	}
 
 	[[nodiscard]] Mesh&           GetMesh          (const size_t index) noexcept { return this->meshes[index];          }
@@ -2419,6 +2633,7 @@ public:
 		}
 	}
 };
+
 // --> ENGINE --> ENGINE CLASS END
 // --> ENGINE END
 #endif // __WEISS__
