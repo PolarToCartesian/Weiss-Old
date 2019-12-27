@@ -45,11 +45,13 @@
 //////////////    //          //    ////////////        //////////      //          //    //////////////
 
 
+
 // Upcoming Features
 // --> Error Handling (Exceptions)  : DONE
 // --> Server Sockets               : DONE
 // --> Better Sound Engine          : TODO
 // --> Abstracted 2D Renderer       : TODO
+// --> Abstracted 3D Renderer       : TODO
 // --> ...
 // --> Physics???
 
@@ -105,24 +107,11 @@
 	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);\
 }
 
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
 #define MESSAGE_BOX_ERROR(errorMsg) {\
 	MessageBox(NULL, (std::string("Error in File: ") + std::string(__FILE__) + std::string("\nAt line: ") + std::to_string(__LINE__) + std::string("\nIn Function: ") + std::string(__FUNCTION__) + std::string("\nError: ") + std::string(errorMsg)).c_str(), "Weiss Engine Error", MB_ABORTRETRYIGNORE);\
 }
-
-#define ASSERT(v, errorMsg) {\
-	if (!(v))\
-		MESSAGE_BOX_ERROR(errorMsg)\
-}
-
-#define HRESULT_ERROR(hr, errorMsg) {\
-	if (hr != S_OK)\
-		MESSAGE_BOX_ERROR(errorMsg)\
-}
-
-#define ENABLE_CONSOLE() {\
-	AllocConsole();\
-	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);\
-}
+#endif // __WEISS_SHOW_DEBUG_ERRORS
 
 // --> ERROR HANDLING END
 // --> WEISS DEFINES START
@@ -433,163 +422,312 @@ constexpr float QUARTER_TAU = HALF_PI;
 // --> MATH --> VECTORS START
 // --> MATH --> VECTORS --> TYPEDEFS START
 
-typedef std::array<float,    2> Vec2f;
-typedef std::array<int8_t,   2> Vec2i8;
-typedef std::array<int16_t,  2> Vec2i16;
-typedef std::array<int32_t,  2> Vec2i32;
-typedef std::array<int64_t,  2> Vec2i64;
-typedef std::array<uint8_t,  2> Vec2u8;
-typedef std::array<uint16_t, 2> Vec2u16;
-typedef std::array<uint32_t, 2> Vec2u32;
-typedef std::array<uint64_t, 2> Vec2u64;
+template <typename T>
+struct Vector2D
+{
+	T x;
+	T y;
+	
+	template <typename K>
+	void operator+=(const Vector2D<K>& v)
+	{
+		this->x += v.x;
+		this->y += v.y;
+	}
 
-typedef std::array<float,    3> Vec3f;
-typedef std::array<int8_t,   3> Vec3i8;
-typedef std::array<int16_t,  3> Vec3i16;
-typedef std::array<int32_t,  3> Vec3i32;
-typedef std::array<int64_t,  3> Vec3i64;
-typedef std::array<uint8_t,  3> Vec3u8;
-typedef std::array<uint16_t, 3> Vec3u16;
-typedef std::array<uint32_t, 3> Vec3u32;
-typedef std::array<uint64_t, 3> Vec3u64;
+	template <typename K>
+	void operator-=(const Vector2D<K>& v)
+	{
+		this->x -= v.x;
+		this->y -= v.y;
+	}
 
-typedef std::array<float,    4> Vec4f;
-typedef std::array<int8_t,   4> Vec4i8;
-typedef std::array<int16_t,  4> Vec4i16;
-typedef std::array<int32_t,  4> Vec4i32;
-typedef std::array<int64_t,  4> Vec4i64;
-typedef std::array<uint8_t,  4> Vec4u8;
-typedef std::array<uint16_t, 4> Vec4u16;
-typedef std::array<uint32_t, 4> Vec4u32;
-typedef std::array<uint64_t, 4> Vec4u64;
-typedef std::array<uint8_t,  4> Vec4u8;
+	template <typename K>
+	void operator*=(const Vector2D<K>& v)
+	{
+		this->x *= v.x;
+		this->y *= v.y;
+	}
+
+	template <typename K>
+	void operator/=(const Vector2D<K>& v)
+	{
+		this->x /= v.x;
+		this->y /= v.y;
+	}
+
+	template <typename K>
+	void operator+=(const K& n)
+	{
+		this->x += n;
+		this->y += n;
+	}
+
+	template <typename K>
+	void operator-=(const K& n)
+	{
+		this->x -= n;
+		this->y -= n;
+	}
+
+	template <typename K>
+	void operator*=(const K& n)
+	{
+		this->x *= n;
+		this->y *= n;
+	}
+
+	template <typename K>
+	void operator/=(const K& n)
+	{
+		this->x /= n;
+		this->y /= n;
+	}
+};
+
+template <typename T, typename K>
+[[nodiscard]] Vector2D<T> operator+(const Vector2D<T>& a, const Vector2D<K>& b)
+{
+	return Vector2D<T>{
+		a.x + b.x,
+		a.y + b.y,
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector2D<T> operator-(const Vector2D<T>& a, const Vector2D<K>& b)
+{
+	return Vector2D<T>{
+		a.x - b.x,
+		a.y - b.y,
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector2D<T> operator*(const Vector2D<T>& a, const Vector2D<K>& b)
+{
+	return Vector2D<T>{
+		a.x * b.x,
+		a.y * b.y,
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector2D<T> operator/(const Vector2D<T>& a, const Vector2D<K>& b)
+{
+	return Vector2D<T>{
+		a.x / b.x,
+		a.y / b.y,
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector2D<T> operator+(const Vector2D<T>& v, const K& n)
+{
+	return Vector2D<T>{
+		v.x + n,
+		v.y + n
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector2D<T> operator-(const Vector2D<T>& v, const K& n)
+{
+	return Vector2D<T>{
+		v.x - n,
+		v.y - n
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector2D<T> operator*(const Vector2D<T>& v, const K& n)
+{
+	return Vector2D<T>{
+		v.x * n,
+		v.y * n
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector2D<T> operator/(const Vector2D<T>& v, const K& n)
+{
+	return Vector2D<T>{
+		v.x / n,
+		v.y / n
+	};
+}
+
+template <typename T>
+struct Vector3D : Vector2D<T>
+{
+	T z;
+
+	template <typename K>
+	void operator+=(const Vector3D<K>& v)
+	{
+		this->x += v.x;
+		this->y += v.y;
+		this->z += v.z;
+	}
+
+	template <typename K>
+	void operator-=(const Vector3D<K>& v)
+	{
+		this->x -= v.x;
+		this->y -= v.y;
+		this->z -= v.z;
+	}
+
+	template <typename K>
+	void operator*=(const Vector3D<K>& v)
+	{
+		this->x *= v.x;
+		this->y *= v.y;
+		this->z *= v.z;
+	}
+
+	template <typename K>
+	void operator/=(const Vector3D<K>& v)
+	{
+		this->x /= v.x;
+		this->y /= v.y;
+		this->z /= v.z;
+	}
+
+	template <typename K>
+	void operator+=(const K& n)
+	{
+		this->x += n;
+		this->y += n;
+		this->z += n;
+	}
+
+	template <typename K>
+	void operator-=(const K& n)
+	{
+		this->x -= n;
+		this->y -= n;
+		this->z -= n;
+	}
+
+	template <typename K>
+	void operator*=(const K& n)
+	{
+		this->x *= n;
+		this->y *= n;
+		this->z *= n;
+	}
+
+	template <typename K>
+	void operator/=(const K& n)
+	{
+		this->x /= n;
+		this->y /= n;
+		this->z /= n;
+	}
+};
+
+template <typename T, typename K>
+[[nodiscard]] Vector3D<T> operator+(const Vector3D<T>& a, const Vector3D<K>& b)
+{
+	return Vector3D<T>{
+		a.x + b.x,
+		a.y + b.y,
+		a.z + b.z
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector3D<T> operator-(const Vector3D<T>& a, const Vector3D<K>& b)
+{
+	return Vector3D<T>{
+		a.x - b.x,
+		a.y - b.y,
+		a.z - b.z
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector3D<T> operator*(const Vector3D<T>& a, const Vector3D<K>& b)
+{
+	return Vector3D<T>{
+		a.x * b.x,
+		a.y * b.y,
+		a.z * b.z
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector3D<T> operator/(const Vector3D<T>& a, const Vector3D<K>& b)
+{
+	return Vector3D<T>{
+		a.x / b.x,
+		a.y / b.y,
+		a.z / b.z
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector3D<T> operator+(const Vector3D<T>& v, const K& n)
+{
+	return Vector3D<T>{
+		v.x + n,
+		v.y + n,
+		v.z + n
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector3D<T> operator-(const Vector3D<T>& v, const K& n)
+{
+	return Vector3D<T>{
+		v.x - n,
+		v.y - n,
+		v.z - n
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector3D<T> operator*(const Vector3D<T>& v, const K& n)
+{
+	return Vector3D<T>{
+		v.x * n,
+		v.y * n,
+		v.z * n
+	};
+}
+
+template <typename T, typename K>
+[[nodiscard]] Vector3D<T> operator/(const Vector3D<T>& v, const K& n)
+{
+	return Vector3D<T>{
+		v.x / n,
+		v.y / n,
+		v.z / n
+	};
+}
+
+typedef Vector2D<float>    Vec2f;
+typedef Vector2D<int8_t>   Vec2i8;
+typedef Vector2D<int16_t>  Vec2i16;
+typedef Vector2D<int32_t>  Vec2i32;
+typedef Vector2D<int64_t>  Vec2i64;
+typedef Vector2D<uint8_t>  Vec2u8;
+typedef Vector2D<uint16_t> Vec2u16;
+typedef Vector2D<uint32_t> Vec2u32;
+typedef Vector2D<uint64_t> Vec2u64;
+
+typedef Vector3D<float>    Vec3f;
+typedef Vector3D<int8_t>   Vec3i8;
+typedef Vector3D<int16_t>  Vec3i16;
+typedef Vector3D<int32_t>  Vec3i32;
+typedef Vector3D<int64_t>  Vec3i64;
+typedef Vector3D<uint8_t>  Vec3u8;
+typedef Vector3D<uint16_t> Vec3u16;
+typedef Vector3D<uint32_t> Vec3u32;
+typedef Vector3D<uint64_t> Vec3u64;
 
 // --> MATH --> VECTORS --> TYPEDEFS END
-// --> MATH --> VECTORS --> OPERATOR OVERLOADING START
-
-template <typename T, size_t S>
-[[nodiscard]] std::array<T, S> operator+(const std::array<T, S>& a, const std::array<T, S>& b)
-{
-	std::array<T, S> result(a);
-	
-	for (size_t i = 0; i < S; i++)
-		result[i] += b[i];
-	
-	return result;
-}
-
-template <typename T, size_t S>
-[[nodiscard]] std::array<T, S> operator-(const std::array<T, S>& a, const std::array<T, S>& b)
-{
-	std::array<T, S> result(a);
-
-	for (size_t i = 0; i < S; i++)
-		result[i] -= b[i];
-
-	return result;
-}
-
-template <typename T, size_t S>
-[[nodiscard]] std::array<T, S> operator*(const std::array<T, S>& a, const std::array<T, S>& b)
-{
-	std::array<T, S> result(a);
-
-	for (size_t i = 0; i < S; i++)
-		result[i] *= b[i];
-
-	return result;
-}
-
-template <typename T, size_t S>
-[[nodiscard]] std::array<T, S> operator/(const std::array<T, S>& a, const std::array<T, S>& b)
-{
-	std::array<T, S> result(a);
-	
-	for (size_t i = 0; i < S; i++)
-		result[i] /= b[i];
-	
-	return result;
-}
-
-template <typename T, size_t S>
-[[nodiscard]] std::array<T, S> operator/(const std::array<T, S>& a, const float n)
-{
-	std::array<T, S> result(a);
-	
-	for (size_t i = 0; i < S; i++)
-		result[i] /= n;
-	
-	return result;
-}
-
-template <typename T, size_t S>
-void operator+=(std::array<T, S>& a, const std::array<T, S>& b)
-{
-	for (size_t i = 0; i < S; i++)
-		a[i] += b[i];
-}
-
-template <typename T, size_t S>
-void operator-=(std::array<T, S>& a, const std::array<T, S>& b)
-{
-	for (size_t i = 0; i < S; i++)
-		a[i] -= b[i];
-}
-
-template <typename T, size_t S>
-void operator*=(std::array<T, S>& a, const std::array<T, S>& b)
-{
-	for (size_t i = 0; i < S; i++)
-		a[i] *= b[i];
-}
-
-template <typename T, size_t S>
-void operator/=(std::array<T, S>& a, const std::array<T, S>& b)
-{
-	for (size_t i = 0; i < S; i++)
-		a[i] /= b[i];
-}
-
-template <typename T, size_t S>
-void operator+=(std::array<T, S>& a, const float n)
-{
-	for (size_t i = 0; i < S; i++)
-		a[i] += n;
-}
-
-template <typename T, size_t S>
-void operator-=(std::array<T, S>& a, const float n)
-{
-	for (size_t i = 0; i < S; i++)
-		a[i] -= n;
-}
-
-template <typename T, size_t S>
-void operator*=(std::array<T, S>& a, const float n)
-{
-	for (size_t i = 0; i < S; i++)
-		a[i] *= n;
-}
-
-template <typename T, size_t S>
-void operator/=(std::array<T, S>& a, const float n)
-{
-	for (size_t i = 0; i < S; i++)
-		a[i] /= n;
-}
-
-template <typename T, size_t S>
-std::ostream& operator<<(std::ostream& stream, const std::array<T, S>& v)
-{
-	stream << '(';
-
-	for (auto it = v.begin(); it != v.end() - 1; it++)
-		stream << *it << ", ";
-
-	return stream << v[S - 1] << ')';
-}
-
-// --> MATH --> VECTORS --> OPERATOR OVERLOADING END
 // --> MATH --> VECTORS --> END
 
 // --> MATH --> CONVERSIONS START
@@ -609,20 +747,20 @@ namespace Conversions
 	// If a polar point is stored as (θ, r)
 	[[nodiscard]] inline Vec2f PolarToCartesian(const Vec2f polar)
 	{
-		const float x = polar[1] * std::cos(polar[0]);
-		const float y = polar[1] * std::sin(polar[0]);
+		const float x = polar.y * std::cos(polar.x);
+		const float y = polar.y * std::sin(polar.x);
 
 		return Vec2f{ x, y };
 	}
 
 	[[nodiscard]] inline Vec2f CartesianToPolar(const Vec2f cartesian)
 	{
-		float a = std::atan(cartesian[1] / cartesian[0]);
+		float a = std::atan(cartesian.y / cartesian.x);
 
-		if (cartesian[0] < 0) a += PI;
-		else if (cartesian[1] < 0) a += TWO_PI;
+		if (cartesian.x < 0) a += PI;
+		else if (cartesian.y < 0) a += TWO_PI;
 
-		const float r = std::sqrt(std::pow(cartesian[0], 2) + std::pow(cartesian[1], 2));
+		const float r = std::sqrt(std::pow(cartesian.x, 2) + std::pow(cartesian.y, 2));
 
 		return Vec2f{ a, r };
 	}
@@ -639,9 +777,9 @@ namespace Misc
 		const Vec3f V = c - a;
 
 		return Vec3f{
-			U[1] * V[2] - U[2] * V[1],
-			U[2] * V[0] - U[0] * V[2],
-			U[0] * V[1] - U[1] * V[0]
+			U.y * V.z - U.z * V.y,
+			U.z * V.x - U.x * V.z,
+			U.x * V.y - U.y * V.x
 		};
 	}
 };
@@ -1439,6 +1577,30 @@ class IconLoadingException : public std::exception
 
 };
 
+enum class WindowCreationExceptionErrorType
+{
+	CLASS_REGISTRATION_ERROR,
+	WINDOW_CREATION_ERROR
+};
+
+class WindowCreationException : public std::exception
+{
+private:
+	const WindowCreationExceptionErrorType m_type;
+
+public:
+	WindowCreationException(const WindowCreationExceptionErrorType& type)
+		: m_type(type)
+	{
+
+	}
+
+	WindowCreationExceptionErrorType getErrorType() const
+	{
+		return this->m_type;
+	}
+};
+
 class Window
 {
 	friend LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
@@ -1472,25 +1634,40 @@ public:
 			"WNDCLASSA"
 		};
 
-		if (RegisterClassA(&wc))
+		if (!RegisterClassA(&wc))
 		{
-			const uint32_t windowStyle = descriptor.isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("[WINDOW] Could Not Register Window Class");
+#endif
 
-			RECT windowRect{ 0, 0, descriptor.width, descriptor.height };
-			AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
-
-			this->m_handle = CreateWindowA("WNDCLASSA", descriptor.title, windowStyle,
-				descriptor.windowPositionX, descriptor.windowPositionY, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
-				NULL, NULL, descriptor.hInstance, NULL);
-
-			ShowWindow(this->m_handle, SW_SHOW);
-			UpdateWindow(this->m_handle);
-
-			this->m_isRunning = true;
-
-			if (descriptor.iconPath != nullptr)
-				this->SetIcon(descriptor.iconPath);
+			throw WindowCreationException(WindowCreationExceptionErrorType::CLASS_REGISTRATION_ERROR);
 		}
+
+		const uint32_t windowStyle = descriptor.isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+
+		RECT windowRect{ 0, 0, descriptor.width, descriptor.height };
+		AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
+
+		this->m_handle = CreateWindowA("WNDCLASSA", descriptor.title, windowStyle,
+						 descriptor.windowPositionX, descriptor.windowPositionY, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
+						 NULL, NULL, descriptor.hInstance, NULL);
+
+		if (this->m_handle == NULL)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("[WINDOW] Could Not Create Window");
+#endif
+
+			throw WindowCreationException(WindowCreationExceptionErrorType::WINDOW_CREATION_ERROR);
+		}
+
+		ShowWindow(this->m_handle, SW_SHOW);
+		UpdateWindow(this->m_handle);
+
+		this->m_isRunning = true;
+
+		if (descriptor.iconPath != nullptr)
+			this->SetIcon(descriptor.iconPath);
 	}
 
 	// Misc
@@ -1642,7 +1819,7 @@ public:
 					static_cast<uint16_t>(GET_Y_LPARAM(lParam))
 				};
 
-				this->m_isMinimized = (client_area_dimensions[0] == 0 && client_area_dimensions[1] == 0);
+				this->m_isMinimized = (client_area_dimensions.x == 0 && client_area_dimensions.y == 0);
 
 				for (auto& functor : this->m_onResizeFunctors)
 					functor(client_area_dimensions);
@@ -1673,36 +1850,32 @@ public:
 	{
 		this->Destroy();
 	}
-};
-// --> WINDOW END
-// --> WINDOW MANAGER START
 
-namespace WindowManager
-{
-	inline std::vector<Window> windows;
+public:
+	static std::vector<Window> m_s_windows;
 
-	inline Window* CreateNewWindow(const WindowDescriptor& descriptor)
+	static Window* CreateNewWindow(const WindowDescriptor& descriptor)
 	{
-		windows.emplace_back(descriptor);
+		Window::m_s_windows.emplace_back(descriptor);
 
-		return &windows[windows.size() - 1];
+		return &Window::m_s_windows[Window::m_s_windows.size() - 1];
 	}
 };
 
+// --> WINDOW END
+
 LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	std::vector<Window>::iterator it = std::find_if(WindowManager::windows.begin(), WindowManager::windows.end(), [&hwnd](const Window& window)
+	std::vector<Window>::iterator it = std::find_if(Window::m_s_windows.begin(), Window::m_s_windows.end(), [&hwnd](const Window& window)
 	{
 		return window.m_handle == hwnd;
 	});
 
-	if (it != WindowManager::windows.end())
+	if (it != Window::m_s_windows.end())
 		return it->HandleMessage(msg, wParam, lParam);
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
-
-// --> WINDOW MANAGER END
 
 // --> CAMERAS START
 // --> CAMERAS --> CAMERA START
@@ -1763,12 +1936,12 @@ private:
 public:
 	OrthographicCamera(Window& window, const OrthographicCameraDescriptor& descriptor)
 	{
-		this->m_position = DirectX::XMVectorSet(descriptor.position[0], descriptor.position[1], 0.0f, 0.0f);
+		this->m_position = DirectX::XMVectorSet(descriptor.position.x, descriptor.position.y, 0.0f, 0.0f);
 		this->m_rotation = DirectX::XMVectorSet(0.0f, 0.0f, descriptor.ratation, 0.0f);
 
 		auto recalculateInvAspectRatio = [this](const Vec2u16& clientDims)
 		{
-			this->m_InvAspectRatio = clientDims[1] / static_cast<float>(clientDims[0]);
+			this->m_InvAspectRatio = clientDims.y / static_cast<float>(clientDims.x);
 		};
 
 		recalculateInvAspectRatio({ window.GetClientWidth(), window.GetClientHeight() });
@@ -1783,19 +1956,19 @@ public:
 
 	void SetPosition(const Vec2f& v)
 	{
-		this->m_position = DirectX::XMVectorSet(v[0], v[1], 0.0f, 0.0f);
+		this->m_position = DirectX::XMVectorSet(v.x, v.y, 0.0f, 0.0f);
 	}
 
 	void SetRotation(const Vec2f& v)
 	{
-		this->m_rotation.m128_f32[0] += v[0];
-		this->m_rotation.m128_f32[1] += v[1];
+		this->m_rotation.m128_f32[0] += v.x;
+		this->m_rotation.m128_f32[1] += v.y;
 	}
 
 	void Translate(const Vec2f& v)
 	{
-		this->m_position.m128_f32[0] += v[0];
-		this->m_position.m128_f32[1] += v[1];
+		this->m_position.m128_f32[0] += v.x;
+		this->m_position.m128_f32[1] += v.y;
 	}
 
 	virtual void CalculateTransform() override
@@ -1848,12 +2021,12 @@ public:
 	PerspectiveCamera(Window& window, const PerspectiveCameraDescriptor& descriptor)
 		: m_fov(descriptor.fov), m_zNear(descriptor.zNear), m_zFar(descriptor.zFar)
 	{
-		this->m_position = DirectX::XMVectorSet(descriptor.position[0], descriptor.position[1], descriptor.position[2], 0.0f);
-		this->m_rotation = DirectX::XMVectorSet(descriptor.rotation[0], descriptor.rotation[1], descriptor.rotation[2], 0.0f);
+		this->m_position = DirectX::XMVectorSet(descriptor.position.x, descriptor.position.y, descriptor.position.z, 0.0f);
+		this->m_rotation = DirectX::XMVectorSet(descriptor.rotation.x, descriptor.rotation.y, descriptor.rotation.z, 0.0f);
 
 		auto recalculateAspectRatio = [this](const Vec2u16& clientDims)
 		{
-			this->m_aspectRatio = clientDims[0] / static_cast<float>(clientDims[1]);
+			this->m_aspectRatio = clientDims.x / static_cast<float>(clientDims.y);
 		};
 
 		recalculateAspectRatio({ window.GetClientWidth(), window.GetClientHeight() });
@@ -1863,17 +2036,17 @@ public:
 
 	void Translate(const Vec3f& v)
 	{
-		this->m_position = DirectX::XMVectorAdd(this->m_position, DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f));
+		this->m_position = DirectX::XMVectorAdd(this->m_position, DirectX::XMVectorSet(v.x, v.y, v.z, 0.0f));
 	}
 
 	void SetPosition(const Vec3f& v)
 	{
-		this->m_position = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f);
+		this->m_position = DirectX::XMVectorSet(v.x, v.y, v.z, 0.0f);
 	}
 
 	void Rotate(const Vec3f& v)
 	{
-		const DirectX::XMVECTOR rotationDeltaVector = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f);
+		const DirectX::XMVECTOR rotationDeltaVector = DirectX::XMVectorSet(v.x, v.y, v.z, 0.0f);
 
 		this->m_rotation = DirectX::XMVectorAdd(this->m_rotation, rotationDeltaVector);
 
@@ -1887,7 +2060,7 @@ public:
 
 	void SetRotation(const Vec3f& v)
 	{
-		this->m_rotation = DirectX::XMVectorSet(v[0], v[1], v[2], 0.0f);
+		this->m_rotation = DirectX::XMVectorSet(v.x, v.y, v.z, 0.0f);
 
 		// UP-DOWN Rotation Limit
 		if (this->m_rotation.m128_f32[0] > HALF_PI)
@@ -1926,7 +2099,7 @@ public:
 		mouse.OnMouseMove([sensitivity, this, &mouse](const Vec2u16 position, const Vec2i16 delta)
 			{
 				if (mouse.IsCursorInWindow())
-					this->Rotate({ sensitivity * delta[1], sensitivity * delta[0], 0.0f });
+					this->Rotate({ sensitivity * delta.y, sensitivity * delta.x, 0.0f });
 			});
 	}
 
@@ -2575,7 +2748,7 @@ public:
 
 	void Init(const EngineDescriptor& descriptor)
 	{
-		this->window = WindowManager::CreateNewWindow(descriptor.windowDesc);
+		this->window = Window::CreateNewWindow(descriptor.windowDesc);
 
 		this->mouse = &(this->window->GetMouse());
 		this->keyboard = &(this->window->GetKeyboard());
@@ -2743,7 +2916,7 @@ public:
 			{
 				Vec3f vertex{ 0.f, 0.f, 0.f };
 
-				iss >> vertex[0] >> vertex[1] >> vertex[2];
+				iss >> vertex.x >> vertex.y >> vertex.z;
 
 				vertices.push_back(vertex);
 			}
@@ -2813,4 +2986,29 @@ public:
 
 // --> ENGINE --> ENGINE CLASS END
 // --> ENGINE END
+
 #endif // __WEISS__
+
+#ifdef __WEISS_LAST_INCLUDE
+std::vector<Window> Window::m_s_windows = std::vector<Window>();
+#endif // __WEISS_LAST_INCLUDE
+
+
+
+//          //    //////////////      //////////      //////////////    //////////////
+//          //    //                      //          //                //
+//          //    //                      //          //                //
+//    //    //    //////////////          //          //////////////    //////////////
+//    //    //    //                      //                      //                //
+//  //  //  //    //                      //                      //                //
+  //      //      //////////////      //////////      //////////////    //////////////
+
+//////////////    //          //    //////////////      //////////      //          //    //////////////
+//                ////        //    //                      //          ////        //    //
+//                //  //      //    //                      //          //  //      //    //
+//////////////    //    //    //    //    //////            //          //    //    //    //////////////
+//                //      //  //    //          //          //          //      //  //    //
+//                //        ////    //          //          //          //        ////    //
+//////////////    //          //    ////////////        //////////      //          //    //////////////
+
+
