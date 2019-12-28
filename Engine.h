@@ -120,7 +120,6 @@ constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0u;
 constexpr const size_t WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE      = 1024;
 
 // --> WEISS DEFINES END
-
 // --> SOCKETS START
 // --> SOCKETS --> CLIENT START
 // --> SOCKETS --> CLIENT --> EXCEPTIONS START
@@ -1387,6 +1386,7 @@ public:
 		{
 			UINT size = 0;
 
+			// WINDOWS API LOGIC
 			if (!GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER)))
 			{
 				std::vector<char> rawBuffer(size);
@@ -1603,16 +1603,15 @@ public:
 
 class Window
 {
-	friend LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
+friend LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
 
 private:
 	HWND m_handle = 0;
-	HINSTANCE m_hinstance;
 
-	Mouse m_mouse;
+	Mouse    m_mouse;
 	Keyboard m_keyboard;
 
-	bool m_isRunning = false;
+	bool m_isRunning   = false;
 	bool m_isMinimized = false;
 
 	std::vector<std::function<void(const Vec2u16)>> m_onResizeFunctors;
@@ -1620,14 +1619,12 @@ private:
 public:
 	Window(const WindowDescriptor& descriptor)
 	{
-		this->m_hinstance = descriptor.hInstance;
-
 		const WNDCLASSA wc{
 			CS_HREDRAW | CS_VREDRAW,
 			WindowProcessMessages,
 			0,
 			0,
-			this->m_hinstance,
+			descriptor.hInstance,
 			NULL,
 			LoadCursor(nullptr, IDC_ARROW),
 			(HBRUSH)COLOR_WINDOW, NULL,
@@ -1854,11 +1851,12 @@ public:
 public:
 	static std::vector<Window> m_s_windows;
 
-	static Window* CreateNewWindow(const WindowDescriptor& descriptor)
+	// Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
+	static size_t CreateNewWindow(const WindowDescriptor& descriptor)
 	{
 		Window::m_s_windows.emplace_back(descriptor);
 
-		return &Window::m_s_windows[Window::m_s_windows.size() - 1];
+		return Window::m_s_windows.size() - 1u;
 	}
 };
 
@@ -2497,9 +2495,9 @@ private:
 	std::vector<Texture2D>      textures;
 	std::vector<TextureSampler> textureSamplers;
 
-	Window*   window   = nullptr;
-	Mouse*    mouse    = nullptr;
-	Keyboard* keyboard = nullptr;
+	size_t    windowIndex = 0u;
+	Mouse*    mouse       = nullptr;
+	Keyboard* keyboard    = nullptr;
 	
 	OrthographicCamera* orthographicCamera = nullptr;
 	PerspectiveCamera*  perspectiveCamera  = nullptr;
@@ -2519,7 +2517,7 @@ private:
 		scd.SampleDesc.Quality = 0;
 		scd.BufferUsage  = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 		scd.BufferCount  = 1;
-		scd.OutputWindow = this->window->GetHandle();
+		scd.OutputWindow = this->GetWindow().GetHandle();
 		scd.Windowed     = TRUE;
 		scd.SwapEffect   = DXGI_SWAP_EFFECT_DISCARD;
 		scd.Flags        = 0;
@@ -2560,8 +2558,8 @@ private:
 	void CreateViewport()
 	{
 		D3D11_VIEWPORT vp;
-		vp.Width    = static_cast<FLOAT>(this->window->GetClientWidth());
-		vp.Height   = static_cast<FLOAT>(this->window->GetClientHeight());
+		vp.Width    = static_cast<FLOAT>(this->GetWindow().GetClientWidth());
+		vp.Height   = static_cast<FLOAT>(this->GetWindow().GetClientHeight());
 		vp.MinDepth = 0;
 		vp.MaxDepth = 1;
 		vp.TopLeftX = 0;
@@ -2610,11 +2608,11 @@ private:
 
 	void CreateDepthStencil()
 	{
-		// Create Detph Texture
+		// Create Depth Texture
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
 		D3D11_TEXTURE2D_DESC descDepth = {};
-		descDepth.Width     = this->window->GetClientWidth();
-		descDepth.Height    = this->window->GetClientHeight();
+		descDepth.Width     = this->GetWindow().GetClientWidth();
+		descDepth.Height    = this->GetWindow().GetClientHeight();
 		descDepth.MipLevels = 1u;
 		descDepth.ArraySize = 1u;
 		descDepth.Format    = DXGI_FORMAT_D32_FLOAT;
@@ -2654,7 +2652,7 @@ private:
 	}
 
 	/*
-	 * This function initiliazes directx and creates key components
+	 * This function initializes DirectX and creates key components
 	*/
 	void InitGraphics()
 	{
@@ -2738,7 +2736,8 @@ public:
 	[[nodiscard]] IndexBuffer&    GetIndexBuffer   (const size_t index) noexcept { return this->indexBuffers[index];    }
 	[[nodiscard]] TextureSampler& GetTextureSampler(const size_t index) noexcept { return this->textureSamplers[index]; }
 
-	[[nodiscard]] Window&   GetWindow()   noexcept { return *this->window;   }
+	// Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
+	[[nodiscard]] Window&   GetWindow()   noexcept { return Window::m_s_windows[this->windowIndex]; }
 	[[nodiscard]] Mouse&    GetMouse()    noexcept { return *this->mouse;    }
 	[[nodiscard]] Keyboard& GetKeybaord() noexcept { return *this->keyboard; }
 	[[nodiscard]] Engine&   GetEngine()   noexcept { return *this;           }
@@ -2746,20 +2745,20 @@ public:
 	[[nodiscard]] OrthographicCamera& GetOrthographicCamera() noexcept { return *this->orthographicCamera; }
 	[[nodiscard]] PerspectiveCamera&  GetPerspectiveCamera()  noexcept { return *this->perspectiveCamera;  }
 
-	void Init(const EngineDescriptor& descriptor)
+	void InitEngine(const EngineDescriptor& descriptor)
 	{
-		this->window = Window::CreateNewWindow(descriptor.windowDesc);
+		this->windowIndex = Window::CreateNewWindow(descriptor.windowDesc);
 
-		this->mouse = &(this->window->GetMouse());
-		this->keyboard = &(this->window->GetKeyboard());
+		this->mouse = &(this->GetWindow().GetMouse());
+		this->keyboard = &(this->GetWindow().GetKeyboard());
 
-		this->orthographicCamera = new OrthographicCamera(*this->window, descriptor.orthographicCameraDesc);
-		this->perspectiveCamera  = new PerspectiveCamera (*this->window, descriptor.perspectiveCameraDesc);
+		this->orthographicCamera = new OrthographicCamera(this->GetWindow(), descriptor.orthographicCameraDesc);
+		this->perspectiveCamera  = new PerspectiveCamera (this->GetWindow(), descriptor.perspectiveCameraDesc);
 
 		this->InitGraphics();
 		this->CreateDefaultConstantBuffers();
 
-		this->window->OnResize([this](const Vec2u16 dimensions)
+		this->GetWindow().OnResize([this](const Vec2u16 dimensions)
 		{
 			this->InitGraphics();
 		});
@@ -2770,8 +2769,8 @@ public:
 	void CaptureCursor()
 	{
 		// Clip Cursor
-		const RECT windowRect = this->window->GetWindowRectangle();
-		const RECT clientRect = this->window->GetClientRectangle();
+		const RECT windowRect = this->GetWindow().GetWindowRectangle();
+		const RECT clientRect = this->GetWindow().GetClientRectangle();
 
 		RECT boundingRect = windowRect;
 
@@ -2783,7 +2782,6 @@ public:
 		this->mouse->Clip(boundingRect);
 
 		// Hide Cursor
-
 		this->mouse->Hide();
 	}
 
@@ -2958,7 +2956,7 @@ public:
 		Timer timer;
 		uint32_t frames = 0;
 
-		while (this->window->IsRunning())
+		while (this->GetWindow().IsRunning())
 		{
 			const float elapsed = timer.GetElapsedTimeMs();
 
@@ -2975,7 +2973,7 @@ public:
 				}
 			}
 
-			this->window->Update();
+			this->GetWindow().Update();
 
 			this->OnRender(elapsed);
 
