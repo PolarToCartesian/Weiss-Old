@@ -14,7 +14,7 @@ Start Coding!
 
 ## Progress
 
-+ 2D and 3D Rendering
++ Graphics
   + [x] Cameras
     + [x] Perspective
     + [x] Orthographic
@@ -23,11 +23,14 @@ Start Coding!
       + [ ] Point Light
       + [ ] Directional Light
     + [ ] Materials
+    + [ ] Shadows
 	+ [x] 2D Texturing
+    + [ ] 2D Abstracted Renderer
+  + [ ] 3D Abstracted Renderer
   + [ ] Advanced
     + [ ] Multithreaded Rendering
+    + [ ] Post Processing
 + [ ] Audio
-  + [x] Basic
 	+ [x] Play
   + [ ] Advanced
     + [ ] Volume Control
@@ -37,3 +40,5 @@ Start Coding!
     + [x] Server Sockets
   + [ ] HTTP
   + [ ] HTTPS
++ [ ] Possibly Later
+  + [ ] Physics
