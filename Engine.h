@@ -2,7 +2,7 @@
 #define __WEISS__
 
 #ifndef _WIN32
-#error This Application Can Only Run On Windows
+#error Weiss Is Windows Only! (for now)
 #endif // _WIN32
 
 // Project      : Weiss Engine
@@ -877,8 +877,8 @@ class VertexBufferDataSettingException : public std::exception
 
 class VertexBuffer {
 private:
-	size_t nElements;
-	size_t elementSize;
+	size_t m_nElements;
+	size_t m_elementSize;
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pVertexBuffer;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef;
@@ -887,15 +887,15 @@ public:
 	VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef,
 				 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
 				 const VertexBufferDescriptor& descriptor)
-		: nElements(descriptor.nElements), elementSize(descriptor.elementSize), m_pDeviceContextRef(pDeviceContextRef)
+		: m_nElements(descriptor.nElements), m_elementSize(descriptor.elementSize), m_pDeviceContextRef(pDeviceContextRef)
 	{
 		D3D11_BUFFER_DESC bd = {};
 		bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 		bd.Usage = (descriptor.isUpdatable) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
 		bd.CPUAccessFlags = (descriptor.isUpdatable) ? D3D11_CPU_ACCESS_WRITE : 0u;
 		bd.MiscFlags = 0u;
-		bd.ByteWidth = static_cast<UINT>(this->elementSize * this->nElements);
-		bd.StructureByteStride = static_cast<UINT>(this->elementSize);
+		bd.ByteWidth = static_cast<UINT>(this->m_elementSize * this->m_nElements);
+		bd.StructureByteStride = static_cast<UINT>(this->m_elementSize);
 
 		D3D11_SUBRESOURCE_DATA sd = {};
 		sd.pSysMem = descriptor.memoryPtr;
@@ -910,7 +910,13 @@ public:
 		}
 	}
 
-	void SetData(const void* memoryPtr, const size_t nElements, const size_t elementSize) const {
+	size_t GetElementCount() const noexcept
+	{
+		return this->m_nElements;
+	}
+
+	void SetData(const void* memoryPtr, const size_t nElements)
+	{
 		D3D11_MAPPED_SUBRESOURCE resource;
 
 		if (this->m_pDeviceContextRef->Map(this->m_pVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource) != S_OK)
@@ -921,15 +927,17 @@ public:
 
 			throw VertexBufferDataSettingException();
 		}
+
+		this->m_nElements = nElements;
 		
-		memcpy(resource.pData, memoryPtr, nElements * elementSize);
+		memcpy(resource.pData, memoryPtr, this->m_nElements * this->m_elementSize);
 
 		this->m_pDeviceContextRef->Unmap(this->m_pVertexBuffer.Get(), 0);
 	}
 
 	void Bind() const noexcept
 	{
-		const UINT stride = static_cast<UINT>(this->elementSize);
+		const UINT stride = static_cast<UINT>(this->m_elementSize);
 		const UINT offset = 0u;
 
 		this->m_pDeviceContextRef->IASetVertexBuffers(0u, 1u, this->m_pVertexBuffer.GetAddressOf(), &stride, &offset);
@@ -1192,17 +1200,17 @@ public:
 
 struct Mesh {
 	size_t vertexBufferIndex;
-	size_t indexBufferIndex;
 
-	size_t vsIndex;
-	size_t psIndex;
+	size_t vertexShaderIndex;
+	size_t pixelShaderIndex;
 
-	std::vector<size_t> textureIndices;
-	std::vector<size_t> textureSamplerIndices;
+	std::optional<size_t> indexBufferIndex = { };
+	std::vector<size_t> textureIndices = { };
+	std::vector<size_t> textureSamplerIndices = { };
 
-	std::vector<size_t> constantBufferIndices;
+	std::vector<size_t> constantBufferIndices = { };
 
-	D3D_PRIMITIVE_TOPOLOGY primitiveTopologyType;
+	D3D_PRIMITIVE_TOPOLOGY primitiveTopologyType = D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 };
 
 // --> MESHES --> MESH END
@@ -2438,17 +2446,6 @@ struct PhysicsObject
 
 // --> ENGINE START
 // --> ENGINE --> ENGINE DESCRIPTORS START
-struct MeshDescriptorFromVertices
-{
-	const size_t vertexBufferIndex;
-	const size_t indexBufferIndex;
-	const size_t vertexShaderIndex;
-	const size_t pixelShaderIndex;
-	const std::vector<size_t> t2dIndices = std::vector<size_t>{};
-	const std::vector<size_t> tsIndices  = std::vector<size_t>{};
-	const std::vector<size_t> constantBufferIndices = std::vector<size_t>{};
-	const D3D_PRIMITIVE_TOPOLOGY primitiveTopology = D3D_PRIMITIVE_TOPOLOGY::D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-};
 
 struct DataFromMeshFile
 {
@@ -2810,9 +2807,8 @@ public:
 		Mesh& mesh = this->meshes[meshIndex];
 
 		this->vertexBuffers[mesh.vertexBufferIndex].Bind();
-		this->indexBuffers[mesh.indexBufferIndex].Bind();
-		this->vertexShaders[mesh.vsIndex].Bind();
-		this->pixelShaders[mesh.psIndex].Bind();
+		this->vertexShaders[mesh.vertexShaderIndex].Bind();
+		this->pixelShaders[mesh.pixelShaderIndex].Bind();
 
 		for (const size_t textureIndex : mesh.textureIndices)
 			this->textures[textureIndex].Bind();
@@ -2824,7 +2820,16 @@ public:
 			this->constantBuffers[cbIndex].Bind();
 
 		this->m_pDeviceContext->IASetPrimitiveTopology(mesh.primitiveTopologyType);
-		this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex].GetSize()), 0u, 0u);
+
+		if (mesh.indexBufferIndex.has_value())
+		{
+			this->indexBuffers[mesh.indexBufferIndex.value()].Bind();
+			this->m_pDeviceContext->DrawIndexed(static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex.value()].GetSize()), 0u, 0u);
+		}
+		else
+		{
+			this->m_pDeviceContext->Draw(this->vertexBuffers[mesh.vertexBufferIndex].GetElementCount(), 0u);
+		}
 	}
 
 	[[nodiscard]] size_t CreateVertexShader(const VertexShaderDescriptor& descriptor)
@@ -2876,18 +2881,9 @@ public:
 		return this->indexBuffers.size() - 1;
 	}
 
-	[[nodiscard]] size_t CreateMeshFromVertices(const MeshDescriptorFromVertices& descriptor)
+	[[nodiscard]] size_t CreateMeshFromVertices(const Mesh& mesh)
 	{
-		this->meshes.emplace_back(Mesh{
-			descriptor.vertexBufferIndex,
-			descriptor.indexBufferIndex,
-			descriptor.vertexShaderIndex,
-			descriptor.pixelShaderIndex,
-			descriptor.t2dIndices,
-			descriptor.tsIndices,
-			descriptor.constantBufferIndices,
-			descriptor.primitiveTopology
-		});
+		this->meshes.push_back(mesh);
 
 		return this->meshes.size() - 1;
 	}
