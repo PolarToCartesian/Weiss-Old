@@ -60,6 +60,7 @@
 
 #define _WINSOCKAPI_ // Stops Windows.h from including winsock2
 #define _WINSOCK_DEPRECATED_NO_WARNINGS // Lets us use htons()
+#define NOMINMAX // Stops The Importing Of min() And max() From Windef.h
 
 #include <wrl.h>
 #include <array>
@@ -117,7 +118,8 @@
 // --> WEISS DEFINES START
 
 constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0u;
-constexpr const size_t WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE      = 1024;
+constexpr const size_t WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE      = 1024u;
+constexpr const size_t WEISS_NO_RESOURCE_INDEX                      = std::numeric_limits<size_t>::max();
 
 // --> WEISS DEFINES END
 // --> SOCKETS START
@@ -139,6 +141,7 @@ public:
 	ClientSocketCreationException(const ClientSocketCreationExceptionErrorType errorType)
 		: m_errorType(errorType)
 	{
+
 	}
 
 	ClientSocketCreationExceptionErrorType getErrorType() const
@@ -217,7 +220,7 @@ public:
 			throw ClientSocketSendException();
 		}
 	}
-
+	
 	[[nodiscard]] std::pair<std::array<char, WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE>, size_t> Receive()
 	{
 		std::array<char, WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE> buffer;
@@ -2496,8 +2499,13 @@ private:
 	Mouse*    mouse       = nullptr;
 	Keyboard* keyboard    = nullptr;
 	
+	// 2D RENDERER START
+
 	OrthographicCamera* orthographicCamera = nullptr;
-	PerspectiveCamera*  perspectiveCamera  = nullptr;
+
+	// 3D RENDERER START
+	
+	PerspectiveCamera* perspectiveCamera  = nullptr;
 
 private:
 	void CreateDeviceAndSwapChain()
