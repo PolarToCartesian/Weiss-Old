@@ -119,6 +119,7 @@
 
 constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0u;
 constexpr const size_t WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE      = 1024u;
+constexpr const size_t WEISS_MAX_VERTICES_PER_BATCH_RENDERER        = 3000u;
 constexpr const size_t WEISS_NO_RESOURCE_INDEX                      = std::numeric_limits<size_t>::max();
 
 // --> WEISS DEFINES END
@@ -725,6 +726,8 @@ public:
 
 			throw VertexBufferDataSettingException();
 		}
+
+		std::memset(resource.pData, 0, this->m_nElements * this->m_elementSize);
 
 		this->m_nElements = nElements;
 		
@@ -2595,9 +2598,9 @@ public:
 	ColoredBatch2DRenderer(Engine& engine)
 		: m_engine(engine)
 	{
-		Colored2DVertex junk[3] = {  };
+		Colored2DVertex junk[WEISS_MAX_VERTICES_PER_BATCH_RENDERER] = {  };
 
-		const VertexBufferDescriptor vbd{ junk, 3u, sizeof(Colored2DVertex), true };
+		const VertexBufferDescriptor vbd{ junk, WEISS_MAX_VERTICES_PER_BATCH_RENDERER, sizeof(Colored2DVertex), true };
 		this->m_vertexBufferIndex = this->m_engine.CreateVertexBuffer(vbd);
 
 		std::vector<std::pair<const char*, DXGI_FORMAT>> ieds = {
@@ -2638,6 +2641,7 @@ public:
 			vertices[i++] = tr[0];
 			vertices[i++] = tr[1];
 			vertices[i++] = tr[2];
+			std::cout << i << ' ' << vertices.size() << '\n';
 		}
 
 		this->m_engine.GetVertexBuffer(this->m_vertexBufferIndex).SetData(vertices.data(), vertices.size());
