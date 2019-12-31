@@ -122,9 +122,17 @@ constexpr const size_t WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE      = 1024u;
 constexpr const size_t WEISS_NO_RESOURCE_INDEX                      = std::numeric_limits<size_t>::max();
 
 // --> WEISS DEFINES END
-// --> SOCKETS START
-// --> SOCKETS --> CLIENT START
-// --> SOCKETS --> CLIENT --> EXCEPTIONS START
+// --> CLASS FORWARD DECLARATIONS START
+
+class Engine;
+
+// --> CLASS FORWARD DECLARATIONS END
+// --> FUNCTION FORWARD DECLARATIONS START
+
+LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
+
+// --> FUNCTION FORWARD DECLARATIONS END
+// --> CLASS EXCEPTIONS & ERROR CODES START
 
 enum class ClientSocketCreationExceptionErrorType
 {
@@ -138,29 +146,67 @@ private:
 	const ClientSocketCreationExceptionErrorType m_errorType;
 
 public:
-	ClientSocketCreationException(const ClientSocketCreationExceptionErrorType errorType)
-		: m_errorType(errorType)
-	{
+	ClientSocketCreationException(const ClientSocketCreationExceptionErrorType errorType) : m_errorType(errorType) { }
 
-	}
-
-	ClientSocketCreationExceptionErrorType getErrorType() const
-	{
-		return this->m_errorType;
-	}
+	ClientSocketCreationExceptionErrorType getErrorType() const { return this->m_errorType; }
 };
 
-class ClientSocketReceiveException : public std::exception
+class ClientSocketReceiveException : public std::exception { };
+
+class ClientSocketSendException : public std::exception { };
+
+enum class ServerSocketCreationExceptionErrorType
 {
-
+	CREATION_FAILED = 0,
+	BINDING_FAILED = 1,
+	LISTENING_FAILED = 2
 };
 
-class ClientSocketSendException : public std::exception
+class ServerSocketCreationException : public std::exception
 {
+private:
+	const ServerSocketCreationExceptionErrorType m_errorType;
 
+public:
+	ServerSocketCreationException(const ServerSocketCreationExceptionErrorType errorType) : m_errorType(errorType) { }
+
+	ServerSocketCreationExceptionErrorType getErrorType() const { return this->m_errorType; }
 };
 
-// --> SOCKETS --> CLIENT --> EXCEPTIONS END
+class ServerSocketReceiveException     : public std::exception { };
+class ServerSocketSendException        : public std::exception { };
+class IndexBufferCreationException     : public std::exception { };
+class VertexBufferCreationException    : public std::exception { };
+class VertexBufferDataSettingException : public std::exception { };
+class ConstantBufferCreationException  : public std::exception { };
+class PixelShaderCreationException     : public std::exception { };
+class VertexShaderCreationException    : public std::exception { };
+class IconLoadingException             : public std::exception { };
+class ImageLoadingException            : public std::exception { };
+class Texture2DCreationException       : public std::exception { };
+class EngineInitializationException    : public std::exception { };
+
+enum class WindowCreationExceptionErrorType
+{
+	CLASS_REGISTRATION_ERROR,
+	WINDOW_CREATION_ERROR
+};
+
+class WindowCreationException : public std::exception
+{
+private:
+	const WindowCreationExceptionErrorType m_type;
+
+public:
+	WindowCreationException(const WindowCreationExceptionErrorType& type) : m_type(type) { }
+
+	WindowCreationExceptionErrorType getErrorType() const { return this->m_type; }
+};
+
+
+// --> CLASS EXCEPTIONS & ERROR CODES END
+// --> SOCKETS START
+// --> SOCKETS --> CLIENT START
 
 class ClientSocket {
 private:
@@ -173,10 +219,7 @@ public:
 		WSAStartup(MAKEWORD(2, 0), &wsaData);
 	}
 
-	~ClientSocket()
-	{
-		this->Disconnect();
-	}
+	~ClientSocket() { this->Disconnect(); }
 
 	void Connect(const char* host, const unsigned int port)
 	{
@@ -250,44 +293,6 @@ public:
 // --> SOCKETS --> CLIENT END
 // --> SOCKETS --> SERVER START
 
-// --> SOCKETS --> SERVER --> EXCEPTIONS START
-
-enum class ServerSocketCreationExceptionErrorType
-{
-	CREATION_FAILED  = 0,
-	BINDING_FAILED   = 1,
-	LISTENING_FAILED = 2
-};
-
-class ServerSocketCreationException : public std::exception
-{
-private:
-	const ServerSocketCreationExceptionErrorType m_errorType;
-
-public:
-	ServerSocketCreationException(const ServerSocketCreationExceptionErrorType errorType)
-		: m_errorType(errorType)
-	{
-	}
-
-	ServerSocketCreationExceptionErrorType getErrorType() const
-	{
-		return this->m_errorType;
-	}
-};
-
-class ServerSocketReceiveException : public std::exception
-{
-
-};
-
-class ServerSocketSendException : public std::exception
-{
-
-};
-
-// --> SOCKETS --> SERVER --> EXCEPTIONS END
-
 class ServerSocket
 {
 private:
@@ -302,10 +307,7 @@ public:
 		WSAStartup(MAKEWORD(2, 0), &wsaData);
 	}
 
-	~ServerSocket()
-	{
-		this->Disconnect();
-	}
+	~ServerSocket() { this->Disconnect(); }
 
 	void Bind(const unsigned int port)
 	{
@@ -431,133 +433,53 @@ struct Vector2D
 	T y;
 	
 	template <typename K>
-	void operator+=(const Vector2D<K>& v)
-	{
-		this->x += v.x;
-		this->y += v.y;
-	}
+	void operator+=(const Vector2D<K>& v) { this->x += v.x; this->y += v.y; }
 
 	template <typename K>
-	void operator-=(const Vector2D<K>& v)
-	{
-		this->x -= v.x;
-		this->y -= v.y;
-	}
+	void operator-=(const Vector2D<K>& v) { this->x -= v.x; this->y -= v.y; }
 
 	template <typename K>
-	void operator*=(const Vector2D<K>& v)
-	{
-		this->x *= v.x;
-		this->y *= v.y;
-	}
+	void operator*=(const Vector2D<K>& v) { this->x *= v.x; this->y *= v.y; }
 
 	template <typename K>
-	void operator/=(const Vector2D<K>& v)
-	{
-		this->x /= v.x;
-		this->y /= v.y;
-	}
+	void operator/=(const Vector2D<K>& v) { this->x /= v.x; this->y /= v.y; }
 
 	template <typename K>
-	void operator+=(const K& n)
-	{
-		this->x += n;
-		this->y += n;
-	}
+	void operator+=(const K& n) { this->x += n; this->y += n; }
 
 	template <typename K>
-	void operator-=(const K& n)
-	{
-		this->x -= n;
-		this->y -= n;
-	}
+	void operator-=(const K& n) { this->x -= n; this->y -= n; }
 
 	template <typename K>
-	void operator*=(const K& n)
-	{
-		this->x *= n;
-		this->y *= n;
-	}
+	void operator*=(const K& n) { this->x *= n; this->y *= n; }
 
 	template <typename K>
-	void operator/=(const K& n)
-	{
-		this->x /= n;
-		this->y /= n;
-	}
+	void operator/=(const K& n) { this->x /= n; this->y /= n; }
 };
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator+(const Vector2D<T>& a, const Vector2D<K>& b)
-{
-	return Vector2D<T>{
-		a.x + b.x,
-		a.y + b.y,
-	};
-}
+[[nodiscard]] Vector2D<T> operator+(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x + b.x, a.y + b.y }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator-(const Vector2D<T>& a, const Vector2D<K>& b)
-{
-	return Vector2D<T>{
-		a.x - b.x,
-		a.y - b.y,
-	};
-}
+[[nodiscard]] Vector2D<T> operator-(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x - b.x, a.y - b.y }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator*(const Vector2D<T>& a, const Vector2D<K>& b)
-{
-	return Vector2D<T>{
-		a.x * b.x,
-		a.y * b.y,
-	};
-}
+[[nodiscard]] Vector2D<T> operator*(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x * b.x, a.y * b.y }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator/(const Vector2D<T>& a, const Vector2D<K>& b)
-{
-	return Vector2D<T>{
-		a.x / b.x,
-		a.y / b.y,
-	};
-}
+[[nodiscard]] Vector2D<T> operator/(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x / b.x, a.y / b.y }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator+(const Vector2D<T>& v, const K& n)
-{
-	return Vector2D<T>{
-		v.x + n,
-		v.y + n
-	};
-}
+[[nodiscard]] Vector2D<T> operator+(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x + n, v.y + n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator-(const Vector2D<T>& v, const K& n)
-{
-	return Vector2D<T>{
-		v.x - n,
-		v.y - n
-	};
-}
+[[nodiscard]] Vector2D<T> operator-(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x - n, v.y - n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator*(const Vector2D<T>& v, const K& n)
-{
-	return Vector2D<T>{
-		v.x * n,
-		v.y * n
-	};
-}
+[[nodiscard]] Vector2D<T> operator*(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x * n, v.y * n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator/(const Vector2D<T>& v, const K& n)
-{
-	return Vector2D<T>{
-		v.x / n,
-		v.y / n
-	};
-}
+[[nodiscard]] Vector2D<T> operator/(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x / n, v.y / n }; }
 
 template <typename T>
 struct Vector3D : Vector2D<T>
@@ -565,149 +487,53 @@ struct Vector3D : Vector2D<T>
 	T z;
 
 	template <typename K>
-	void operator+=(const Vector3D<K>& v)
-	{
-		this->x += v.x;
-		this->y += v.y;
-		this->z += v.z;
-	}
+	void operator+=(const Vector3D<K>& v) { this->x += v.x; this->y += v.y; this->z += v.z; }
 
 	template <typename K>
-	void operator-=(const Vector3D<K>& v)
-	{
-		this->x -= v.x;
-		this->y -= v.y;
-		this->z -= v.z;
-	}
+	void operator-=(const Vector3D<K>& v) { this->x -= v.x; this->y -= v.y; this->z -= v.z; }
 
 	template <typename K>
-	void operator*=(const Vector3D<K>& v)
-	{
-		this->x *= v.x;
-		this->y *= v.y;
-		this->z *= v.z;
-	}
+	void operator*=(const Vector3D<K>& v) { this->x *= v.x; this->y *= v.y; this->z *= v.z; }
 
 	template <typename K>
-	void operator/=(const Vector3D<K>& v)
-	{
-		this->x /= v.x;
-		this->y /= v.y;
-		this->z /= v.z;
-	}
+	void operator/=(const Vector3D<K>& v) { this->x /= v.x; this->y /= v.y; this->z /= v.z; }
 
 	template <typename K>
-	void operator+=(const K& n)
-	{
-		this->x += n;
-		this->y += n;
-		this->z += n;
-	}
+	void operator+=(const K& n) { this->x += n; this->y += n; this->z += n; }
 
 	template <typename K>
-	void operator-=(const K& n)
-	{
-		this->x -= n;
-		this->y -= n;
-		this->z -= n;
-	}
+	void operator-=(const K& n) { this->x -= n; this->y -= n; this->z -= n; }
 
 	template <typename K>
-	void operator*=(const K& n)
-	{
-		this->x *= n;
-		this->y *= n;
-		this->z *= n;
-	}
+	void operator*=(const K& n) { this->x *= n; this->y *= n; this->z *= n; }
 
 	template <typename K>
-	void operator/=(const K& n)
-	{
-		this->x /= n;
-		this->y /= n;
-		this->z /= n;
-	}
+	void operator/=(const K& n) { this->x /= n; this->y /= n; this->z /= n; }
 };
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator+(const Vector3D<T>& a, const Vector3D<K>& b)
-{
-	return Vector3D<T>{
-		a.x + b.x,
-		a.y + b.y,
-		a.z + b.z
-	};
-}
+[[nodiscard]] Vector3D<T> operator+(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x + b.x, a.y + b.y, a.z + b.z }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator-(const Vector3D<T>& a, const Vector3D<K>& b)
-{
-	return Vector3D<T>{
-		a.x - b.x,
-		a.y - b.y,
-		a.z - b.z
-	};
-}
+[[nodiscard]] Vector3D<T> operator-(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x - b.x, a.y - b.y, a.z - b.z }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator*(const Vector3D<T>& a, const Vector3D<K>& b)
-{
-	return Vector3D<T>{
-		a.x * b.x,
-		a.y * b.y,
-		a.z * b.z
-	};
-}
+[[nodiscard]] Vector3D<T> operator*(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x * b.x, a.y * b.y, a.z * b.z }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator/(const Vector3D<T>& a, const Vector3D<K>& b)
-{
-	return Vector3D<T>{
-		a.x / b.x,
-		a.y / b.y,
-		a.z / b.z
-	};
-}
+[[nodiscard]] Vector3D<T> operator/(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x / b.x, a.y / b.y, a.z / b.z }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator+(const Vector3D<T>& v, const K& n)
-{
-	return Vector3D<T>{
-		v.x + n,
-		v.y + n,
-		v.z + n
-	};
-}
+[[nodiscard]] Vector3D<T> operator+(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x + n, v.y + n, v.z + n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator-(const Vector3D<T>& v, const K& n)
-{
-	return Vector3D<T>{
-		v.x - n,
-		v.y - n,
-		v.z - n
-	};
-}
+[[nodiscard]] Vector3D<T> operator-(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x - n, v.y - n, v.z - n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator*(const Vector3D<T>& v, const K& n)
-{
-	return Vector3D<T>{
-		v.x * n,
-		v.y * n,
-		v.z * n
-	};
-}
+[[nodiscard]] Vector3D<T> operator*(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x * n, v.y * n, v.z * n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator/(const Vector3D<T>& v, const K& n)
-{
-	return Vector3D<T>{
-		v.x / n,
-		v.y / n,
-		v.z / n
-	};
-}
+[[nodiscard]] Vector3D<T> operator/(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x / n, v.y / n, v.z / n }; }
 
 typedef Vector2D<float>    Vec2f;
 typedef Vector2D<int8_t>   Vec2i8;
@@ -736,15 +562,8 @@ typedef Vector3D<uint64_t> Vec3u64;
 
 namespace Conversions
 {
-	[[nodiscard]] inline float DegreesToRadians(const float degrees)
-	{
-		return degrees * PI_DIV_180;
-	}
-
-	[[nodiscard]] inline float RadiansToDegrees(const float radians)
-	{
-		return radians * PI_DIV_180_INV;
-	}
+	[[nodiscard]] inline float DegreesToRadians(const float degrees) { return degrees * PI_DIV_180;     }
+	[[nodiscard]] inline float RadiansToDegrees(const float radians) { return radians * PI_DIV_180_INV; }
 
 	// If a polar point is stored as (θ, r)
 	[[nodiscard]] inline Vec2f PolarToCartesian(const Vec2f polar)
@@ -808,11 +627,6 @@ struct IndexBufferDescriptor
 	const std::vector<uint32_t> indices;
 };
 
-class IndexBufferCreationException : public std::exception
-{
-
-};
-
 class IndexBuffer {
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pIndexBuffer;
@@ -846,15 +660,9 @@ public:
 		}
 	}
 
-	[[nodiscard]] size_t GetSize() const
-	{
-		return this->m_nBytes;
-	}
+	[[nodiscard]] size_t GetSize() const { return this->m_nBytes; }
 
-	void Bind() const noexcept
-	{
-		this->m_pDeviceContextRef->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0u);
-	}
+	void Bind() const noexcept { this->m_pDeviceContextRef->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0u); }
 };
 
 // --> D3D11 --> BUFFERS --> INDEX  BUFFER END
@@ -866,16 +674,6 @@ struct VertexBufferDescriptor
 	const size_t nElements   = 0u;
 	const size_t elementSize = 0u;
 	const bool isUpdatable   = false;
-};
-
-class VertexBufferCreationException : public std::exception
-{
-
-};
-
-class VertexBufferDataSettingException : public std::exception
-{
-
 };
 
 class VertexBuffer {
@@ -913,10 +711,7 @@ public:
 		}
 	}
 
-	[[nodiscard]] size_t GetElementCount() const noexcept
-	{
-		return this->m_nElements;
-	}
+	[[nodiscard]] size_t GetElementCount() const noexcept { return this->m_nElements; }
 
 	void SetData(const void* memoryPtr, const size_t nElements)
 	{
@@ -958,11 +753,6 @@ struct ConstantBufferDescriptor
 	const UINT              slotPS      = 0u; // Ignored if ShaderBindingType is VERTEX
 };
 
-class ConstantBufferCreationException : public std::exception
-{
-
-};
-
 class ConstantBuffer {
 private:
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pConstantBuffer;
@@ -996,10 +786,7 @@ public:
 		}
 	}
 
-	void SetData(const void* objPtr)
-	{
-		this->m_pDeviceContextRef->UpdateSubresource(this->m_pConstantBuffer.Get(), 0, 0, objPtr, 0, 0);
-	}
+	void SetData(const void* objPtr) { this->m_pDeviceContextRef->UpdateSubresource(this->m_pConstantBuffer.Get(), 0, 0, objPtr, 0, 0); }
 
 	void Bind() const noexcept
 	{
@@ -1030,11 +817,6 @@ struct PixelShaderDescriptor
 	const ShaderLoadingMethod loadingMethod;
 	const wchar_t* binaryFilename;
 	const char* sourceCode;
-};
-
-class PixelShaderCreationException : public std::exception
-{
-
 };
 
 class PixelShader {
@@ -1091,10 +873,7 @@ public:
 		}
 	}
 
-	void Bind() const noexcept
-	{
-		this->m_pDeviceContextRef->PSSetShader(this->m_pPixelShader.Get(), nullptr, 0u);
-	}
+	void Bind() const noexcept { this->m_pDeviceContextRef->PSSetShader(this->m_pPixelShader.Get(), nullptr, 0u); }
 };
 
 // --> D3D11 --> SHADERS --> PIXEL  SHADER END
@@ -1106,11 +885,6 @@ struct VertexShaderDescriptor
 	const ShaderLoadingMethod loadingMethod  = ShaderLoadingMethod::FROM_BINARY_FILE;
 	const wchar_t*            binaryFilename = nullptr; // Ignore if ShaderLoadingMethod is FROM_SOURCE_CODE
 	const char*               sourceCode     = nullptr; // Ignore if ShaderLoadingMethod is FROM_BINARY_FILE
-};
-
-class VertexShaderCreationException : public std::exception
-{
-
 };
 
 class VertexShader {
@@ -1227,10 +1001,7 @@ private:
 	std::chrono::system_clock::time_point m_start;
 
 public:
-	Timer()
-	{
-		this->m_start = std::chrono::system_clock::now();
-	}
+	Timer() { this->m_start = std::chrono::system_clock::now(); }
 
 	[[nodiscard]] float GetElapsedTimeMs()
 	{
@@ -1273,40 +1044,13 @@ protected:
 	std::vector<std::function<void(const Vec2u16, const Vec2i16)>> m_onCursorMoveFunctors;
 
 public:
-	void OnLeftButtonUp(const std::function<void(Vec2u16)>& functor)
-	{
-		this->m_onLeftButtonUpFunctors.push_back(functor);
-	}
-
-	void OnLeftButtonDown(const std::function<void(Vec2u16)>& functor)
-	{
-		this->m_onLeftButtonDownFunctors.push_back(functor);
-	}
-
-	void OnRightButtonUp(const std::function<void(Vec2u16)>& functor)
-	{
-		this->m_onRightButtonUpFunctors.push_back(functor);
-	}
-
-	void OnRightButtonDown(const std::function<void(Vec2u16)>& functor)
-	{
-		this->m_onRightButtonDownFunctors.push_back(functor);
-	}
-
-	void OnWheelTurn(const std::function<void(const int16_t)>& functor)
-	{
-		this->m_onWheelTurnFunctors.push_back(functor);
-	}
-
-	void OnMouseMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor)
-	{
-		this->m_onMouseMoveFunctors.push_back(functor);
-	}
-	
-	void OnCursorMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor)
-	{
-		this->m_onCursorMoveFunctors.push_back(functor);
-	}
+	void OnLeftButtonUp   (const std::function<void(Vec2u16)>& functor)                      { this->m_onLeftButtonUpFunctors.push_back(functor); }
+	void OnLeftButtonDown (const std::function<void(Vec2u16)>& functor)                      { this->m_onLeftButtonDownFunctors.push_back(functor); }
+	void OnRightButtonUp  (const std::function<void(Vec2u16)>& functor)                      { this->m_onRightButtonUpFunctors.push_back(functor); }
+	void OnRightButtonDown(const std::function<void(Vec2u16)>& functor)                      { this->m_onRightButtonDownFunctors.push_back(functor); }
+	void OnWheelTurn      (const std::function<void(const int16_t)>& functor)                { this->m_onWheelTurnFunctors.push_back(functor); }
+	void OnMouseMove      (const std::function<void(const Vec2u16, const Vec2i16)>& functor) { this->m_onMouseMoveFunctors.push_back(functor); }
+	void OnCursorMove     (const std::function<void(const Vec2u16, const Vec2i16)>& functor) { this->m_onCursorMoveFunctors.push_back(functor); }
 };
 
 // --> PERIPHERAL DEVICES --> MOUSE EVENT INTERFACES END
@@ -1321,10 +1065,10 @@ private:
 
 	int16_t m_wheelDelta = 0;
 
-	bool m_isLeftButtonDown = false;
+	bool m_isLeftButtonDown  = false;
 	bool m_isRightButtonDown = false;
 
-	bool m_wasMouseMovedDuringUpdate = false;
+	bool m_wasMouseMovedDuringUpdate  = false;
 	bool m_wasCursorMovedDuringUpdate = false;
 
 	bool m_isCursorInWindow = false;
@@ -1334,52 +1078,23 @@ public:
 	{
 		RAWINPUTDEVICE mouseInputDevice;
 		mouseInputDevice.usUsagePage = 0x01;
-		mouseInputDevice.usUsage = 0x02;
-		mouseInputDevice.dwFlags = 0;
-		mouseInputDevice.hwndTarget = nullptr;
+		mouseInputDevice.usUsage     = 0x02;
+		mouseInputDevice.dwFlags     = 0;
+		mouseInputDevice.hwndTarget  = nullptr;
 
 		RegisterRawInputDevices(&mouseInputDevice, 1, sizeof(RAWINPUTDEVICE));
 	}
 
-	[[nodiscard]] bool IsLeftButtonUp()   const
-	{
-		return !this->m_isLeftButtonDown;
-	}
+	[[nodiscard]] bool IsLeftButtonUp()    const { return !this->m_isLeftButtonDown;  }
+	[[nodiscard]] bool IsLeftButtonDown()  const { return this->m_isLeftButtonDown;   }
+	[[nodiscard]] bool IsRightButtonUp()   const { return !this->m_isRightButtonDown; }
+	[[nodiscard]] bool IsRightButtonDown() const { return this->m_isRightButtonDown;  }
+	[[nodiscard]] bool IsCursorInWindow()  const { return this->m_isCursorInWindow;   }
 
-	[[nodiscard]] bool IsLeftButtonDown() const
-	{ 
-		return this->m_isLeftButtonDown;
-	}
+	void Show() const { ShowCursor(true);  }
+	void Hide() const { ShowCursor(false); }
 
-	[[nodiscard]] bool IsRightButtonUp()   const
-	{
-		return !this->m_isRightButtonDown;
-	}
-
-	[[nodiscard]] bool IsRightButtonDown() const
-	{
-		return this->m_isRightButtonDown;
-	}
-
-	[[nodiscard]] bool IsCursorInWindow() const
-	{
-		return this->m_isCursorInWindow;
-	}
-
-	void Show() const
-	{
-		ShowCursor(true);
-	}
-
-	void Hide() const
-	{
-		ShowCursor(false);
-	}
-
-	void Clip(const RECT& rect) const
-	{
-		ClipCursor(&rect);
-	}
+	void Clip(const RECT& rect) const { ClipCursor(&rect); }
 
 	virtual void __OnWindowUpdateBegin() override
 	{
@@ -1504,25 +1219,12 @@ public:
 
 	}
 
-	void OnKeyUp(const std::function<void(const uint8_t)>& functor)
-	{
-		this->m_onKeyUpFunctors.push_back(functor);
-	}
+	void OnKeyUp  (const std::function<void(const uint8_t)>& functor) { this->m_onKeyUpFunctors.push_back(functor);   }
+	void OnKeyDown(const std::function<void(const uint8_t)>& functor) { this->m_onKeyDownFunctors.push_back(functor); }
 
-	void OnKeyDown(const std::function<void(const uint8_t)>& functor)
-	{
-		this->m_onKeyDownFunctors.push_back(functor);
-	}
+	bool IsKeyDown(const uint8_t key) { return this->m_downKeys.end() != std::find(this->m_downKeys.begin(), this->m_downKeys.end(), key); }
 
-	bool IsKeyDown(const uint8_t key)
-	{
-		return this->m_downKeys.end() != std::find(this->m_downKeys.begin(), this->m_downKeys.end(), key);
-	}
-
-	virtual void __OnWindowUpdateBegin() override
-	{
-
-	}
+	virtual void __OnWindowUpdateBegin() override { }
 
 	virtual bool __HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override
 	{
@@ -1559,18 +1261,13 @@ public:
 		return false;
 	}
 
-	virtual void __OnWindowUpdateEnd()
-	{
-
-	}
+	virtual void __OnWindowUpdateEnd() { }
 };
 
 // --> PERIPHERAL DEVICES --> KEYBOARD END
 
 // --> PERIPHERAL DEVICES END
 // --> WINDOW START
-
-inline LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
 
 struct WindowDescriptor
 {
@@ -1581,35 +1278,6 @@ struct WindowDescriptor
 	const char* iconPath   = nullptr;
 	const bool isResizable = true;
 	const HINSTANCE hInstance;
-};
-
-class IconLoadingException : public std::exception
-{
-
-};
-
-enum class WindowCreationExceptionErrorType
-{
-	CLASS_REGISTRATION_ERROR,
-	WINDOW_CREATION_ERROR
-};
-
-class WindowCreationException : public std::exception
-{
-private:
-	const WindowCreationExceptionErrorType m_type;
-
-public:
-	WindowCreationException(const WindowCreationExceptionErrorType& type)
-		: m_type(type)
-	{
-
-	}
-
-	WindowCreationExceptionErrorType getErrorType() const
-	{
-		return this->m_type;
-	}
 };
 
 class Window
@@ -1685,24 +1353,28 @@ public:
 	}
 
 	// Getters
-	[[nodiscard]] bool IsRunning() const
+	[[nodiscard]] bool      IsRunning() const { return this->m_isRunning; }
+	[[nodiscard]] Keyboard& GetKeyboard()     { return this->m_keyboard;  }
+	[[nodiscard]] Mouse&    GetMouse()        { return this->m_mouse;     }
+	[[nodiscard]] HWND      GetHandle() const { return this->m_handle;    }
+
+	[[nodiscard]] uint16_t GetWindowPositionX() const { return static_cast<uint16_t>(this->GetWindowRectangle().left);   }
+	[[nodiscard]] uint16_t GetWindowPositionY() const { return static_cast<uint16_t>(this->GetWindowRectangle().top);    }
+	[[nodiscard]] uint16_t GetClientWidth()     const { return static_cast<uint16_t>(this->GetClientRectangle().right);  }
+	[[nodiscard]] uint16_t GetClientHeight()    const { return static_cast<uint16_t>(this->GetClientRectangle().bottom); }
+
+	[[nodiscard]] uint16_t GetWindowWidth()  const
 	{
-		return this->m_isRunning;
+		const RECT rect = this->GetWindowRectangle();
+
+		return static_cast<uint16_t>(rect.right - rect.left);
 	}
 
-	Keyboard& GetKeyboard()
+	[[nodiscard]] uint16_t GetWindowHeight() const
 	{
-		return this->m_keyboard;
-	}
+		const RECT rect = this->GetWindowRectangle();
 
-	[[nodiscard]] Mouse&    GetMouse()
-	{
-		return this->m_mouse;
-	}
-
-	[[nodiscard]] HWND      GetHandle() const
-	{
-		return this->m_handle;
+		return static_cast<uint16_t>(rect.bottom - rect.top);
 	}
 
 	[[nodiscard]] RECT GetWindowRectangle() const
@@ -1721,53 +1393,8 @@ public:
 		return result;
 	}
 
-	[[nodiscard]] uint16_t GetWindowPositionX() const
-	{
-		const RECT rect = this->GetWindowRectangle();
-		
-		return static_cast<uint16_t>(rect.left);
-	}
-
-	[[nodiscard]] uint16_t GetWindowPositionY() const
-	{
-		const RECT rect = this->GetWindowRectangle();
-		
-		return static_cast<uint16_t>(rect.top);
-	}
-
-	[[nodiscard]] uint16_t GetWindowWidth()  const
-	{
-		const RECT rect = this->GetWindowRectangle();
-		
-		return static_cast<uint16_t>(rect.right - rect.left);
-	}
-
-	[[nodiscard]] uint16_t GetWindowHeight() const
-	{
-		const RECT rect = this->GetWindowRectangle();
-		
-		return static_cast<uint16_t>(rect.bottom - rect.top);
-	}
-
-	[[nodiscard]] uint16_t GetClientWidth()  const
-	{
-		const RECT rect = this->GetClientRectangle();
-		
-		return static_cast<uint16_t>(rect.right);
-	}
-	
-	[[nodiscard]] uint16_t GetClientHeight() const
-	{
-		const RECT rect = this->GetClientRectangle();
-		
-		return static_cast<uint16_t>(rect.bottom);
-	}
-
 	// Setters
-	void SetWindowSize(const uint16_t width, const uint16_t height)
-	{
-		SetWindowPos(this->m_handle, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOOWNERZORDER);
-	}
+	void SetWindowSize(const uint16_t width, const uint16_t height) { SetWindowPos(this->m_handle, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOOWNERZORDER); }
 
 	void SetClientSize(const uint16_t width, const uint16_t height)
 	{
@@ -1777,10 +1404,7 @@ public:
 		this->SetWindowSize(width + leftRightWindowPadding, height + topBottomWindowPadding);
 	}
 
-	void SetTitle(const char* title)
-	{
-		SetWindowTextA(this->m_handle, title);
-	}
+	void SetTitle(const char* title) const noexcept { SetWindowTextA(this->m_handle, title); }
 
 	void SetIcon(const char* pathname)
 	{
@@ -1849,15 +1473,9 @@ public:
 	}
 
 	// DESTROYING
-	void Destroy()
-	{
-		this->m_isRunning = !DestroyWindow(this->m_handle);
-	}
+	void Destroy() { this->m_isRunning = !DestroyWindow(this->m_handle); }
 
-	~Window()
-	{
-		this->Destroy();
-	}
+	~Window() { this->Destroy(); }
 
 public:
 	static std::vector<Window> m_s_windows;
@@ -1872,20 +1490,6 @@ public:
 };
 
 // --> WINDOW END
-
-LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
-{
-	std::vector<Window>::iterator it = std::find_if(Window::m_s_windows.begin(), Window::m_s_windows.end(), [&hwnd](const Window& window)
-	{
-		return window.m_handle == hwnd;
-	});
-
-	if (it != Window::m_s_windows.end())
-		return it->HandleMessage(msg, wParam, lParam);
-
-	return DefWindowProc(hwnd, msg, wParam, lParam);
-}
-
 // --> CAMERAS START
 // --> CAMERAS --> CAMERA START
 
@@ -1900,30 +1504,13 @@ protected:
 	size_t m_transformConstantBufferIndex = 0;
 
 public:
-	Camera()
-	{
+	Camera() { }
 
-	}
+	[[nodiscard]] DirectX::XMMATRIX GetTransform()           const noexcept { return this->m_transform; }
+	[[nodiscard]] DirectX::XMMATRIX GetTransposedTransform() const noexcept { return DirectX::XMMatrixTranspose(this->m_transform); }
 
-	[[nodiscard]] DirectX::XMMATRIX GetTransform()           const noexcept
-	{
-		return this->m_transform;
-	}
-
-	[[nodiscard]] DirectX::XMMATRIX GetTransposedTransform() const noexcept
-	{
-		return DirectX::XMMatrixTranspose(this->m_transform);
-	}
-
-	[[nodiscard]] Vec3f GetPosition() const noexcept
-	{
-		return Vec3f{ this->m_position.m128_f32[0], this->m_position.m128_f32[1], this->m_position.m128_f32[2] };
-	}
-
-	[[nodiscard]] Vec3f GetRotation() const noexcept
-	{
-		return Vec3f{ this->m_rotation.m128_f32[0], this->m_rotation.m128_f32[1], this->m_rotation.m128_f32[2] };
-	}
+	[[nodiscard]] Vec3f GetPosition() const noexcept { return Vec3f{ this->m_position.m128_f32[0], this->m_position.m128_f32[1], this->m_position.m128_f32[2] }; }
+	[[nodiscard]] Vec3f GetRotation() const noexcept { return Vec3f{ this->m_rotation.m128_f32[0], this->m_rotation.m128_f32[1], this->m_rotation.m128_f32[2] }; }
 
 	virtual void CalculateTransform() = 0;
 };
@@ -1958,15 +1545,9 @@ public:
 		window.OnResize(recalculateInvAspectRatio);
 	}
 
-	void Rotate(const float angle)
-	{
-		this->m_rotation.m128_f32[2] += angle;
-	}
+	void Rotate(const float angle) { this->m_rotation.m128_f32[2] += angle; }
 
-	void SetPosition(const Vec2f& v)
-	{
-		this->m_position = DirectX::XMVectorSet(v.x, v.y, 0.0f, 0.0f);
-	}
+	void SetPosition(const Vec2f& v) { this->m_position = DirectX::XMVectorSet(v.x, v.y, 0.0f, 0.0f); }
 
 	void SetRotation(const Vec2f& v)
 	{
@@ -2043,15 +1624,9 @@ public:
 		window.OnResize(recalculateAspectRatio);
 	}
 
-	void Translate(const Vec3f& v)
-	{
-		this->m_position = DirectX::XMVectorAdd(this->m_position, DirectX::XMVectorSet(v.x, v.y, v.z, 0.0f));
-	}
+	void Translate(const Vec3f& v) { this->m_position = DirectX::XMVectorAdd(this->m_position, DirectX::XMVectorSet(v.x, v.y, v.z, 0.0f)); }
 
-	void SetPosition(const Vec3f& v)
-	{
-		this->m_position = DirectX::XMVectorSet(v.x, v.y, v.z, 0.0f);
-	}
+	void SetPosition(const Vec3f& v) { this->m_position = DirectX::XMVectorSet(v.x, v.y, v.z, 0.0f); }
 
 	void Rotate(const Vec3f& v)
 	{
@@ -2079,10 +1654,7 @@ public:
 			this->m_rotation.m128_f32[0] = -HALF_PI;
 	}
 
-	virtual void CalculateTransform() override
-	{
-		this->m_transform = this->GetViewMatrix() * this->GetProjectionMatrix();
-	}
+	virtual void CalculateTransform() override { this->m_transform = this->GetViewMatrix() * this->GetProjectionMatrix(); }
 
 	[[nodiscard]] DirectX::XMMATRIX GetViewMatrix()
 	{
@@ -2178,11 +1750,6 @@ struct Colorf16
 // --> IMAGES --> COLOR STRUCTS END
 // --> IMAGES --> IMAGE START
 
-class ImageLoadingException : public std::exception
-{
-
-};
-
 class Image {
 private:
 	std::unique_ptr<Coloru8[]> m_buff;
@@ -2261,32 +1828,13 @@ public:
 		}
 	}
 
-	[[nodiscard]] uint16_t GetWidth()   const {
-		return this->m_width;
-	}
+	[[nodiscard]] uint16_t GetWidth()                                 const { return this->m_width;                       }
+	[[nodiscard]] uint16_t GetHeight()                                const { return this->m_height;                      }
+	[[nodiscard]] uint32_t GetPixelCount()                            const { return this->m_nPixels;                     }
+	[[nodiscard]] Coloru8* GetBuffer()                                const { return this->m_buff.get();                  }
+	[[nodiscard]] Coloru8  Sample(const uint16_t x, const uint16_t y) const { return this->m_buff[y * this->m_width + x]; }
 
-	[[nodiscard]] uint16_t GetHeight()  const {
-		return this->m_height;
-	}
-
-	[[nodiscard]] uint32_t GetPixelCount() const {
-		return this->m_nPixels;
-	}
-
-	[[nodiscard]] Coloru8 Sample(const uint16_t x, const uint16_t y) const
-	{
-		return this->m_buff[y * this->m_width + x];
-	}
-
-	void    Set(const uint16_t x, const uint16_t y, const Coloru8& color)
-	{
-		this->m_buff[y * this->m_width + x] = color;
-	}
-
-	[[nodiscard]] Coloru8* GetBuffer() const
-	{
-		return this->m_buff.get();
-	}
+	void Set(const uint16_t x, const uint16_t y, const Coloru8& color) { this->m_buff[y * this->m_width + x] = color; }
 };
 
 // --> IMAGES --> IMAGE END
@@ -2299,11 +1847,6 @@ struct Texture2DDescriptor
 	const UINT slotVS;
 	const UINT slotPS;
 	const bool useMipMaps;
-};
-
-class Texture2DCreationException : public std::exception
-{
-
 };
 
 class Texture2D {
@@ -2464,15 +2007,51 @@ struct EngineDescriptor
 };
 
 // --> ENGINE --> ENGINE DESCRIPTORS END
-// --> ENGINE --> ENGINE CLASS START
+// --> ENGINE --> ENGINE STRUCTURES & DATA-TYPES START
 
-class EngineInitializationException : public std::exception
-{
-
+struct Colored2DVertex {
+	Vec2f    position;
+	Coloru8  color;
+	uint32_t doApplyTransform = true;
 };
+
+typedef std::array<Colored2DVertex, 3u> ColoredTriangle2D;
+
+template <typename V>
+using Triangle = std::array<V, 3u>;
+
+// --> ENGINE --> ENGINE STRUCTURES & DATA-TYPES END
+// --> ENGINE --> BATCH RENDERER BASE CLASS START
+
+template <typename V>
+class Batch2DRenderer
+{
+protected:
+	std::vector<Triangle<V>> m_triangles;
+
+	size_t m_meshIndex = WEISS_NO_RESOURCE_INDEX, m_vertexBufferIndex = WEISS_NO_RESOURCE_INDEX;
+
+public:
+	Triangle<V>& getTriangle(const size_t index) noexcept
+	{
+		return this->m_triangles[index];
+	}
+
+	size_t addTriangle(const Triangle<V>& tr) noexcept
+	{
+		this->m_triangles.push_back(tr);
+
+		return this->m_triangles.size() - 1u;
+	}
+
+	virtual void Draw() = 0;
+};
+// --> ENGINE --> BATCH RENDERER BASE CLASS END
+// --> ENGINE --> ENGINE CLASS START
 
 class Engine
 {
+// --> ENGINE --> ENGINE CLASS --> CORE START
 private:
 	Microsoft::WRL::ComPtr<ID3D11Device> m_pDevice;
 	Microsoft::WRL::ComPtr<IDXGISwapChain> m_pSwapChain;
@@ -2484,7 +2063,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_pDepthStencilStateForZBufferOff;
 
 	std::vector<Mesh>           meshes;
-		
+
 	std::vector<PixelShader>    pixelShaders;
 	std::vector<VertexShader>   vertexShaders;
 
@@ -2496,36 +2075,28 @@ private:
 	std::vector<TextureSampler> textureSamplers;
 
 	size_t    windowIndex = 0u;
-	Mouse*    mouse       = nullptr;
-	Keyboard* keyboard    = nullptr;
-	
-	// 2D RENDERER START
-
-	OrthographicCamera* orthographicCamera = nullptr;
-
-	// 3D RENDERER START
-	
-	PerspectiveCamera* perspectiveCamera  = nullptr;
+	Mouse* mouse = nullptr;
+	Keyboard* keyboard = nullptr;
 
 private:
 	void CreateDeviceAndSwapChain()
 	{
 		DXGI_SWAP_CHAIN_DESC scd{};
-		scd.BufferDesc.Width  = 0;
+		scd.BufferDesc.Width = 0;
 		scd.BufferDesc.Height = 0;
 		scd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-		scd.BufferDesc.RefreshRate.Numerator   = 0;
+		scd.BufferDesc.RefreshRate.Numerator = 0;
 		scd.BufferDesc.RefreshRate.Denominator = 0;
-		scd.BufferDesc.Scaling          = DXGI_MODE_SCALING_UNSPECIFIED;
+		scd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 		scd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-		scd.SampleDesc.Count   = 1;
+		scd.SampleDesc.Count = 1;
 		scd.SampleDesc.Quality = 0;
-		scd.BufferUsage  = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-		scd.BufferCount  = 1;
+		scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+		scd.BufferCount = 1;
 		scd.OutputWindow = this->GetWindow().GetHandle();
-		scd.Windowed     = TRUE;
-		scd.SwapEffect   = DXGI_SWAP_EFFECT_DISCARD;
-		scd.Flags        = 0;
+		scd.Windowed = TRUE;
+		scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
+		scd.Flags = 0;
 
 		if (D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &scd, &m_pSwapChain, &m_pDevice, nullptr, &m_pDeviceContext) != S_OK)
 		{
@@ -2563,8 +2134,8 @@ private:
 	void CreateViewport()
 	{
 		D3D11_VIEWPORT vp;
-		vp.Width    = static_cast<FLOAT>(this->GetWindow().GetClientWidth());
-		vp.Height   = static_cast<FLOAT>(this->GetWindow().GetClientHeight());
+		vp.Width = static_cast<FLOAT>(this->GetWindow().GetClientWidth());
+		vp.Height = static_cast<FLOAT>(this->GetWindow().GetClientHeight());
 		vp.MinDepth = 0;
 		vp.MaxDepth = 1;
 		vp.TopLeftX = 0;
@@ -2575,21 +2146,21 @@ private:
 
 	void CreateDepthStencilStates()
 	{
-		D3D11_DEPTH_STENCIL_DESC dsDesc     = {};
-		dsDesc.DepthEnable                  = TRUE;
-		dsDesc.DepthWriteMask               = D3D11_DEPTH_WRITE_MASK_ALL;
-		dsDesc.DepthFunc                    = D3D11_COMPARISON_LESS;
-		dsDesc.StencilReadMask              = 0xFF;
-		dsDesc.StencilWriteMask             = 0xFF;
-		dsDesc.FrontFace.StencilFailOp      = D3D11_STENCIL_OP_KEEP;
+		D3D11_DEPTH_STENCIL_DESC dsDesc = {};
+		dsDesc.DepthEnable = TRUE;
+		dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+		dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
+		dsDesc.StencilReadMask = 0xFF;
+		dsDesc.StencilWriteMask = 0xFF;
+		dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
 		dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-		dsDesc.FrontFace.StencilPassOp      = D3D11_STENCIL_OP_KEEP;
-		dsDesc.FrontFace.StencilFunc        = D3D11_COMPARISON_ALWAYS;
-		dsDesc.BackFace.StencilFailOp       = D3D11_STENCIL_OP_KEEP;
-		dsDesc.BackFace.StencilDepthFailOp  = D3D11_STENCIL_OP_DECR;
-		dsDesc.BackFace.StencilPassOp       = D3D11_STENCIL_OP_KEEP;
-		dsDesc.BackFace.StencilFunc         = D3D11_COMPARISON_ALWAYS;
-		
+		dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+		dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+		dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+		dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+		dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
 		if (this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOn) != S_OK)
 		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
@@ -2600,7 +2171,7 @@ private:
 		}
 
 		dsDesc.DepthEnable = FALSE;
-		
+
 		if (this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOff) != S_OK)
 		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
@@ -2616,14 +2187,14 @@ private:
 		// Create Depth Texture
 		Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
 		D3D11_TEXTURE2D_DESC descDepth = {};
-		descDepth.Width     = this->GetWindow().GetClientWidth();
-		descDepth.Height    = this->GetWindow().GetClientHeight();
+		descDepth.Width = this->GetWindow().GetClientWidth();
+		descDepth.Height = this->GetWindow().GetClientHeight();
 		descDepth.MipLevels = 1u;
 		descDepth.ArraySize = 1u;
-		descDepth.Format    = DXGI_FORMAT_D32_FLOAT;
-		descDepth.SampleDesc.Count   = 1u;
+		descDepth.Format = DXGI_FORMAT_D32_FLOAT;
+		descDepth.SampleDesc.Count = 1u;
 		descDepth.SampleDesc.Quality = 0u;
-		descDepth.Usage     = D3D11_USAGE_DEFAULT;
+		descDepth.Usage = D3D11_USAGE_DEFAULT;
 		descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
 
 		if (this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil) != S_OK)
@@ -2669,7 +2240,7 @@ private:
 		this->BindDepthStencil();
 	}
 
-	/*
+	/* 
 	 * This functions swaps the back buffer and the front buffer to show the frame to the user
 	 * It also clears the depthStencilView
 	 */
@@ -2722,34 +2293,6 @@ public:
 		delete this->perspectiveCamera;
 	}
 
-	void PlayWavFile(const char* filename)
-	{
-		if (!PlaySound(TEXT(filename), NULL, SND_ASYNC | SND_FILENAME))
-		{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-			MESSAGE_BOX_ERROR("Could Not Play Sound From File");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-		}
-	}
-
-	[[nodiscard]] Mesh&           GetMesh          (const size_t index) noexcept { return this->meshes[index];          }
-	[[nodiscard]] Texture2D&      GetTexture       (const size_t index) noexcept { return this->textures[index];        }
-	[[nodiscard]] VertexShader&   GetVertexShader  (const size_t index) noexcept { return this->vertexShaders[index];   }
-	[[nodiscard]] PixelShader&    GetPixelShader   (const size_t index) noexcept { return this->pixelShaders[index];    }
-	[[nodiscard]] ConstantBuffer& GetConstantBuffer(const size_t index) noexcept { return this->constantBuffers[index]; }
-	[[nodiscard]] VertexBuffer&   GetVertexBuffer  (const size_t index) noexcept { return this->vertexBuffers[index];   }
-	[[nodiscard]] IndexBuffer&    GetIndexBuffer   (const size_t index) noexcept { return this->indexBuffers[index];    }
-	[[nodiscard]] TextureSampler& GetTextureSampler(const size_t index) noexcept { return this->textureSamplers[index]; }
-
-	// Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
-	[[nodiscard]] Window&   GetWindow()   noexcept { return Window::m_s_windows[this->windowIndex]; }
-	[[nodiscard]] Mouse&    GetMouse()    noexcept { return *this->mouse;    }
-	[[nodiscard]] Keyboard& GetKeybaord() noexcept { return *this->keyboard; }
-	[[nodiscard]] Engine&   GetEngine()   noexcept { return *this;           }
-
-	[[nodiscard]] OrthographicCamera& GetOrthographicCamera() noexcept { return *this->orthographicCamera; }
-	[[nodiscard]] PerspectiveCamera&  GetPerspectiveCamera()  noexcept { return *this->perspectiveCamera;  }
-
 	void InitEngine(const EngineDescriptor& descriptor)
 	{
 		this->windowIndex = Window::CreateNewWindow(descriptor.windowDesc);
@@ -2758,15 +2301,45 @@ public:
 		this->keyboard = &(this->GetWindow().GetKeyboard());
 
 		this->orthographicCamera = new OrthographicCamera(this->GetWindow(), descriptor.orthographicCameraDesc);
-		this->perspectiveCamera  = new PerspectiveCamera (this->GetWindow(), descriptor.perspectiveCameraDesc);
+		this->perspectiveCamera = new PerspectiveCamera(this->GetWindow(), descriptor.perspectiveCameraDesc);
 
 		this->InitGraphics();
 		this->CreateDefaultConstantBuffers();
 
 		this->GetWindow().OnResize([this](const Vec2u16 dimensions)
+			{
+				this->InitGraphics();
+			});
+	}
+
+	void Run(const bool useVSync = true, const uint16_t fps = 60)
+	{
+		Timer timer;
+		uint32_t frames = 0;
+
+		while (this->GetWindow().IsRunning())
 		{
-			this->InitGraphics();
-		});
+			const float elapsed = timer.GetElapsedTimeMs();
+
+			if (!useVSync)
+			{
+				if (elapsed >= 1 / static_cast<float>(fps) * 1000)
+				{
+					timer = Timer();
+				}
+				else
+				{
+					std::this_thread::yield();
+					continue;
+				}
+			}
+
+			this->GetWindow().Update();
+
+			this->OnRender(elapsed);
+
+			this->PresentFrame(useVSync);
+		}
 	}
 
 	virtual void OnRender(const float elapsed) = 0;
@@ -2779,9 +2352,9 @@ public:
 
 		RECT boundingRect = windowRect;
 
-		boundingRect.top    += (windowRect.bottom - windowRect.top) - clientRect.bottom + 10; // padding
-		boundingRect.left   += 10; // padding
-		boundingRect.right  -= 10; // padding
+		boundingRect.top += (windowRect.bottom - windowRect.top) - clientRect.bottom + 10; // padding
+		boundingRect.left += 10; // padding
+		boundingRect.right -= 10; // padding
 		boundingRect.bottom -= 10; // padding
 
 		this->mouse->Clip(boundingRect);
@@ -2790,24 +2363,14 @@ public:
 		this->mouse->Hide();
 	}
 
-	void SetRenderMode2D()
+	void PlayWavFile(const char* filename)
 	{
-		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
-		const DirectX::XMMATRIX orthographicCameraTransposedTransform = this->orthographicCamera->GetTransposedTransform();
-		cameraTransformConstantBuffer.SetData(&orthographicCameraTransposedTransform);
-		cameraTransformConstantBuffer.Bind();
-
-		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOff.Get(), 1u);
-	}
-
-	void SetRenderMode3D()
-	{
-		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
-		const DirectX::XMMATRIX perspectiveCameraTransposedTransform = this->perspectiveCamera->GetTransposedTransform();
-		cameraTransformConstantBuffer.SetData(&perspectiveCameraTransposedTransform);
-		cameraTransformConstantBuffer.Bind();
-
-		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOn.Get(), 1u);
+		if (!PlaySound(TEXT(filename), NULL, SND_ASYNC | SND_FILENAME))
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("Could Not Play Sound From File");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+		}
 	}
 
 	void DrawMesh(const size_t meshIndex)
@@ -2878,7 +2441,7 @@ public:
 	[[nodiscard]] size_t CreateVertexBuffer(const VertexBufferDescriptor& descriptor)
 	{
 		this->vertexBuffers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
-	
+
 		return this->vertexBuffers.size() - 1;
 	}
 
@@ -2948,6 +2511,47 @@ public:
 		return { vertices, indices };
 	}
 
+	[[nodiscard]] Mesh&           GetMesh          (const size_t index) noexcept { return this->meshes[index];          }
+	[[nodiscard]] Texture2D&      GetTexture       (const size_t index) noexcept { return this->textures[index];        }
+	[[nodiscard]] VertexShader&   GetVertexShader  (const size_t index) noexcept { return this->vertexShaders[index];   }
+	[[nodiscard]] PixelShader&    GetPixelShader   (const size_t index) noexcept { return this->pixelShaders[index];    }
+	[[nodiscard]] ConstantBuffer& GetConstantBuffer(const size_t index) noexcept { return this->constantBuffers[index]; }
+	[[nodiscard]] VertexBuffer&   GetVertexBuffer  (const size_t index) noexcept { return this->vertexBuffers[index];   }
+	[[nodiscard]] IndexBuffer&    GetIndexBuffer   (const size_t index) noexcept { return this->indexBuffers[index];    }
+	[[nodiscard]] TextureSampler& GetTextureSampler(const size_t index) noexcept { return this->textureSamplers[index]; }
+
+	// Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
+	[[nodiscard]] Window&   GetWindow()   noexcept { return Window::m_s_windows[this->windowIndex]; }
+	[[nodiscard]] Mouse&    GetMouse()    noexcept { return *this->mouse;                           }
+	[[nodiscard]] Keyboard& GetKeybaord() noexcept { return *this->keyboard;                        }
+	[[nodiscard]] Engine&   GetEngine()   noexcept { return *this;                                  }
+
+	// --> ENGINE --> ENGINE CLASS --> CORE END
+	// --> ENGINE --> ENGINE CLASS --> 2D (Abstracted) START
+private:
+	OrthographicCamera* orthographicCamera = nullptr;
+
+	Batch2DRenderer<Colored2DVertex>* coloredBatch2DRenderer = nullptr;
+
+private:
+	void Init2DBatchRenderers();
+
+public:
+	void InitEngine2D()
+	{
+		this->Init2DBatchRenderers();
+	}
+
+	void SetRenderMode2D()
+	{
+		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
+		const DirectX::XMMATRIX orthographicCameraTransposedTransform = this->orthographicCamera->GetTransposedTransform();
+		cameraTransformConstantBuffer.SetData(&orthographicCameraTransposedTransform);
+		cameraTransformConstantBuffer.Bind();
+
+		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOff.Get(), 1u);
+	}
+
 	void Fill(const Coloru8& color)
 	{
 		float colorf[4] = { color.red / 255.f, color.green / 255.f, color.blue / 255.f, color.alpha / 255.f };
@@ -2955,44 +2559,119 @@ public:
 		this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&colorf);
 	}
 
-	void Run(const bool useVSync = true, const uint16_t fps = 60)
+	[[nodiscard]] OrthographicCamera&               GetOrthographicCamera()     noexcept { return *this->orthographicCamera; }
+	[[nodiscard]] Batch2DRenderer<Colored2DVertex>& GetColoredBatchRenderer2D() noexcept { return *this->coloredBatch2DRenderer; }
+
+	// --> ENGINE --> ENGINE CLASS --> 2D (Abstracted) END
+	// --> ENGINE --> ENGINE CLASS --> 3D (Abstracted) START
+private:
+	PerspectiveCamera* perspectiveCamera = nullptr;
+
+public:
+	void SetRenderMode3D()
 	{
-		Timer timer;
-		uint32_t frames = 0;
+		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
+		const DirectX::XMMATRIX perspectiveCameraTransposedTransform = this->perspectiveCamera->GetTransposedTransform();
+		cameraTransformConstantBuffer.SetData(&perspectiveCameraTransposedTransform);
+		cameraTransformConstantBuffer.Bind();
 
-		while (this->GetWindow().IsRunning())
-		{
-			const float elapsed = timer.GetElapsedTimeMs();
-
-			if (!useVSync)
-			{
-				if (elapsed >= 1 / static_cast<float>(fps) * 1000)
-				{
-					timer = Timer();
-				}
-				else
-				{
-					std::this_thread::yield();
-					continue;
-				}
-			}
-
-			this->GetWindow().Update();
-
-			this->OnRender(elapsed);
-
-			this->PresentFrame(useVSync);
-		}
+		this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOn.Get(), 1u);
 	}
+
+	[[nodiscard]] PerspectiveCamera& GetPerspectiveCamera() noexcept { return *this->perspectiveCamera; }
+
+	// --> ENGINE --> ENGINE CLASS --> 3D (Abstracted) END
 };
 
 // --> ENGINE --> ENGINE CLASS END
+// --> ENGINE --> BATCH RENDERERS START
+
+class ColoredBatch2DRenderer : public Batch2DRenderer<Colored2DVertex>
+{
+private:
+	Engine& m_engine;
+
+public:
+	ColoredBatch2DRenderer(Engine& engine)
+		: m_engine(engine)
+	{
+		Colored2DVertex junk[3] = {  };
+
+		const VertexBufferDescriptor vbd{ junk, 3u, sizeof(Colored2DVertex), true };
+		this->m_vertexBufferIndex = this->m_engine.CreateVertexBuffer(vbd);
+
+		std::vector<std::pair<const char*, DXGI_FORMAT>> ieds = {
+			{ "Position",         DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT    },
+			{ "Color",            DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM  },
+			{ "DoApplyTransform", DXGI_FORMAT::DXGI_FORMAT_R32_UINT        } // 1 if you want to apply to the orthographic / perspective transform
+		};
+
+		const char* vsSource = "cbuffer cbuff { matrix transform; }\n"
+			"struct VSoutput { float4 out_color : Color; float4 out_positionSV : SV_Position; };\n"
+			"VSoutput main(float2 in_position : Position, float4 in_color : Color, uint doApplyTransform : DoApplyTransform) {"
+				"VSoutput output;\n"
+				"output.out_color = in_color;\n"
+				"output.out_positionSV = float4(in_position, 0.0f, 1.0f);\n"
+				"if (doApplyTransform == 1) { output.out_positionSV = mul(output.out_positionSV, transform); }\n"
+				"return output;"
+			"}";
+
+		const VertexShaderDescriptor vsd = { ieds, ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, vsSource };
+
+		const char* psSource = "float4 main(float4 color : Color) : SV_TARGET { return color; }";
+
+		const PixelShaderDescriptor psd = { ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, psSource };
+
+		Mesh mesh { this->m_vertexBufferIndex, this->m_engine.CreateVertexShader(vsd), this->m_engine.CreatePixelShader(psd) };
+
+		this->m_meshIndex = this->m_engine.CreateMeshFromVertices(mesh);
+	}
+
+	virtual void Draw() override
+	{
+		std::vector<Colored2DVertex> vertices(this->m_triangles.size() * 3u);
+
+		size_t i = 0;
+
+		for (const ColoredTriangle2D& tr : this->m_triangles)
+		{
+			vertices[i++] = tr[0];
+			vertices[i++] = tr[1];
+			vertices[i++] = tr[2];
+		}
+
+		this->m_engine.GetVertexBuffer(this->m_vertexBufferIndex).SetData(vertices.data(), vertices.size());
+		this->m_engine.DrawMesh(this->m_meshIndex);
+	}
+};
+
+// --> ENGINE --> BATCH RENDERERS END
 // --> ENGINE END
 
 #endif // __WEISS__
 
 #ifdef __WEISS_LAST_INCLUDE
+
 std::vector<Window> Window::m_s_windows = std::vector<Window>();
+
+LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+{
+	std::vector<Window>::iterator it = std::find_if(Window::m_s_windows.begin(), Window::m_s_windows.end(), [&hwnd](const Window& window)
+		{
+			return window.m_handle == hwnd;
+		});
+
+	if (it != Window::m_s_windows.end())
+		return it->HandleMessage(msg, wParam, lParam);
+
+	return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+void Engine::Init2DBatchRenderers()
+{
+	this->coloredBatch2DRenderer = new ColoredBatch2DRenderer(this->GetEngine());
+}
+
 #endif // __WEISS_LAST_INCLUDE
 
 /*
