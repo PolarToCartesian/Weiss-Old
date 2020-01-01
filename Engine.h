@@ -123,6 +123,27 @@ constexpr const size_t WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER  = 200u;
 constexpr const size_t WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER   = 3u * WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER;
 constexpr const size_t WEISS_NO_RESOURCE_INDEX                      = std::numeric_limits<size_t>::max();
 
+constexpr const char* WEISS_COLORED_BATCH_2D_RENDERER_VS_SOURCE = ""
+"cbuffer cbuff { matrix transform; }\n"
+"struct VSoutput { float4 out_color : Color; float4 out_positionSV : SV_Position; };\n"
+"VSoutput main(float2 in_position : Position, float4 in_color : Color, uint doApplyTransform : DoApplyTransform) {"
+	"VSoutput output;\n"
+	"output.out_color = in_color;\n"
+	"output.out_positionSV = float4(in_position, 0.0f, 1.0f);\n"
+	"if (doApplyTransform == 1) { output.out_positionSV = mul(output.out_positionSV, transform); }\n"
+	"return output;"
+"}";
+
+constexpr const char* WEISS_COLORED_BATCH_2D_RENDERER_PS_SOURCE = ""
+"float4 main(float4 color : Color) : SV_TARGET { return color; }";
+
+const std::vector<std::pair<const char*, DXGI_FORMAT>> WEISS_COLORED_BATCH_2D_RENDERER_IEDS =
+{
+	{ "Position",         DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT   },
+	{ "Color",            DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM },
+	{ "DoApplyTransform", DXGI_FORMAT::DXGI_FORMAT_R32_UINT       } // 1 if you want to apply to the orthographic / perspective transform
+};
+
 // --> WEISS DEFINES END
 // --> CLASS FORWARD DECLARATIONS START
 
@@ -254,7 +275,7 @@ public:
 	void Send(const char* data, int length = -1)
 	{
 		if (length < 0)
-			length = strlen(data) + 1;
+			length = static_cast<int>(strlen(data) + 1u);
 
 		if (send(this->m_socket, data, length, 0) == SOCKET_ERROR)
 		{
@@ -359,7 +380,7 @@ public:
 		{
 			this->m_clients.push_back(client);
 
-			return this->m_clients.size() - 1;
+			return static_cast<int>(this->m_clients.size() - 1u);
 		}
 
 		return -1;
@@ -368,7 +389,7 @@ public:
 	void Send(const int clientID, const char* data, int length = -1)
 	{
 		if (length < 0)
-			length = strlen(data) + 1;
+			length = static_cast<int>(strlen(data) + 1);
 
 		if (send(this->m_clients[clientID], data, length, 0) == SOCKET_ERROR)
 		{
@@ -2041,12 +2062,18 @@ protected:
 	size_t m_vertexBufferIndex = WEISS_NO_RESOURCE_INDEX;
 
 	std::vector<size_t> m_meshes;
+	
+	Engine& m_engine;
+
+private:
+	// Defined Later (__WEISS_LAST_INCLUDE) Because It Uses The Engine Class Before Its Declaration
+	void CreateNewMeshesIfNeeded();
 
 public:
-	Triangle<V>& getTriangle(const size_t index) noexcept
-	{
-		return this->m_triangles[index];
-	}
+	// Defined Later (__WEISS_LAST_INCLUDE) Because It Uses The Engine Class Before Its Declaration
+	Batch2DRenderer(Engine& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource);
+
+	Triangle<V>& getTriangle(const size_t index) noexcept { return this->m_triangles[index]; }
 
 	size_t addTriangle(const Triangle<V>& tr) noexcept
 	{
@@ -2055,7 +2082,31 @@ public:
 		return this->m_triangles.size() - 1u;
 	}
 
-	virtual void Draw() = 0;
+	void Draw()
+	{
+		this->CreateNewMeshesIfNeeded();
+
+		// Fill Vertex Buffers And Draw
+		for (size_t i = 0u; i < this->m_meshes.size(); i++)
+		{
+			// Set Data
+			V vertices[WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER];
+
+			const void* srcPtr = this->m_triangles.data() + i * WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER;
+
+			std::memcpy(vertices, srcPtr, sizeof(V) * WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
+
+			Mesh& mesh = this->m_engine.GetMesh(this->m_meshes[i]);
+			VertexBuffer& vertexBuffer = this->m_engine.GetVertexBuffer(mesh.vertexBufferIndex);
+
+			vertexBuffer.SetData(vertices, WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
+
+			// Draw
+			const UINT nVerticesToDraw = static_cast<UINT>((i != this->m_meshes.size() - 1u) ? WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER : this->m_triangles.size() * 3u - i * WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
+
+			this->m_engine.DrawMesh(this->m_meshes[i], nVerticesToDraw);
+		}
+	}
 };
 // --> ENGINE --> BATCH RENDERER BASE CLASS END
 // --> ENGINE --> ENGINE CLASS START
@@ -2384,7 +2435,7 @@ public:
 		}
 	}
 
-	void DrawMesh(const size_t meshIndex, size_t count = 0u)
+	void DrawMesh(const size_t meshIndex, UINT count = 0u)
 	{
 		Mesh& mesh = this->meshes[meshIndex];
 
@@ -2408,14 +2459,14 @@ public:
 			this->indexBuffers[mesh.indexBufferIndex.value()].Bind();
 
 			if (count == 0u)
-				count = this->indexBuffers[mesh.indexBufferIndex.value()].GetSize();
+				count = static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex.value()].GetSize());
 
 			this->m_pDeviceContext->DrawIndexed(count, 0u, 0u);
 		}
 		else
 		{
 			if (count == 0u)
-				count = this->vertexBuffers[mesh.vertexBufferIndex].GetElementCount();
+				count = static_cast<UINT>(this->vertexBuffers[mesh.vertexBufferIndex].GetElementCount());
 
 			this->m_pDeviceContext->Draw(count, 0u);
 		}
@@ -2606,81 +2657,11 @@ public:
 
 class ColoredBatch2DRenderer : public Batch2DRenderer<Colored2DVertex>
 {
-private:
-	Engine& m_engine;
-
-private:
-	void CreateNewMesh()
-	{
-		Colored2DVertex junk[WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER] = {  };
-
-		const VertexBufferDescriptor vbd{ junk, WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER, sizeof(Colored2DVertex), true };
-		this->m_vertexBufferIndex = this->m_engine.CreateVertexBuffer(vbd);
-
-		Mesh mesh{ this->m_vertexBufferIndex, this->m_vertexShaderIndex, this->m_pixelShaderIndex };
-
-		this->m_meshes.push_back(this->m_engine.CreateMeshFromVertices(mesh));
-	}
-
 public:
 	ColoredBatch2DRenderer(Engine& engine)
-		: m_engine(engine)
-	{
-		// Load Shaders
-		std::vector<std::pair<const char*, DXGI_FORMAT>> ieds = {
-			{ "Position",         DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT    },
-			{ "Color",            DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM  },
-			{ "DoApplyTransform", DXGI_FORMAT::DXGI_FORMAT_R32_UINT        } // 1 if you want to apply to the orthographic / perspective transform
-		};
-
-		const char* vsSource = "cbuffer cbuff { matrix transform; }\n"
-			"struct VSoutput { float4 out_color : Color; float4 out_positionSV : SV_Position; };\n"
-			"VSoutput main(float2 in_position : Position, float4 in_color : Color, uint doApplyTransform : DoApplyTransform) {"
-				"VSoutput output;\n"
-				"output.out_color = in_color;\n"
-				"output.out_positionSV = float4(in_position, 0.0f, 1.0f);\n"
-				"if (doApplyTransform == 1) { output.out_positionSV = mul(output.out_positionSV, transform); }\n"
-			"return output;"
-			"}";
-
-		const VertexShaderDescriptor vsd = { ieds, ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, vsSource };
-
-		this->m_vertexShaderIndex = this->m_engine.CreateVertexShader(vsd);
-
-		const char* psSource = "float4 main(float4 color : Color) : SV_TARGET { return color; }";
-
-		const PixelShaderDescriptor psd = { ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, psSource };
-
-		this->m_pixelShaderIndex = this->m_engine.CreatePixelShader(psd);
-	}
-
-	virtual void Draw() override
-	{
-		const size_t nMeshToAdd = std::ceil((this->m_triangles.size() * 3u) / (float)WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER) - this->m_meshes.size();
-
-		for (size_t i = 0u; i < nMeshToAdd; i++)
-			this->CreateNewMesh();
-
-		// Fill Vertex Buffers And Draw
-
-		for (size_t i = 0u; i < this->m_meshes.size(); i++)
-		{
-			Colored2DVertex vertices[WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER];
-
-			const void* srcPtr = this->m_triangles.data() + i * WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER;
-
-			std::memcpy(vertices, srcPtr, sizeof(Colored2DVertex) * WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
-
-			Mesh& mesh = this->m_engine.GetMesh(this->m_meshes[i]);
-			VertexBuffer& vertexBuffer = this->m_engine.GetVertexBuffer(mesh.vertexBufferIndex);
-
-			vertexBuffer.SetData(vertices, WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
-
-			const size_t nVerticesToDraw = (i != this->m_meshes.size() - 1u) ? WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER : this->m_triangles.size() * 3u - i * WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER;
-
-			this->m_engine.DrawMesh(this->m_meshes[i], nVerticesToDraw);
-		}
-	}
+		: Batch2DRenderer<Colored2DVertex>(engine, WEISS_COLORED_BATCH_2D_RENDERER_IEDS, 
+												   WEISS_COLORED_BATCH_2D_RENDERER_VS_SOURCE, 
+												   WEISS_COLORED_BATCH_2D_RENDERER_PS_SOURCE) {  }
 };
 
 // --> ENGINE --> BATCH RENDERERS END
@@ -2703,6 +2684,34 @@ LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 		return it->HandleMessage(msg, wParam, lParam);
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
+}
+
+template <typename V>
+Batch2DRenderer<V>::Batch2DRenderer(Engine& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource)
+	: m_engine(engine)
+{
+	const VertexShaderDescriptor vsd = { ieds, ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, vsSource };
+	this->m_vertexShaderIndex = this->m_engine.CreateVertexShader(vsd);
+
+	const PixelShaderDescriptor psd = { ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, psSource };
+	this->m_pixelShaderIndex = this->m_engine.CreatePixelShader(psd);
+}
+
+template <typename V>
+void Batch2DRenderer<V>::CreateNewMeshesIfNeeded() {
+	const size_t nMeshToAdd = static_cast<UINT>(std::ceil((this->m_triangles.size() * 3u) / (float)WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER) - this->m_meshes.size());
+
+	for (size_t i = 0u; i < nMeshToAdd; i++)
+	{
+		V junk[WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER] = {  };
+
+		const VertexBufferDescriptor vbd{ junk, WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER, sizeof(V), true };
+		this->m_vertexBufferIndex = this->m_engine.CreateVertexBuffer(vbd);
+
+		Mesh mesh{ this->m_vertexBufferIndex, this->m_vertexShaderIndex, this->m_pixelShaderIndex };
+
+		this->m_meshes.push_back(this->m_engine.CreateMeshFromVertices(mesh));
+	}
 }
 
 void Engine::Init2DBatchRenderers()
