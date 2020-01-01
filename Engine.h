@@ -119,7 +119,7 @@
 
 constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0u;
 constexpr const size_t WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE      = 1024u;
-constexpr const size_t WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER  = 200u;
+constexpr const size_t WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER  = 600u;
 constexpr const size_t WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER   = 3u * WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER;
 constexpr const size_t WEISS_NO_RESOURCE_INDEX                      = std::numeric_limits<size_t>::max();
 
@@ -144,10 +144,60 @@ const std::vector<std::pair<const char*, DXGI_FORMAT>> WEISS_COLORED_BATCH_2D_RE
 	{ "DoApplyTransform", DXGI_FORMAT::DXGI_FORMAT_R32_UINT       } // 1 if you want to apply to the orthographic / perspective transform
 };
 
+constexpr const char* WEISS_TEXTURED_BATCH_2D_RENDERER_VS_SOURCE = ""
+"cbuffer cbuff { matrix transform; }\n"
+"struct VSoutput { float2 out_textureCoord : TextureCoord; uint out_textureIndex : TextureIndex; float4 out_positionSV : SV_Position; };\n"
+"VSoutput main(float2 in_position : Position, float2 in_textureCoord : TextureCoord, uint in_textureIndex : TextureIndex, uint doApplyTransform : DoApplyTransform) {"
+	"VSoutput output;\n"
+	"output.out_textureCoord = in_textureCoord;\n"
+	"output.out_textureIndex = in_textureIndex;\n"
+	"output.out_positionSV = float4(in_position, 0.0f, 1.0f);\n"
+	"if (doApplyTransform == 1) { output.out_positionSV = mul(output.out_positionSV, transform); }\n"
+	"return output;"
+"}";
+
+constexpr const char* WEISS_TEXTURED_BATCH_2D_RENDERER_PS_SOURCE = ""
+"Texture2D tex0 : register(t0);\n"
+"Texture2D tex1 : register(t1);\n"
+"Texture2D tex2 : register(t2);\n"
+"Texture2D tex3 : register(t3);\n"
+"Texture2D tex4 : register(t4);\n"
+"Texture2D tex5 : register(t5);\n"
+"Texture2D tex6 : register(t6);\n"
+"Texture2D tex7 : register(t7);\n"
+"Texture2D tex8 : register(t8);\n"
+"Texture2D tex9 : register(t9);\n"
+"\n"
+"SamplerState splr : register(s0);\n"
+"\n"
+"float4 main(float2 in_textureCoord : TextureCoord, uint in_textureIndex : TextureIndex) : SV_TARGET {\n"
+	"float4 sampled = { 0, 0, 0, 0 };\n"
+	"if (tIndex == 0) sampled = tex0.Sample(splr, tc);\n"
+	"else if (tIndex == 1) sampled = tex1.Sample(splr, tc);\n"
+	"else if (tIndex == 2) sampled = tex2.Sample(splr, tc);\n"
+	"else if (tIndex == 3) sampled = tex3.Sample(splr, tc);\n"
+	"else if (tIndex == 4) sampled = tex4.Sample(splr, tc);\n"
+	"else if (tIndex == 5) sampled = tex5.Sample(splr, tc);\n"
+	"else if (tIndex == 6) sampled = tex6.Sample(splr, tc);\n"
+	"else if (tIndex == 7) sampled = tex7.Sample(splr, tc);\n"
+	"else if (tIndex == 8) sampled = tex8.Sample(splr, tc);\n"
+	"else if (tIndex == 9) sampled = tex9.Sample(splr, tc);\n"
+	""
+	"return sampled;\n"
+"}";
+
+const std::vector<std::pair<const char*, DXGI_FORMAT>> WEISS_TEXTURED_BATCH_2D_RENDERER_IEDS =
+{
+	{ "Position",         DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT   },
+	{ "TextureCoord",     DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT   },
+	{ "TextureIndex",     DXGI_FORMAT::DXGI_FORMAT_R32_UINT       },
+	{ "DoApplyTransform", DXGI_FORMAT::DXGI_FORMAT_R32_UINT       } // 1 if you want to apply to the orthographic / perspective transform
+};
+
 // --> WEISS DEFINES END
 // --> CLASS FORWARD DECLARATIONS START
 
-class Engine;
+class EngineCore;
 
 // --> CLASS FORWARD DECLARATIONS END
 // --> FUNCTION FORWARD DECLARATIONS START
@@ -1504,9 +1554,9 @@ public:
 	static std::vector<Window> m_s_windows;
 
 	// Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
-	static size_t CreateNewWindow(const WindowDescriptor& descriptor)
+	static size_t CreateNewWindow(const WindowDescriptor& windowDesc)
 	{
-		Window::m_s_windows.emplace_back(descriptor);
+		Window::m_s_windows.emplace_back(windowDesc);
 
 		return Window::m_s_windows.size() - 1u;
 	}
@@ -2022,19 +2072,20 @@ struct DataFromMeshFile
 	std::vector<uint32_t> indices;
 };
 
-struct EngineDescriptor
-{
-	WindowDescriptor windowDesc;
-	OrthographicCameraDescriptor orthographicCameraDesc;
-	PerspectiveCameraDescriptor  perspectiveCameraDesc;
-};
-
 // --> ENGINE --> ENGINE DESCRIPTORS END
 // --> ENGINE --> ENGINE STRUCTURES & DATA-TYPES START
 
-struct Colored2DVertex {
+struct Colored2DVertex
+{
 	Vec2f    position;
 	Coloru8  color;
+	uint32_t doApplyTransform = true;
+};
+
+struct Textured2DVertex {
+	Vec2f    position;
+	Vec2f    textureCoord;
+	uint32_t textureIndex;
 	uint32_t doApplyTransform = true;
 };
 
@@ -2046,7 +2097,8 @@ struct Triangle
 	V v3;
 };
 
-typedef Triangle<Colored2DVertex> ColoredTriangle2D;
+typedef Triangle<Colored2DVertex>  ColoredTriangle2D;
+typedef Triangle<Textured2DVertex> TexturedTriangle2D;
 
 // --> ENGINE --> ENGINE STRUCTURES & DATA-TYPES END
 // --> ENGINE --> BATCH RENDERER BASE CLASS START
@@ -2063,7 +2115,7 @@ protected:
 
 	std::vector<size_t> m_meshes;
 	
-	Engine& m_engine;
+	EngineCore& m_engine;
 
 private:
 	// Defined Later (__WEISS_LAST_INCLUDE) Because It Uses The Engine Class Before Its Declaration
@@ -2071,7 +2123,7 @@ private:
 
 public:
 	// Defined Later (__WEISS_LAST_INCLUDE) Because It Uses The Engine Class Before Its Declaration
-	Batch2DRenderer(Engine& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource);
+	Batch2DRenderer(EngineCore& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource);
 
 	Triangle<V>& getTriangle(const size_t index) noexcept { return this->m_triangles[index]; }
 
@@ -2090,16 +2142,13 @@ public:
 		for (size_t i = 0u; i < this->m_meshes.size(); i++)
 		{
 			// Set Data
-			V vertices[WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER];
-
-			const void* srcPtr = this->m_triangles.data() + i * WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER;
-
-			std::memcpy(vertices, srcPtr, sizeof(V) * WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
 
 			Mesh& mesh = this->m_engine.GetMesh(this->m_meshes[i]);
 			VertexBuffer& vertexBuffer = this->m_engine.GetVertexBuffer(mesh.vertexBufferIndex);
 
-			vertexBuffer.SetData(vertices, WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
+			const void* srcPtr = this->m_triangles.data() + i * WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER;
+
+			vertexBuffer.SetData(srcPtr, WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
 
 			// Draw
 			const UINT nVerticesToDraw = static_cast<UINT>((i != this->m_meshes.size() - 1u) ? WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER : this->m_triangles.size() * 3u - i * WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
@@ -2111,10 +2160,10 @@ public:
 // --> ENGINE --> BATCH RENDERER BASE CLASS END
 // --> ENGINE --> ENGINE CLASS START
 
-class Engine
+class EngineCore
 {
 // --> ENGINE --> ENGINE CLASS --> CORE START
-private:
+protected:
 	Microsoft::WRL::ComPtr<ID3D11Device> m_pDevice;
 	Microsoft::WRL::ComPtr<IDXGISwapChain> m_pSwapChain;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_pDeviceContext;
@@ -2137,7 +2186,7 @@ private:
 	std::vector<TextureSampler> textureSamplers;
 
 	size_t    windowIndex = 0u;
-	Mouse* mouse = nullptr;
+	Mouse*    mouse = nullptr;
 	Keyboard* keyboard = nullptr;
 
 private:
@@ -2336,7 +2385,7 @@ private:
 	}
 
 public:
-	Engine()
+	EngineCore()
 	{
 		if (CoInitialize(NULL) != S_OK)
 		{
@@ -2348,22 +2397,17 @@ public:
 		}
 	}
 
-	~Engine()
+	~EngineCore()
 	{
 		// No Need To Destroy Window Because It Destroys Itself
-		delete this->orthographicCamera;
-		delete this->perspectiveCamera;
 	}
 
-	void InitEngine(const EngineDescriptor& descriptor)
+	void InitEngine(const WindowDescriptor& windowDesc)
 	{
-		this->windowIndex = Window::CreateNewWindow(descriptor.windowDesc);
+		this->windowIndex = Window::CreateNewWindow(windowDesc);
 
 		this->mouse = &(this->GetWindow().GetMouse());
 		this->keyboard = &(this->GetWindow().GetKeyboard());
-
-		this->orthographicCamera = new OrthographicCamera(this->GetWindow(), descriptor.orthographicCameraDesc);
-		this->perspectiveCamera = new PerspectiveCamera(this->GetWindow(), descriptor.perspectiveCameraDesc);
 
 		this->InitGraphics();
 		this->CreateDefaultConstantBuffers();
@@ -2590,25 +2634,39 @@ public:
 	[[nodiscard]] TextureSampler& GetTextureSampler(const size_t index) noexcept { return this->textureSamplers[index]; }
 
 	// Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
-	[[nodiscard]] Window&   GetWindow()   noexcept { return Window::m_s_windows[this->windowIndex]; }
-	[[nodiscard]] Mouse&    GetMouse()    noexcept { return *this->mouse;                           }
-	[[nodiscard]] Keyboard& GetKeybaord() noexcept { return *this->keyboard;                        }
-	[[nodiscard]] Engine&   GetEngine()   noexcept { return *this;                                  }
+	[[nodiscard]] Window&   GetWindow()         noexcept { return Window::m_s_windows[this->windowIndex]; }
+	[[nodiscard]] Mouse&    GetMouse()          noexcept { return *this->mouse;                           }
+	[[nodiscard]] Keyboard& GetKeybaord()       noexcept { return *this->keyboard;                        }
+	[[nodiscard]] EngineCore&   GetEngineCore() noexcept { return *this;                                  }
+};
 
-	// --> ENGINE --> ENGINE CLASS --> CORE END
-	// --> ENGINE --> ENGINE CLASS --> 2D (Abstracted) START
+// --> ENGINE --> BATCH RENDERERS START
+
+class ColoredBatch2DRenderer : public Batch2DRenderer<Colored2DVertex>
+{
+public:
+	ColoredBatch2DRenderer(EngineCore& engine)
+		: Batch2DRenderer<Colored2DVertex>(engine, WEISS_COLORED_BATCH_2D_RENDERER_IEDS,
+			WEISS_COLORED_BATCH_2D_RENDERER_VS_SOURCE,
+			WEISS_COLORED_BATCH_2D_RENDERER_PS_SOURCE) {  }
+};
+
+// --> ENGINE --> BATCH RENDERERS END
+
+class Engine : public EngineCore
+{
+// RENDERER 2D START
 private:
 	OrthographicCamera* orthographicCamera = nullptr;
 
 	Batch2DRenderer<Colored2DVertex>* coloredBatch2DRenderer = nullptr;
 
-private:
-	void Init2DBatchRenderers();
-
 public:
-	void InitEngine2D()
+	void InitEngine2D(const OrthographicCameraDescriptor& orthographicCameraDesc)
 	{
-		this->Init2DBatchRenderers();
+		this->coloredBatch2DRenderer = new ColoredBatch2DRenderer(this->GetEngine());
+
+		this->orthographicCamera = new OrthographicCamera(this->GetWindow(), orthographicCameraDesc);
 	}
 
 	void SetRenderMode2D()
@@ -2628,15 +2686,22 @@ public:
 		this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&colorf);
 	}
 
-	[[nodiscard]] OrthographicCamera&               GetOrthographicCamera()     noexcept { return *this->orthographicCamera; }
-	[[nodiscard]] Batch2DRenderer<Colored2DVertex>& GetColoredBatchRenderer2D() noexcept { return *this->coloredBatch2DRenderer; }
+	[[nodiscard]] Engine& GetEngine() noexcept { return *this; }
 
-	// --> ENGINE --> ENGINE CLASS --> 2D (Abstracted) END
-	// --> ENGINE --> ENGINE CLASS --> 3D (Abstracted) START
+	[[nodiscard]] OrthographicCamera&               GetOrthographicCamera()      noexcept { return *this->orthographicCamera; }
+	[[nodiscard]] Batch2DRenderer<Colored2DVertex>& GetColoredBatchRenderer2D()  noexcept { return *this->coloredBatch2DRenderer; }
+// RENDERER 2D END
+// RENDERER 3D START
+
 private:
 	PerspectiveCamera* perspectiveCamera = nullptr;
 
 public:
+	void InitEngine3D(const PerspectiveCameraDescriptor& perspectiveCameraDesc)
+	{
+		this->perspectiveCamera = new PerspectiveCamera(this->GetWindow(), perspectiveCameraDesc);
+	}
+
 	void SetRenderMode3D()
 	{
 		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
@@ -2649,22 +2714,16 @@ public:
 
 	[[nodiscard]] PerspectiveCamera& GetPerspectiveCamera() noexcept { return *this->perspectiveCamera; }
 
-	// --> ENGINE --> ENGINE CLASS --> 3D (Abstracted) END
+// RENDERER 3D END
+	~Engine()
+	{
+		delete this->orthographicCamera;
+		delete this->perspectiveCamera;
+	}
 };
 
 // --> ENGINE --> ENGINE CLASS END
-// --> ENGINE --> BATCH RENDERERS START
 
-class ColoredBatch2DRenderer : public Batch2DRenderer<Colored2DVertex>
-{
-public:
-	ColoredBatch2DRenderer(Engine& engine)
-		: Batch2DRenderer<Colored2DVertex>(engine, WEISS_COLORED_BATCH_2D_RENDERER_IEDS, 
-												   WEISS_COLORED_BATCH_2D_RENDERER_VS_SOURCE, 
-												   WEISS_COLORED_BATCH_2D_RENDERER_PS_SOURCE) {  }
-};
-
-// --> ENGINE --> BATCH RENDERERS END
 // --> ENGINE END
 
 #endif // __WEISS__
@@ -2687,7 +2746,7 @@ LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 }
 
 template <typename V>
-Batch2DRenderer<V>::Batch2DRenderer(Engine& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource)
+Batch2DRenderer<V>::Batch2DRenderer(EngineCore& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource)
 	: m_engine(engine)
 {
 	const VertexShaderDescriptor vsd = { ieds, ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, vsSource };
@@ -2712,11 +2771,6 @@ void Batch2DRenderer<V>::CreateNewMeshesIfNeeded() {
 
 		this->m_meshes.push_back(this->m_engine.CreateMeshFromVertices(mesh));
 	}
-}
-
-void Engine::Init2DBatchRenderers()
-{
-	this->coloredBatch2DRenderer = new ColoredBatch2DRenderer(this->GetEngine());
 }
 
 #endif // __WEISS_LAST_INCLUDE
