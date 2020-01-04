@@ -1,6 +1,6 @@
 # Weiss
 
-> Weiss is a header-only 2D and 3D rendering engine for windows built with DirectX in c++17. It is intended to be a wrapper around low-level apis to make the developpement of 2D and 3D applications simpler and faster.
+> Weiss is a 2D and 3D rendering engine for windows built with DirectX in c++17. It is intended to be a wrapper around low-level apis to make the developpement of 2D and 3D applications simpler and faster.
 
 ---
 
@@ -24,7 +24,7 @@ Example Application :
 #define __WEISS_SHOW_DEBUG_ERRORS
 #define __WEISS_LAST_INCLUDE
 
-#include "../engine/Engine.h"
+#include "../engine/Include.h"
 
 class Sandbox : public Engine
 {

@@ -1,0 +1,62 @@
+#pragma once
+
+#include "../objects/Mesh.h"
+#include "../objects/Triangles.h"
+#include "../buffers/VertexBuffer.h"
+
+class EngineCore;
+
+template <typename V>
+class Batch2DRenderer
+{
+protected:
+	std::vector<Triangle<V>> m_triangles;
+
+	size_t m_vertexShaderIndex = WEISS_NO_RESOURCE_INDEX;
+	size_t m_pixelShaderIndex  = WEISS_NO_RESOURCE_INDEX;
+	size_t m_vertexBufferIndex = WEISS_NO_RESOURCE_INDEX;
+
+	std::vector<size_t> m_meshes;
+	
+	EngineCore& m_engine;
+
+private:
+	// Defined Later (__WEISS_LAST_INCLUDE) Because It Uses The Engine Class Before Its Declaration
+	void CreateNewMeshesIfNeeded();
+
+public:
+	// Defined Later (__WEISS_LAST_INCLUDE) Because It Uses The Engine Class Before Its Declaration
+	Batch2DRenderer(EngineCore& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource);
+
+	Triangle<V>& getTriangle(const size_t index) noexcept { return this->m_triangles[index]; }
+
+	size_t addTriangle(const Triangle<V>& tr) noexcept
+	{
+		this->m_triangles.push_back(tr);
+
+		return this->m_triangles.size() - 1u;
+	}
+
+	void Draw()
+	{
+		this->CreateNewMeshesIfNeeded();
+
+		// Fill Vertex Buffers And Draw
+		for (size_t i = 0u; i < this->m_meshes.size(); i++)
+		{
+			// Set Data
+
+			Mesh& mesh = this->m_engine.GetMesh(this->m_meshes[i]);
+			VertexBuffer& vertexBuffer = this->m_engine.GetVertexBuffer(mesh.vertexBufferIndex);
+
+			const void* srcPtr = this->m_triangles.data() + i * WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER;
+
+			vertexBuffer.SetData(srcPtr, WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
+
+			// Draw
+			const UINT nVerticesToDraw = static_cast<UINT>((i != this->m_meshes.size() - 1u) ? WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER : this->m_triangles.size() * 3u - i * WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
+
+			this->m_engine.DrawMesh(this->m_meshes[i], nVerticesToDraw);
+		}
+	}
+};
