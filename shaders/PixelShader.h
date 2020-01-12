@@ -7,7 +7,7 @@ class PixelShaderCreationException : public std::exception { };
 
 struct PixelShaderDescriptor
 {
-	const ShaderLoadingMethod loadingMethod;
+	ShaderLoadingMethod loadingMethod;
 	const wchar_t* binaryFilename;
 	const char* sourceCode;
 };

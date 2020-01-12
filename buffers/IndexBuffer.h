@@ -6,7 +6,7 @@ class IndexBufferCreationException : public std::exception { };
 
 struct IndexBufferDescriptor
 {
-	const std::vector<uint32_t> indices;
+	std::vector<uint32_t> indices;
 };
 
 class IndexBuffer {

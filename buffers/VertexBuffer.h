@@ -8,10 +8,10 @@ class VertexBufferCreationException : public std::exception { };
 
 struct VertexBufferDescriptor
 {
-	const void* memoryPtr    = nullptr;
-	const size_t nElements   = 0u;
-	const size_t elementSize = 0u;
-	const bool isUpdatable   = false;
+	void* memoryPtr    = nullptr;
+	size_t nElements   = 0u;
+	size_t elementSize = 0u;
+	bool isUpdatable   = false;
 };
 
 class VertexBuffer {

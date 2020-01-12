@@ -12,6 +12,15 @@ private:
 	uint32_t m_nPixels = 0;
 
 public:
+	Image(const Image& img)
+	{
+		this->m_nPixels = img.m_nPixels;
+		this->m_width = img.m_width;
+		this->m_height = img.m_height;
+		this->m_buff = std::make_unique<Coloru8[]>(this->m_nPixels * sizeof(Coloru8));
+		std::memcpy(this->m_buff.get(), img.m_buff.get(), this->m_nPixels * sizeof(Coloru8));
+	}
+
 	Image(const wchar_t* filename)
 	{
 		Microsoft::WRL::ComPtr<IWICBitmapSource>      decodedConvertedFrame;

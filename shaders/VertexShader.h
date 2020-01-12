@@ -7,8 +7,8 @@ class VertexShaderCreationException : public std::exception { };
 
 struct VertexShaderDescriptor
 {
-	const std::vector<std::pair<const char*, DXGI_FORMAT>> inputElementDescriptors = {};
-	const ShaderLoadingMethod loadingMethod  = ShaderLoadingMethod::FROM_BINARY_FILE;
+	std::vector<std::pair<const char*, DXGI_FORMAT>> inputElementDescriptors = {};
+	ShaderLoadingMethod loadingMethod  = ShaderLoadingMethod::FROM_BINARY_FILE;
 	const wchar_t*            binaryFilename = nullptr; // Ignore if ShaderLoadingMethod is FROM_SOURCE_CODE
 	const char*               sourceCode     = nullptr; // Ignore if ShaderLoadingMethod is FROM_BINARY_FILE
 };

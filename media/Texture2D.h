@@ -5,11 +5,11 @@ class Texture2DCreationException : public std::exception { };
 
 struct Texture2DDescriptor
 {
-	const ShaderBindingType bindingType;
-	const Image& image;
-	const UINT slotVS;
-	const UINT slotPS;
-	const bool useMipMaps;
+	ShaderBindingType bindingType;
+	Image image;
+	UINT slotVS;
+	UINT slotPS;
+	bool useMipMaps;
 };
 
 class Texture2D {
@@ -20,7 +20,8 @@ private:
 	Texture2DDescriptor m_descriptor;
 
 public:
-	Texture2D(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef, const Texture2DDescriptor& descriptor) : m_pDeviceContextRef(pDeviceContextRef), m_descriptor(descriptor)
+	Texture2D(const Microsoft::WRL::ComPtr<ID3D11Device>& pDeviceRef, Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef, const Texture2DDescriptor& descriptor)
+		: m_pDeviceContextRef(pDeviceContextRef), m_descriptor(descriptor)
 	{
 		D3D11_SUBRESOURCE_DATA subResourceData;
 		subResourceData.pSysMem = static_cast<void*>(descriptor.image.GetBuffer());
