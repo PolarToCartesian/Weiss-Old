@@ -31,7 +31,20 @@ struct Vector2D
 
 	template <typename K>
 	void operator/=(const K& n) { this->x /= n; this->y /= n; }
+
+	template<typename K>
+	bool operator==(const Vector2D<K>& v) { return this->x == v.x && this->y == v.y; }
+
+	template<typename K>
+	bool operator!=(const Vector2D<K>& v) { return this->x != v.x || this->y != v.y; }
 };
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Vector2D<T>& v)
+{
+	os << '(' << v.x << ", " << v.y << ")\n";
+	return os;
+}
 
 template <typename T, typename K>
 [[nodiscard]] Vector2D<T> operator+(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x + b.x, a.y + b.y }; }
@@ -85,6 +98,12 @@ struct Vector3D : Vector2D<T>
 
 	template <typename K>
 	void operator/=(const K& n) { this->x /= n; this->y /= n; this->z /= n; }
+
+	template<typename K>
+	bool operator==(const Vector3D<K>& v) { return this->x == v.x && this->y == v.y && this->z == v.z; }
+
+	template<typename K>
+	bool operator!=(const Vector3D<K>& v) { return this->x != v.x || this->y != v.y || this->z != v.z; }
 };
 
 template <typename T, typename K>
@@ -110,6 +129,13 @@ template <typename T, typename K>
 
 template <typename T, typename K>
 [[nodiscard]] Vector3D<T> operator/(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x / n, v.y / n, v.z / n }; }
+
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Vector3D<T>& v)
+{
+	os << '(' << v.x << ", " << v.y << ", " << v.z << ")\n";
+	return os;
+}
 
 typedef Vector2D<float>    Vec2f;
 typedef Vector2D<int8_t>   Vec2i8;

@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../Window.h"
-
+#include "../misc/Window.h"
 #include "../misc/Defines.h"
 
 #include "../timers/Timer.h"
@@ -35,6 +34,8 @@ protected:
 	Microsoft::WRL::ComPtr<IDXGISwapChain> m_pSwapChain;
 	Microsoft::WRL::ComPtr<ID3D11DeviceContext> m_pDeviceContext;
 	Microsoft::WRL::ComPtr<ID3D11RenderTargetView> m_pRenderTarget;
+
+	Microsoft::WRL::ComPtr<ID3D11BlendState> m_pBlendState;
 
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilView>  m_pDepthStencilView;
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_pDepthStencilStateForZBufferOn;
@@ -205,6 +206,30 @@ private:
 		this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), this->m_pDepthStencilView.Get());
 	}
 
+	void CreateAndBindBlendState()
+	{
+		D3D11_BLEND_DESC blendDesc = {};
+		blendDesc.RenderTarget[0].BlendEnable = TRUE;
+		blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+		blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+		blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+		blendDesc.RenderTarget[0].SrcBlendAlpha  = D3D11_BLEND_ZERO;
+		blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+		blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL; 
+
+		if (this->m_pDevice->CreateBlendState(&blendDesc, &this->m_pBlendState) != S_OK)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("COULD NOT CREATE DEPTH BLEND STATE");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw EngineInitializationException();
+		}
+
+		this->m_pDeviceContext->OMSetBlendState(this->m_pBlendState.Get(), nullptr, 0xFFFFFFFFu);
+	}
+
 	/*
 	 * This function initializes DirectX and creates key components
 	*/
@@ -216,6 +241,7 @@ private:
 		this->CreateDepthStencilStates();
 		this->CreateDepthStencil();
 		this->BindDepthStencil();
+		this->CreateAndBindBlendState();
 	}
 
 	/* 
@@ -349,6 +375,8 @@ public:
 	void DrawMesh(const size_t meshIndex, UINT count = 0u)
 	{
 		Mesh& mesh = this->meshes[meshIndex];
+
+		if (mesh.vertexBufferIndex == WEISS_NO_RESOURCE_INDEX) return;
 
 		this->vertexBuffers[mesh.vertexBufferIndex].Bind();
 		this->vertexShaders[mesh.vertexShaderIndex].Bind();

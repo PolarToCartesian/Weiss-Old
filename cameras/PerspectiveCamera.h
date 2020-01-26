@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Camera.h"
-#include "../Window.h"
+#include "../misc/Window.h"
 #include "../math/Constants.h"
 
 struct PerspectiveCameraDescriptor
@@ -126,19 +126,19 @@ public:
 		DirectX::XMVECTOR delta = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.0f);
 
 		if (keyboard.IsKeyDown(forward))
-			delta = DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f));
+			delta = DirectX::XMVectorAdd(delta, DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f)));
 		if (keyboard.IsKeyDown(backward))
-			delta = DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f));
+			delta = DirectX::XMVectorAdd(delta, DirectX::XMVectorMultiply(this->m_forwardVector, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f)));
 
 		if (keyboard.IsKeyDown(right))
-			delta = DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f));
+			delta = DirectX::XMVectorAdd(delta, DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f)));
 		if (keyboard.IsKeyDown(left))
-			delta = DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f));
+			delta = DirectX::XMVectorAdd(delta, DirectX::XMVectorMultiply(this->m_rightVector, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f)));
 
 		if (keyboard.IsKeyDown(up))
-			delta = DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f));
+			delta = DirectX::XMVectorAdd(delta, DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(+speed, +speed, +speed, 0.0f)));
 		if (keyboard.IsKeyDown(down))
-			delta = DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f));
+			delta = DirectX::XMVectorAdd(delta, DirectX::XMVectorMultiply(UP_VECTOR, DirectX::XMVectorSet(-speed, -speed, -speed, 0.0f)));
 
 		return Vec3f{ delta.m128_f32[0], delta.m128_f32[1], delta.m128_f32[2] };
 	}

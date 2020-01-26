@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Camera.h"
-#include "../Window.h"
+#include "../misc/Window.h"
 
 struct OrthographicCameraDescriptor
 {

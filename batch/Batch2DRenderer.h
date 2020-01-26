@@ -20,7 +20,7 @@ protected:
 	
 	EngineCore& m_engine;
 
-private:
+protected:
 	// Defined Later (__WEISS_LAST_INCLUDE) Because It Uses The Engine Class Before Its Declaration
 	void CreateNewMeshesIfNeeded();
 
