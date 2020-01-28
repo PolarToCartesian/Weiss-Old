@@ -221,7 +221,7 @@ private:
 		if (this->m_pDevice->CreateBlendState(&blendDesc, &this->m_pBlendState) != S_OK)
 		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-			MESSAGE_BOX_ERROR("COULD NOT CREATE DEPTH BLEND STATE");
+			MESSAGE_BOX_ERROR("Could not create Blend State");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
 			throw EngineInitializationException();

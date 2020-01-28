@@ -7,6 +7,8 @@ struct Vector2D
 {
 	T x;
 	T y;
+
+	Vector2D(const T x, const T y) : x(x), y(y) {}
 	
 	template <typename K>
 	void operator+=(const Vector2D<K>& v) { this->x += v.x; this->y += v.y; }
@@ -74,6 +76,8 @@ template <typename T>
 struct Vector3D : Vector2D<T>
 {
 	T z;
+
+	Vector3D(const T x, const T y, const T z) : x(x), y(y), z(z) {}
 
 	template <typename K>
 	void operator+=(const Vector3D<K>& v) { this->x += v.x; this->y += v.y; this->z += v.z; }
