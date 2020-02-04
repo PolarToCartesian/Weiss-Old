@@ -13,13 +13,13 @@ protected:
 	size_t m_transformConstantBufferIndex = 0;
 
 public:
-	Camera() { }
+	Camera();
 
-	[[nodiscard]] DirectX::XMMATRIX GetTransform()           const noexcept { return this->m_transform; }
-	[[nodiscard]] DirectX::XMMATRIX GetTransposedTransform() const noexcept { return DirectX::XMMatrixTranspose(this->m_transform); }
+	[[nodiscard]] DirectX::XMMATRIX GetTransform()           const noexcept;
+	[[nodiscard]] DirectX::XMMATRIX GetTransposedTransform() const noexcept;
 
-	[[nodiscard]] Vec3f GetPosition() const noexcept { return Vec3f{ this->m_position.m128_f32[0], this->m_position.m128_f32[1], this->m_position.m128_f32[2] }; }
-	[[nodiscard]] Vec3f GetRotation() const noexcept { return Vec3f{ this->m_rotation.m128_f32[0], this->m_rotation.m128_f32[1], this->m_rotation.m128_f32[2] }; }
+	[[nodiscard]] Vec3f GetPosition() const noexcept;
+	[[nodiscard]] Vec3f GetRotation() const noexcept;
 
 	virtual void CalculateTransform() = 0;
 };
