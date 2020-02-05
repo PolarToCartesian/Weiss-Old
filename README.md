@@ -26,31 +26,30 @@ Example Application :
 
 #include "../engine/Include.h"
 
-class Sandbox : public Engine
-{
+class Sandbox : public Engine {
 public:
-	Sandbox(HINSTANCE hInstance)
-	{
-		EngineDescriptor ed = {
-			WindowDescriptor { 0u, 0u, 1920u, 1080u, "Weiss Demo", nullptr, true, hInstance },
-			OrthographicCameraDescriptor { Vec2f{ 0.0f, 0.0f        }, 0.0f },
-			PerspectiveCameraDescriptor  { Vec3f{ 0.0f, 20.0f, 0.0f }, Vec3f{}, HALF_PI, 0.01f, 1000.f }
-		};
+	Sandbox(HINSTANCE hInstance) {
+		this->InitEngineCore(WindowDescriptor{ 0, 0, 1920, 1080, "Weiss Demo", nullptr, false, hInstance });
 
-		this->InitEngine(ed);
-		this->PlayWavFile("res/sounds/soundtrack.wav");
+		LightingDescriptor ld{ Colorf32{1.f,1.f,1.f,1.f} };
+
+		OrthographicCameraDescriptor ocd { Vec2f{0.f, 0.f}, 0.f };
+		PerspectiveCameraDescriptor  pcd { Vec3f{0.f, 0.f, 0.f}, Vec3f{0.f, 0.f, 0.f}, HALF_PI, 0.1f, 1000.f };
+
+		this->InitEngine(EngineDescriptor{ 
+			Engine2DDescriptor { ocd, ld }, 
+			Engine3DDescriptor { pcd, ld }
+		});
 	}
 
-	virtual void OnRender(const float elapsed) override
-	{
-		this->Fill(255, 0, 255);
+	// Called Each Frame
+	virtual void OnRender(const float elapsed) override {
+		// Fill With White
+		this->Fill(Coloru8 { 255, 255, 255, 0 });
 	}
 };
 
-int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
-{
-	ENABLE_CONSOLE();
-
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd) {
 	Sandbox sandbox(hInstance);
 	sandbox.Run(false, 30);
 }
