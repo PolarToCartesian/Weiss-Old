@@ -24,6 +24,12 @@ protected:
 	// Defined Later (__WEISS_LAST_INCLUDE) Because It Uses The Engine Class Before Its Declaration
 	void CreateNewMeshesIfNeeded();
 
+	// Defined Later (__WEISS_LAST_INCLUDE) Because It Uses The Engine Class Before Its Declaration
+	void FillMeshesIfNeeded();
+
+private:
+	bool m_wasModified = false;
+
 public:
 	// Defined Later (__WEISS_LAST_INCLUDE) Because It Uses The Engine Class Before Its Declaration
 	Batch2DRenderer(EngineCore& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource);
@@ -34,26 +40,18 @@ public:
 	{
 		this->m_triangles.push_back(tr);
 
+		this->m_wasModified = true;
+
 		return this->m_triangles.size() - 1u;
 	}
 
 	void Draw()
 	{
 		this->CreateNewMeshesIfNeeded();
+		this->FillMeshesIfNeeded();
 
-		// Fill Vertex Buffers And Draw
 		for (size_t i = 0u; i < this->m_meshes.size(); i++)
 		{
-			// Set Data
-
-			Mesh& mesh = this->m_engine.GetMesh(this->m_meshes[i]);
-			VertexBuffer& vertexBuffer = this->m_engine.GetVertexBuffer(mesh.vertexBufferIndex);
-
-			const void* srcPtr = this->m_triangles.data() + i * WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER;
-
-			vertexBuffer.SetData(srcPtr, WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
-
-			// Draw
 			const UINT nVerticesToDraw = static_cast<UINT>((i != this->m_meshes.size() - 1u) ? WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER : this->m_triangles.size() * 3u - i * WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
 
 			this->m_engine.DrawMesh(this->m_meshes[i], nVerticesToDraw);

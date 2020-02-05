@@ -79,6 +79,25 @@ void Batch2DRenderer<V>::CreateNewMeshesIfNeeded() {
 	}
 }
 
+template <typename V>
+void Batch2DRenderer<V>::FillMeshesIfNeeded()
+{
+	if (this->m_wasModified)
+	{
+		for (size_t i = 0u; i < this->m_meshes.size(); i++)
+		{
+			Mesh&         mesh         = this->m_engine.GetMesh(this->m_meshes[i]);
+			VertexBuffer& vertexBuffer = this->m_engine.GetVertexBuffer(mesh.vertexBufferIndex);
+
+			const void* srcPtr = this->m_triangles.data() + i * WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER;
+
+			vertexBuffer.SetData(srcPtr, WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
+		}
+		
+		this->m_wasModified = false;
+	}
+}
+
 std::vector<Window> Window::m_s_windows = std::vector<Window>();
 
 LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
