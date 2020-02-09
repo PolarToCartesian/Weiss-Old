@@ -1,210 +1,5 @@
 #include "EngineCore.h"
 
-void EngineCore::CreateDeviceAndSwapChain()
-{
-	DXGI_SWAP_CHAIN_DESC scd{};
-	scd.BufferDesc.Width = 0;
-	scd.BufferDesc.Height = 0;
-	scd.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
-	scd.BufferDesc.RefreshRate.Numerator = 0;
-	scd.BufferDesc.RefreshRate.Denominator = 0;
-	scd.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-	scd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-	scd.SampleDesc.Count = 1;
-	scd.SampleDesc.Quality = 0;
-	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	scd.BufferCount = 1;
-	scd.OutputWindow = this->GetWindow().GetHandle();
-	scd.Windowed = TRUE;
-	scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
-	scd.Flags = 0;
-
-	if (D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &scd, &m_pSwapChain, &m_pDevice, nullptr, &m_pDeviceContext) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Create Device And SwapChain");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw EngineInitializationException();
-	}
-}
-
-void EngineCore::CreateRenderTarget()
-{
-	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
-
-	if (this->m_pSwapChain->GetBuffer(0, __uuidof(ID3D11Resource), &pBackBuffer) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Get BackBuffer");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw EngineInitializationException();
-	}
-
-	if (this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Create RenderTargetView");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw EngineInitializationException();
-	}
-}
-
-void EngineCore::CreateViewport()
-{
-	D3D11_VIEWPORT vp;
-	vp.Width = static_cast<FLOAT>(this->GetWindow().GetClientWidth());
-	vp.Height = static_cast<FLOAT>(this->GetWindow().GetClientHeight());
-	vp.MinDepth = 0;
-	vp.MaxDepth = 1;
-	vp.TopLeftX = 0;
-	vp.TopLeftY = 0;
-
-	this->m_pDeviceContext->RSSetViewports(1u, &vp);
-}
-
-void EngineCore::CreateDepthStencilStates()
-{
-	D3D11_DEPTH_STENCIL_DESC dsDesc = {};
-	dsDesc.DepthEnable = TRUE;
-	dsDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
-	dsDesc.DepthFunc = D3D11_COMPARISON_LESS;
-	dsDesc.StencilReadMask = 0xFF;
-	dsDesc.StencilWriteMask = 0xFF;
-	dsDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	dsDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
-	dsDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	dsDesc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-	dsDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
-	dsDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
-	dsDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	dsDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
-
-	if (this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOn) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Create DepthStencilState");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw EngineInitializationException();
-	}
-
-	dsDesc.DepthEnable = FALSE;
-
-	if (this->m_pDevice->CreateDepthStencilState(&dsDesc, &this->m_pDepthStencilStateForZBufferOff) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Create EmptyDepthStencilState");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw EngineInitializationException();
-	}
-}
-
-void EngineCore::CreateDepthStencil()
-{
-	// Create Depth Texture
-	Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
-	D3D11_TEXTURE2D_DESC descDepth = {};
-	descDepth.Width = this->GetWindow().GetClientWidth();
-	descDepth.Height = this->GetWindow().GetClientHeight();
-	descDepth.MipLevels = 1u;
-	descDepth.ArraySize = 1u;
-	descDepth.Format = DXGI_FORMAT_D32_FLOAT;
-	descDepth.SampleDesc.Count = 1u;
-	descDepth.SampleDesc.Quality = 0u;
-	descDepth.Usage = D3D11_USAGE_DEFAULT;
-	descDepth.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-
-	if (this->m_pDevice->CreateTexture2D(&descDepth, nullptr, &pDepthStencil) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Create Texture2D");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw EngineInitializationException();
-	}
-
-	// Create Depth Stencil Texture View
-	D3D11_DEPTH_STENCIL_VIEW_DESC descDSV = {};
-	descDSV.Format = DXGI_FORMAT_D32_FLOAT;
-	descDSV.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-	descDSV.Texture2D.MipSlice = 0u;
-
-	if (this->m_pDevice->CreateDepthStencilView(pDepthStencil.Get(), &descDSV, &this->m_pDepthStencilView) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Create DepthStencilView");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw EngineInitializationException();
-	}
-}
-
-void EngineCore::BindDepthStencil()
-{
-	this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), this->m_pDepthStencilView.Get());
-}
-
-void EngineCore::CreateAndBindBlendState()
-{
-	D3D11_BLEND_DESC blendDesc = {};
-	blendDesc.RenderTarget[0].BlendEnable = TRUE;
-	blendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-	blendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-	blendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ZERO;
-	blendDesc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
-	blendDesc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-	blendDesc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
-
-	if (this->m_pDevice->CreateBlendState(&blendDesc, &this->m_pBlendState) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could not create Blend State");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw EngineInitializationException();
-	}
-
-	this->m_pDeviceContext->OMSetBlendState(this->m_pBlendState.Get(), nullptr, 0xFFFFFFFFu);
-}
-
-/*
- * This function initializes DirectX and creates key components
-*/
-void EngineCore::InitGraphics()
-{
-	this->CreateDeviceAndSwapChain();
-	this->CreateRenderTarget();
-	this->CreateViewport();
-	this->CreateDepthStencilStates();
-	this->CreateDepthStencil();
-	this->BindDepthStencil();
-	this->CreateAndBindBlendState();
-}
-
-/*
- * This functions swaps the back buffer and the front buffer to show the frame to the user
- * It also clears the depthStencilView
- */
-void EngineCore::PresentFrame(const bool useVSync)
-{
-	if (this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Present Frame");
-#endif
-
-		throw EngineInitializationException();
-	}
-
-	// Clear Depth Stencil
-	this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
-}
-
 void EngineCore::CreateDefaultConstantBuffers()
 {
 	const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX, WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_SLOT };
@@ -243,9 +38,9 @@ void EngineCore::InitEngineCore(const WindowDescriptor& windowDesc)
 	this->mouse = &(this->GetWindow().GetMouse());
 	this->keyboard = &(this->GetWindow().GetKeyboard());
 
-	this->InitGraphics();
+	this->InitializeLowLevelGraphics(Window::m_s_windows[windowIndex]);
 
-	DeviceInfo di{ this->m_pDevice, this->m_pDeviceContext };
+	DeviceInfo di = this->GetDeviceInfo();
 
 	this->InitBufferManager(di);
 	this->InitShaderManager(di);
@@ -253,10 +48,10 @@ void EngineCore::InitEngineCore(const WindowDescriptor& windowDesc)
 
 	this->CreateDefaultConstantBuffers();
 
-	this->GetWindow().OnResize([this](const Vec2u16 dimensions)
-		{
-			this->InitGraphics();
-		});
+	this->GetWindow().OnResize([&](const Vec2u16 dimensions)
+	{
+		this->InitializeLowLevelGraphics(Window::m_s_windows[windowIndex]);
+	});
 }
 
 void EngineCore::Run(const bool useVSync, const uint16_t fps)
@@ -417,9 +212,6 @@ DataFromMeshFile EngineCore::LoadDataFromMeshFile(const char* filename)
 }
 
 Mesh&           EngineCore::GetMesh(const size_t index)           noexcept { return this->meshes[index];             }
-ConstantBuffer& EngineCore::GetConstantBuffer(const size_t index) noexcept { return this->m_constantBuffers[index];  }
-VertexBuffer&   EngineCore::GetVertexBuffer(const size_t index)   noexcept { return this->m_vertexBuffers[index];    }
-IndexBuffer&    EngineCore::GetIndexBuffer(const size_t index)    noexcept { return this->m_indexBuffers[index];     }
 
 // Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
 Window&     EngineCore::GetWindow()     noexcept { return Window::m_s_windows[this->windowIndex]; }
