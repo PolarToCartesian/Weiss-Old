@@ -28,4 +28,8 @@ public:
 	[[nodiscard]] size_t CreateVertexBuffer(const VertexBufferDescriptor& descriptor);
 
 	[[nodiscard]] size_t CreateConstantBuffer(const ConstantBufferDescriptor& descriptor);
+
+	[[nodiscard]] IndexBuffer&    GetIndexBuffer(const size_t index)    noexcept;
+	[[nodiscard]] VertexBuffer&   GetVertexBuffer(const size_t index)   noexcept;
+	[[nodiscard]] ConstantBuffer& GetConstantBuffer(const size_t index) noexcept;
 };

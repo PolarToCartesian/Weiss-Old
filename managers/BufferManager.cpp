@@ -30,3 +30,15 @@ void BufferManager::InitBufferManager(DeviceInfo& deviceInfo)
 
 	return this->m_constantBuffers.size() - 1u;
 }
+
+[[nodiscard]] IndexBuffer& BufferManager::GetIndexBuffer(const size_t index)    noexcept{
+	return this->m_indexBuffers[index];
+}
+
+[[nodiscard]] VertexBuffer& BufferManager::GetVertexBuffer(const size_t index)   noexcept{
+	return this->m_vertexBuffers[index];
+}
+
+[[nodiscard]] ConstantBuffer& BufferManager::GetConstantBuffer(const size_t index) noexcept{
+	return this->m_constantBuffers[index];
+}
