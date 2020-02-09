@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../misc/Pch.h"
+#include "../misc/DeviceInfo.h"
 #include "../misc/ShaderBindingLoading.h"
 
 class ConstantBufferCreationException : public std::exception { };
@@ -15,15 +16,14 @@ struct ConstantBufferDescriptor
 
 class ConstantBuffer {
 private:
+	const DeviceInfo& m_deviceInfo;
+
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pConstantBuffer;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef;
 
 	ConstantBufferDescriptor m_descriptor;
 
 public:
-	ConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>&		  pDeviceRef,
-						 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-				   const ConstantBufferDescriptor&					  descriptor);
+	ConstantBuffer(const DeviceInfo& deviceInfo, const ConstantBufferDescriptor& descriptor);
 
 	void SetData(const void* objPtr);
 

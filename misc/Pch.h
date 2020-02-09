@@ -11,6 +11,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <variant>
 #include <d3d11.h>
 #include <fstream>
 #include <sstream>

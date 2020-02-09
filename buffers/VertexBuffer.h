@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../misc/Pch.h"
+#include "../misc/DeviceInfo.h"
 
 class VertexBufferDataSettingException : public std::exception { };
 
@@ -19,13 +20,12 @@ private:
 	size_t m_nElements;
 	size_t m_elementSize;
 
-	Microsoft::WRL::ComPtr<ID3D11Buffer>	     m_pVertexBuffer;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef;
+	const DeviceInfo& m_deviceInfo;
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pVertexBuffer;
 
 public:
-	VertexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>&        pDeviceRef,
-					   Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-				 const VertexBufferDescriptor&					    descriptor);
+	VertexBuffer(const DeviceInfo& deviceInfo, const VertexBufferDescriptor& descriptor);
 
 	[[nodiscard]] size_t GetElementCount() const noexcept;
 

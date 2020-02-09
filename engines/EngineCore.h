@@ -1,22 +1,15 @@
 #pragma once
 
+#include "../managers/BufferManager.h"
+#include "../managers/ShaderManager.h"
+#include "../managers/TextureManager.h"
+
 #include "../misc/Window.h"
 #include "../misc/Defines.h"
 
 #include "../timers/Timer.h"
 
 #include "../objects/Mesh.h"
-
-#include "../buffers/IndexBuffer.h"
-#include "../buffers/VertexBuffer.h"
-#include "../buffers/ConstantBuffer.h"
-
-#include "../shaders/PixelShader.h"
-#include "../shaders/VertexShader.h"
-
-#include "../media/Image.h"
-#include "../media/Texture2D.h"
-#include "../media/TextureSampler.h"
 
 class EngineInitializationException : public std::exception { };
 
@@ -26,7 +19,7 @@ struct DataFromMeshFile
 	std::vector<uint32_t> indices;
 };
 
-class EngineCore
+class EngineCore : public TextureManager, public ShaderManager, public BufferManager
 {
 // --> ENGINE --> ENGINE CLASS --> CORE START
 protected:
@@ -43,18 +36,9 @@ protected:
 
 	std::vector<Mesh>           meshes;
 
-	std::vector<PixelShader>    pixelShaders;
-	std::vector<VertexShader>   vertexShaders;
-
-	std::vector<VertexBuffer>   vertexBuffers;
-	std::vector<IndexBuffer>    indexBuffers;
-	std::vector<ConstantBuffer> constantBuffers;
-
-	std::vector<Texture2D>      textures;
-	std::vector<TextureSampler> textureSamplers;
-
 	size_t    windowIndex = 0u;
-	Mouse*    mouse = nullptr;
+
+	Mouse*    mouse    = nullptr;
 	Keyboard* keyboard = nullptr;
 
 private:
@@ -96,36 +80,18 @@ public:
 
 	void DrawMesh(const size_t meshIndex, UINT count = 0u);
 
-	[[nodiscard]] size_t CreateVertexShader(const VertexShaderDescriptor& descriptor);
-
-	[[nodiscard]] size_t CreatePixelShader(const PixelShaderDescriptor& descriptor);
-
-	[[nodiscard]] size_t CreateTextureFromImage(const Texture2DDescriptor& descriptor);
-
-	[[nodiscard]] size_t CreateTextureSampler(const TextureSamplerDescriptor& descriptor);
-
-	[[nodiscard]] size_t CreateConstantBuffer(const ConstantBufferDescriptor& descriptor);
-
-	[[nodiscard]] size_t CreateVertexBuffer(const VertexBufferDescriptor& descriptor);
-
-	[[nodiscard]] size_t CreateIndexBuffer(const IndexBufferDescriptor& descriptor);
-
 	[[nodiscard]] size_t CreateMeshFromVertices(const Mesh& mesh);
 
 	[[nodiscard]] DataFromMeshFile LoadDataFromMeshFile(const char* filename);
 
 	[[nodiscard]] Mesh&           GetMesh          (const size_t index) noexcept;
-	[[nodiscard]] Texture2D&      GetTexture       (const size_t index) noexcept;
-	[[nodiscard]] VertexShader&   GetVertexShader  (const size_t index) noexcept;
-	[[nodiscard]] PixelShader&    GetPixelShader   (const size_t index) noexcept;
 	[[nodiscard]] ConstantBuffer& GetConstantBuffer(const size_t index) noexcept;
 	[[nodiscard]] VertexBuffer&   GetVertexBuffer  (const size_t index) noexcept;
 	[[nodiscard]] IndexBuffer&    GetIndexBuffer   (const size_t index) noexcept;
-	[[nodiscard]] TextureSampler& GetTextureSampler(const size_t index) noexcept;
 
 	// Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
-	[[nodiscard]] Window&   GetWindow()         noexcept;
-	[[nodiscard]] Mouse&    GetMouse()          noexcept;
-	[[nodiscard]] Keyboard& GetKeybaord()       noexcept;
-	[[nodiscard]] EngineCore&   GetEngineCore() noexcept;
+	[[nodiscard]] Window&     GetWindow()     noexcept;
+	[[nodiscard]] Mouse&      GetMouse()      noexcept;
+	[[nodiscard]] Keyboard&   GetKeybaord()   noexcept;
+	[[nodiscard]] EngineCore& GetEngineCore() noexcept;
 };

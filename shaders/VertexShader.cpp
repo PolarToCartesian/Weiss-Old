@@ -1,9 +1,7 @@
 #include "VertexShader.h"
 
-VertexShader::VertexShader(const Microsoft::WRL::ComPtr<ID3D11Device>&        pDeviceRef,
-								 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-						   const VertexShaderDescriptor&                      descriptor)
-	: m_pDeviceContextRef(pDeviceContextRef)
+VertexShader::VertexShader(const DeviceInfo& deviceInfo, const VertexShaderDescriptor& descriptor)
+	: m_deviceInfo(deviceInfo)
 {
 	Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
 
@@ -38,7 +36,7 @@ VertexShader::VertexShader(const Microsoft::WRL::ComPtr<ID3D11Device>&        pD
 		throw VertexShaderCreationException();
 	}
 
-	if (pDeviceRef->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader) != S_OK)
+	if (this->m_deviceInfo.m_pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 		MESSAGE_BOX_ERROR("Could Not Create Vertex Shader");
@@ -57,7 +55,7 @@ VertexShader::VertexShader(const Microsoft::WRL::ComPtr<ID3D11Device>&        pD
 		inputElementDescriptors[i].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
 	}
 
-	if (pDeviceRef->CreateInputLayout(inputElementDescriptors.data(), (UINT)inputElementDescriptors.size(), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &m_pInputLayout) != S_OK)
+	if (this->m_deviceInfo.m_pDevice->CreateInputLayout(inputElementDescriptors.data(), (UINT)inputElementDescriptors.size(), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &m_pInputLayout) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 		MESSAGE_BOX_ERROR("Could Not Create Input Layout");
@@ -69,6 +67,6 @@ VertexShader::VertexShader(const Microsoft::WRL::ComPtr<ID3D11Device>&        pD
 
 void VertexShader::Bind() const noexcept
 {
-	this->m_pDeviceContextRef->IASetInputLayout(this->m_pInputLayout.Get());
-	this->m_pDeviceContextRef->VSSetShader(this->m_pVertexShader.Get(), nullptr, 0u);
+	this->m_deviceInfo.m_pDeviceContext->IASetInputLayout(this->m_pInputLayout.Get());
+	this->m_deviceInfo.m_pDeviceContext->VSSetShader(this->m_pVertexShader.Get(), nullptr, 0u);
 }

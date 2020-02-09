@@ -1,9 +1,7 @@
 #include "IndexBuffer.h"
 
-IndexBuffer::IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>&	    pDeviceRef,
-							   Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-						 const IndexBufferDescriptor&					    descriptor)
-	: m_pDeviceContextRef(pDeviceContextRef)
+IndexBuffer::IndexBuffer(const DeviceInfo& deviceInfo, const IndexBufferDescriptor& descriptor)
+	: m_deviceInfo(deviceInfo)
 {
 	this->m_nBytes = static_cast<uint64_t>(sizeof(uint32_t) * descriptor.indices.size());
 
@@ -17,7 +15,7 @@ IndexBuffer::IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>&	    pDevice
 	D3D11_SUBRESOURCE_DATA isd = {};
 	isd.pSysMem = descriptor.indices.data();
 
-	if (pDeviceRef->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer) != S_OK)
+	if (this->m_deviceInfo.m_pDevice->CreateBuffer(&ibd, &isd, &this->m_pIndexBuffer) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 		MESSAGE_BOX_ERROR("Unable To Create Index Buffer");
@@ -32,4 +30,7 @@ size_t IndexBuffer::GetSize() const
 	return this->m_nBytes;
 }
 
-void IndexBuffer::Bind() const noexcept { this->m_pDeviceContextRef->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0u); }
+void IndexBuffer::Bind() const noexcept
+{
+	this->m_deviceInfo.m_pDeviceContext->IASetIndexBuffer(m_pIndexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0u);
+}

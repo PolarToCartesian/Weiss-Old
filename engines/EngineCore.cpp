@@ -244,6 +244,13 @@ void EngineCore::InitEngineCore(const WindowDescriptor& windowDesc)
 	this->keyboard = &(this->GetWindow().GetKeyboard());
 
 	this->InitGraphics();
+
+	DeviceInfo di{ this->m_pDevice, this->m_pDeviceContext };
+
+	this->InitBufferManager(di);
+	this->InitShaderManager(di);
+	this->InitTextureManager(di);
+
 	this->CreateDefaultConstantBuffers();
 
 	this->GetWindow().OnResize([this](const Vec2u16 dimensions)
@@ -317,86 +324,37 @@ void EngineCore::DrawMesh(const size_t meshIndex, UINT count)
 
 	if (mesh.vertexBufferIndex == WEISS_NO_RESOURCE_INDEX) return;
 
-	this->vertexBuffers[mesh.vertexBufferIndex].Bind();
-	this->vertexShaders[mesh.vertexShaderIndex].Bind();
-	this->pixelShaders[mesh.pixelShaderIndex].Bind();
+	this->m_vertexBuffers[mesh.vertexBufferIndex].Bind();
+	this->m_vertexShaders[mesh.vertexShaderIndex].Bind();
+	this->m_pixelShaders[mesh.pixelShaderIndex].Bind();
 
 	for (const size_t textureIndex : mesh.textureIndices)
-		this->textures[textureIndex].Bind();
+		this->m_imageTexturePairs[textureIndex].textures[0]->Bind();
 
 	for (const size_t textureSamplerIndex : mesh.textureSamplerIndices)
-		this->textureSamplers[textureSamplerIndex].Bind();
+		this->m_textureSamplers[textureSamplerIndex].Bind();
 
 	for (const size_t cbIndex : mesh.constantBufferIndices)
-		this->constantBuffers[cbIndex].Bind();
+		this->m_constantBuffers[cbIndex].Bind();
 
 	this->m_pDeviceContext->IASetPrimitiveTopology(mesh.primitiveTopologyType);
 
 	if (mesh.indexBufferIndex.has_value())
 	{
-		this->indexBuffers[mesh.indexBufferIndex.value()].Bind();
+		this->m_indexBuffers[mesh.indexBufferIndex.value()].Bind();
 
 		if (count == 0u)
-			count = static_cast<UINT>(this->indexBuffers[mesh.indexBufferIndex.value()].GetSize());
+			count = static_cast<UINT>(this->m_indexBuffers[mesh.indexBufferIndex.value()].GetSize());
 
 		this->m_pDeviceContext->DrawIndexed(count, 0u, 0u);
 	}
 	else
 	{
 		if (count == 0u)
-			count = static_cast<UINT>(this->vertexBuffers[mesh.vertexBufferIndex].GetElementCount());
+			count = static_cast<UINT>(this->m_vertexBuffers[mesh.vertexBufferIndex].GetElementCount());
 
 		this->m_pDeviceContext->Draw(count, 0u);
 	}
-}
-
-size_t EngineCore::CreateVertexShader(const VertexShaderDescriptor& descriptor)
-{
-	this->vertexShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
-
-	return this->vertexShaders.size() - 1;
-}
-
-size_t EngineCore::CreatePixelShader(const PixelShaderDescriptor& descriptor)
-{
-	this->pixelShaders.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
-
-	return this->pixelShaders.size() - 1;
-}
-
-size_t EngineCore::CreateTextureFromImage(const Texture2DDescriptor& descriptor)
-{
-	this->textures.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
-
-	return this->textures.size() - 1;
-}
-
-size_t EngineCore::CreateTextureSampler(const TextureSamplerDescriptor& descriptor)
-{
-	this->textureSamplers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
-
-	return this->textureSamplers.size() - 1;
-}
-
-size_t EngineCore::CreateConstantBuffer(const ConstantBufferDescriptor& descriptor)
-{
-	this->constantBuffers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
-
-	return this->constantBuffers.size() - 1;
-}
-
-size_t EngineCore::CreateVertexBuffer(const VertexBufferDescriptor& descriptor)
-{
-	this->vertexBuffers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
-
-	return this->vertexBuffers.size() - 1;
-}
-
-size_t EngineCore::CreateIndexBuffer(const IndexBufferDescriptor& descriptor)
-{
-	this->indexBuffers.emplace_back(this->m_pDevice, this->m_pDeviceContext, descriptor);
-
-	return this->indexBuffers.size() - 1;
 }
 
 size_t EngineCore::CreateMeshFromVertices(const Mesh& mesh)
@@ -458,14 +416,10 @@ DataFromMeshFile EngineCore::LoadDataFromMeshFile(const char* filename)
 	return { vertices, indices };
 }
 
-Mesh&           EngineCore::GetMesh(const size_t index)           noexcept { return this->meshes[index];          }
-Texture2D&      EngineCore::GetTexture(const size_t index)        noexcept { return this->textures[index];        }
-VertexShader&   EngineCore::GetVertexShader(const size_t index)   noexcept { return this->vertexShaders[index];   }
-PixelShader&    EngineCore::GetPixelShader(const size_t index)    noexcept { return this->pixelShaders[index];    }
-ConstantBuffer& EngineCore::GetConstantBuffer(const size_t index) noexcept { return this->constantBuffers[index]; }
-VertexBuffer&   EngineCore::GetVertexBuffer(const size_t index)   noexcept { return this->vertexBuffers[index];   }
-IndexBuffer&    EngineCore::GetIndexBuffer(const size_t index)    noexcept { return this->indexBuffers[index];    }
-TextureSampler& EngineCore::GetTextureSampler(const size_t index) noexcept { return this->textureSamplers[index]; }
+Mesh&           EngineCore::GetMesh(const size_t index)           noexcept { return this->meshes[index];             }
+ConstantBuffer& EngineCore::GetConstantBuffer(const size_t index) noexcept { return this->m_constantBuffers[index];  }
+VertexBuffer&   EngineCore::GetVertexBuffer(const size_t index)   noexcept { return this->m_vertexBuffers[index];    }
+IndexBuffer&    EngineCore::GetIndexBuffer(const size_t index)    noexcept { return this->m_indexBuffers[index];     }
 
 // Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
 Window&     EngineCore::GetWindow()     noexcept { return Window::m_s_windows[this->windowIndex]; }

@@ -7,7 +7,7 @@
 class EngineCore;
 
 template <typename V>
-class Batch2DRenderer
+class BatchRenderer
 {
 protected:
 	std::vector<Triangle<V>> m_triangles;
@@ -32,7 +32,7 @@ private:
 
 public:
 	// Defined Later (__WEISS_LAST_INCLUDE) Because It Uses The Engine Class Before Its Declaration
-	Batch2DRenderer(EngineCore& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource);
+	BatchRenderer(EngineCore& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource);
 
 	Triangle<V>& getTriangle(const size_t index) noexcept
 	{

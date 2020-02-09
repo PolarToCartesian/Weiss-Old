@@ -1,9 +1,7 @@
 #include "ConstantBuffer.h"
 
-ConstantBuffer::ConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>&		  pDeviceRef,
-									 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-							   const ConstantBufferDescriptor&					  descriptor)
-	: m_pDeviceContextRef(pDeviceContextRef), m_descriptor(descriptor)
+ConstantBuffer::ConstantBuffer(const DeviceInfo& deviceInfo, const ConstantBufferDescriptor& descriptor)
+	: m_deviceInfo(deviceInfo), m_descriptor(descriptor)
 {
 	D3D11_BUFFER_DESC cbd;
 	cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
@@ -15,7 +13,7 @@ ConstantBuffer::ConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>&		  pD
 
 	cbd.StructureByteStride = 0u;
 
-	if (pDeviceRef->CreateBuffer(&cbd, nullptr, &this->m_pConstantBuffer) != S_OK)
+	if (this->m_deviceInfo.m_pDevice->CreateBuffer(&cbd, nullptr, &this->m_pConstantBuffer) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 		MESSAGE_BOX_ERROR("Unable To Create Constant Buffer");
@@ -27,14 +25,14 @@ ConstantBuffer::ConstantBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>&		  pD
 
 void ConstantBuffer::SetData(const void* objPtr)
 {
-	this->m_pDeviceContextRef->UpdateSubresource(this->m_pConstantBuffer.Get(), 0, 0, objPtr, 0, 0);
+	this->m_deviceInfo.m_pDeviceContext->UpdateSubresource(this->m_pConstantBuffer.Get(), 0, 0, objPtr, 0, 0);
 }
 
 void ConstantBuffer::Bind() const noexcept
 {
 	if (this->m_descriptor.bindingType == ShaderBindingType::VERTEX || this->m_descriptor.bindingType == ShaderBindingType::BOTH)
-		this->m_pDeviceContextRef->VSSetConstantBuffers(this->m_descriptor.slotVS, 1u, this->m_pConstantBuffer.GetAddressOf());
+		this->m_deviceInfo.m_pDeviceContext->VSSetConstantBuffers(this->m_descriptor.slotVS, 1u, this->m_pConstantBuffer.GetAddressOf());
 
 	if (this->m_descriptor.bindingType == ShaderBindingType::PIXEL || this->m_descriptor.bindingType == ShaderBindingType::BOTH)
-		this->m_pDeviceContextRef->PSSetConstantBuffers(this->m_descriptor.slotPS, 1u, this->m_pConstantBuffer.GetAddressOf());
+		this->m_deviceInfo.m_pDeviceContext->PSSetConstantBuffers(this->m_descriptor.slotPS, 1u, this->m_pConstantBuffer.GetAddressOf());
 }

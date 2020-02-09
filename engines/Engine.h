@@ -51,7 +51,7 @@ public:
 private:
 	OrthographicCamera* m_orthographicCamera = nullptr;
 
-	Batch2DRenderer<Colored2DVertex>* m_coloredBatch2DRenderer = nullptr;
+	ColoredBatch2DRenderer* m_coloredBatch2DRenderer = nullptr;
 
 	LightingDescriptor m_lighting2DDescriptor;
 
@@ -89,13 +89,13 @@ public:
 	void SetRenderMode2D()
 	{
 		// Camera Transform
-		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
+		ConstantBuffer& cameraTransformConstantBuffer = this->m_constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
 		const DirectX::XMMATRIX orthographicCameraTransposedTransform = this->m_orthographicCamera->GetTransposedTransform();
 		cameraTransformConstantBuffer.SetData(&orthographicCameraTransposedTransform);
 		cameraTransformConstantBuffer.Bind();
 
 		// Lighting (VS)
-		ConstantBuffer& lightingConstantBufferInVS = this->constantBuffers[WEISS_LIGHTING_CONSTANT_BUFFER_IN_VS_INDEX];
+		ConstantBuffer& lightingConstantBufferInVS = this->m_constantBuffers[WEISS_LIGHTING_CONSTANT_BUFFER_IN_VS_INDEX];
 		lightingConstantBufferInVS.SetData(&this->m_lighting2DDescriptor.in_vertexShaderConstantBuffer);
 		lightingConstantBufferInVS.Bind();
 
@@ -114,9 +114,9 @@ public:
 
 	[[nodiscard]] Engine& GetEngine() noexcept { return *this; }
 
-	[[nodiscard]] LightingDescriptor&               GetLighting2DDescriptor()   noexcept { return this->m_lighting2DDescriptor; }
-	[[nodiscard]] OrthographicCamera&               GetOrthographicCamera()     noexcept { return *this->m_orthographicCamera; }
-	[[nodiscard]] Batch2DRenderer<Colored2DVertex>& GetColoredBatchRenderer2D() noexcept { return *this->m_coloredBatch2DRenderer; }
+	[[nodiscard]] LightingDescriptor&	  GetLighting2DDescriptor()   noexcept { return this->m_lighting2DDescriptor; }
+	[[nodiscard]] OrthographicCamera&	  GetOrthographicCamera()     noexcept { return *this->m_orthographicCamera; }
+	[[nodiscard]] ColoredBatch2DRenderer& GetColoredBatchRenderer2D() noexcept { return *this->m_coloredBatch2DRenderer; }
 // RENDERER 2D END
 // RENDERER 3D START
 
@@ -132,7 +132,7 @@ private:
 public:
 	void SetRenderMode3D()
 	{
-		ConstantBuffer& cameraTransformConstantBuffer = this->constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
+		ConstantBuffer& cameraTransformConstantBuffer = this->m_constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
 		const DirectX::XMMATRIX perspectiveCameraTransposedTransform = this->m_perspectiveCamera->GetTransposedTransform();
 		cameraTransformConstantBuffer.SetData(&perspectiveCameraTransposedTransform);
 		cameraTransformConstantBuffer.Bind();

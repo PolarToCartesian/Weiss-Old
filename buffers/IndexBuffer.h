@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../misc/Pch.h"
+#include "../misc/DeviceInfo.h"
 
 class IndexBufferCreationException : public std::exception { };
 
@@ -11,15 +12,14 @@ struct IndexBufferDescriptor
 
 class IndexBuffer {
 private:
+	const DeviceInfo& m_deviceInfo;
+
 	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pIndexBuffer;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef;
 
 	size_t m_nBytes;
 
 public:
-	IndexBuffer(const Microsoft::WRL::ComPtr<ID3D11Device>&		   pDeviceRef, 
-					  Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-				const IndexBufferDescriptor&					   descriptor);
+	IndexBuffer(const DeviceInfo& deviceInfo, const IndexBufferDescriptor& descriptor);
 
 	[[nodiscard]] size_t GetSize() const;
 

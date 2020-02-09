@@ -1,9 +1,7 @@
 #include "TextureSampler.h"
 
-TextureSampler::TextureSampler(const Microsoft::WRL::ComPtr<ID3D11Device>&		  pDeviceRef,
-									 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-							   const TextureSamplerDescriptor&					  descriptor)
-	: m_pDeviceContextRef(pDeviceContextRef), m_descriptor(descriptor)
+TextureSampler::TextureSampler(const DeviceInfo& deviceInfo, const TextureSamplerDescriptor& descriptor)
+	: m_deviceInfo(deviceInfo), m_descriptor(descriptor)
 {
 	D3D11_SAMPLER_DESC samplerDescriptor;
 	samplerDescriptor.Filter = descriptor.filter;
@@ -16,14 +14,14 @@ TextureSampler::TextureSampler(const Microsoft::WRL::ComPtr<ID3D11Device>&		  pD
 	samplerDescriptor.MinLOD = 0.0f;
 	samplerDescriptor.MaxLOD = D3D11_FLOAT32_MAX;
 
-	pDeviceRef->CreateSamplerState(&samplerDescriptor, &this->m_pSamplerState);
+	this->m_deviceInfo.m_pDevice->CreateSamplerState(&samplerDescriptor, &this->m_pSamplerState);
 }
 
 void TextureSampler::Bind() const noexcept
 {
 	if (this->m_descriptor.bindingType == ShaderBindingType::VERTEX || this->m_descriptor.bindingType == ShaderBindingType::BOTH)
-		this->m_pDeviceContextRef->VSSetSamplers(this->m_descriptor.slotVS, 1u, this->m_pSamplerState.GetAddressOf());
+		this->m_deviceInfo.m_pDeviceContext->VSSetSamplers(this->m_descriptor.slotVS, 1u, this->m_pSamplerState.GetAddressOf());
 
 	if (this->m_descriptor.bindingType == ShaderBindingType::PIXEL || this->m_descriptor.bindingType == ShaderBindingType::BOTH)
-		this->m_pDeviceContextRef->PSSetSamplers(this->m_descriptor.slotPS, 1u, this->m_pSamplerState.GetAddressOf());
+		this->m_deviceInfo.m_pDeviceContext->PSSetSamplers(this->m_descriptor.slotPS, 1u, this->m_pSamplerState.GetAddressOf());
 }

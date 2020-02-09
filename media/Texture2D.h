@@ -1,28 +1,32 @@
+#pragma once
+
 #include "Image.h"
+#include "../misc/DeviceInfo.h"
 #include "../misc/ShaderBindingLoading.h"
 
 class Texture2DCreationException : public std::exception { };
 
-struct Texture2DDescriptor
-{
+struct Texture2DSettings {
 	ShaderBindingType bindingType;
-	std::vector<Image> images;
 	UINT slotVS;
 	UINT slotPS;
 	bool useMipMaps;
 };
 
+struct Texture2DDescriptor : Texture2DSettings
+{
+	Image image;
+};
+
 class Texture2D {
 private:
+	const DeviceInfo& m_deviceInfo;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> m_pShaderResourceView;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext>&     m_pDeviceContextRef;
 
-	Texture2DDescriptor m_descriptor;
+	Texture2DSettings m_settings;
 
 public:
-	Texture2D(const Microsoft::WRL::ComPtr<ID3D11Device>&		 pDeviceRef,
-					Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-			  const Texture2DDescriptor&						 descriptor);
+	Texture2D(const DeviceInfo& deviceInfo, const Texture2DDescriptor& descriptor);
 
 	void Bind() const noexcept;
 };

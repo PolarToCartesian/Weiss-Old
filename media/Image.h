@@ -14,6 +14,8 @@ private:
 public:
 	Image(const Image& img);
 
+	Image(const uint16_t width, const uint16_t height, Coloru8 fillColor = { 255u,255u,255u,255u });
+
 	Image(const wchar_t* filename);
 
 	[[nodiscard]] uint16_t GetWidth()                                 const;

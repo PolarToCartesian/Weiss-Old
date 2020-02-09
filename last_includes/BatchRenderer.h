@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../batch/Batch2DRenderer.h"
+#include "../batch/BatchRenderer.h"
 
 template <typename V>
-Batch2DRenderer<V>::Batch2DRenderer(EngineCore& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource)
+BatchRenderer<V>::BatchRenderer(EngineCore& engine, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* vsSource, const char* psSource)
 	: m_engine(engine)
 {
 	const VertexShaderDescriptor vsd = { ieds, ShaderLoadingMethod::FROM_SOURCE_CODE, nullptr, vsSource };
@@ -14,7 +14,7 @@ Batch2DRenderer<V>::Batch2DRenderer(EngineCore& engine, const std::vector<std::p
 }
 
 template <typename V>
-void Batch2DRenderer<V>::CreateNewMeshesIfNeeded() {
+void BatchRenderer<V>::CreateNewMeshesIfNeeded() {
 	const size_t nMeshesToAdd = static_cast<UINT>(std::ceil((this->m_triangles.size() * 3u) / (float)WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER) - this->m_meshes.size());
 
 	for (size_t i = 0u; i < nMeshesToAdd; i++)
@@ -31,7 +31,7 @@ void Batch2DRenderer<V>::CreateNewMeshesIfNeeded() {
 }
 
 template <typename V>
-void Batch2DRenderer<V>::FillMeshesIfNeeded()
+void BatchRenderer<V>::FillMeshesIfNeeded()
 {
 	if (this->m_wasModified)
 	{

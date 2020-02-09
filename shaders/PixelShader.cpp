@@ -1,9 +1,7 @@
 #include "PixelShader.h"
 
-PixelShader::PixelShader(const Microsoft::WRL::ComPtr<ID3D11Device>&        pDeviceRef,
-							   Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-						 const PixelShaderDescriptor&                       descriptor)
-	: m_pDeviceContextRef(pDeviceContextRef)
+PixelShader::PixelShader(const DeviceInfo& deviceInfo, const PixelShaderDescriptor& descriptor)
+	: m_deviceInfo(deviceInfo)
 {
 	Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
 
@@ -38,7 +36,7 @@ PixelShader::PixelShader(const Microsoft::WRL::ComPtr<ID3D11Device>&        pDev
 		throw PixelShaderCreationException();
 	}
 
-	if (pDeviceRef->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pPixelShader) != S_OK)
+	if (this->m_deviceInfo.m_pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pPixelShader) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 		MESSAGE_BOX_ERROR("Could Not Create Pixel Shader");
@@ -50,5 +48,5 @@ PixelShader::PixelShader(const Microsoft::WRL::ComPtr<ID3D11Device>&        pDev
 
 void PixelShader::Bind() const noexcept
 {
-	this->m_pDeviceContextRef->PSSetShader(this->m_pPixelShader.Get(), nullptr, 0u);
+	this->m_deviceInfo.m_pDeviceContext->PSSetShader(this->m_pPixelShader.Get(), nullptr, 0u);
 }

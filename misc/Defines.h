@@ -18,6 +18,8 @@ constexpr const uint32_t WEISS_COLORED_BATCH_RENDERER_2D_FLAG_APPLY_LIGHTING  = 
 
 constexpr const uint32_t WEISS_COLORED_BATCH_RENDERER_2D_ALL_FLAGS = WEISS_COLORED_BATCH_RENDERER_2D_FLAG_APPLY_TRANSFORM | WEISS_COLORED_BATCH_RENDERER_2D_FLAG_APPLY_LIGHTING;
 
+constexpr const uint16_t WEISS_SPRITE_SHEET_SIDE_LENGTH = 1024u; // 2^10
+
 constexpr const char* WEISS_COLORED_BATCH_2D_RENDERER_VS_SOURCE = ""
 "cbuffer cbuff0 { matrix transform; }\n"
 "cbuffer cbuff1 { float4 ambiant; }\n"

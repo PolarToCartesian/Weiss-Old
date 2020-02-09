@@ -1,12 +1,19 @@
 #include "Image.h"
 
 Image::Image(const Image& img)
+	: m_width(img.m_width), m_height(img.m_height), m_nPixels(img.m_nPixels)
 {
-	this->m_nPixels = img.m_nPixels;
-	this->m_width = img.m_width;
-	this->m_height = img.m_height;
 	this->m_buff = std::make_unique<Coloru8[]>(this->m_nPixels * sizeof(Coloru8));
+
 	std::memcpy(this->m_buff.get(), img.m_buff.get(), this->m_nPixels * sizeof(Coloru8));
+}
+
+Image::Image(const uint16_t width, const uint16_t height, Coloru8 fillColor)
+	: m_width(width), m_height(height), m_nPixels(width * height)
+{
+	this->m_buff = std::make_unique<Coloru8[]>(this->m_nPixels * sizeof(Coloru8));
+
+	std::fill_n(this->m_buff.get(), this->m_nPixels, fillColor);
 }
 
 Image::Image(const wchar_t* filename)

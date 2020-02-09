@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../misc/Pch.h"
+#include "../misc/DeviceInfo.h"
 #include "../misc/ShaderBindingLoading.h"
 
 class VertexShaderCreationException : public std::exception { };
@@ -15,14 +16,13 @@ struct VertexShaderDescriptor
 
 class VertexShader {
 private:
-	Microsoft::WRL::ComPtr<ID3D11VertexShader>   m_pVertexShader;
-	Microsoft::WRL::ComPtr<ID3D11InputLayout>    m_pInputLayout;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef;
+	const DeviceInfo& m_deviceInfo;
+
+	Microsoft::WRL::ComPtr<ID3D11VertexShader> m_pVertexShader;
+	Microsoft::WRL::ComPtr<ID3D11InputLayout>  m_pInputLayout;
 
 public:
-	VertexShader(const Microsoft::WRL::ComPtr<ID3D11Device>&        pDeviceRef,
-					   Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-				 const VertexShaderDescriptor&                      descriptor);
+	VertexShader(const DeviceInfo& deviceInfo, const VertexShaderDescriptor& descriptor);
 
 	void Bind() const noexcept;
 };

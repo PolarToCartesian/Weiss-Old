@@ -1,5 +1,7 @@
 #pragma once
 
+#include "../misc/DeviceInfo.h"
+
 #include "../misc/Pch.h"
 #include "../misc/ShaderBindingLoading.h"
 
@@ -14,15 +16,13 @@ struct TextureSamplerDescriptor
 
 class TextureSampler {
 private:
-	Microsoft::WRL::ComPtr<ID3D11SamplerState>   m_pSamplerState;
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext>& m_pDeviceContextRef;
+	const DeviceInfo& m_deviceInfo;
+	Microsoft::WRL::ComPtr<ID3D11SamplerState> m_pSamplerState;
 
 	TextureSamplerDescriptor m_descriptor;
 
 public:
-	TextureSampler(const Microsoft::WRL::ComPtr<ID3D11Device>&		  pDeviceRef,
-						 Microsoft::WRL::ComPtr<ID3D11DeviceContext>& pDeviceContextRef,
-				   const TextureSamplerDescriptor&					  descriptor);
+	TextureSampler(const DeviceInfo& deviceInfo, const TextureSamplerDescriptor& descriptor);
 
 	void Bind() const noexcept;
 };
