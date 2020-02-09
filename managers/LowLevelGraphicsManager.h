@@ -31,4 +31,9 @@ protected:
 	void PresentFrame(const bool useVSync);
 
 	DeviceInfo GetDeviceInfo() noexcept;
+
+public:
+	void TurnZBufferOn() noexcept;
+
+	void TurnZBufferOff() noexcept;
 };

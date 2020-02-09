@@ -178,6 +178,8 @@ void LowLevelGraphicsManager::InitializeLowLevelGraphics(Window& window)
 	this->CreateDepthStencilStates();
 	this->CreateDepthStencil(window);
 	this->CreateAndBindBlendState();
+
+	this->TurnZBufferOn();
 }
 
 void LowLevelGraphicsManager::PresentFrame(const bool useVSync)
@@ -198,4 +200,14 @@ void LowLevelGraphicsManager::PresentFrame(const bool useVSync)
 DeviceInfo LowLevelGraphicsManager::GetDeviceInfo() noexcept
 {
 	return DeviceInfo { this->m_pDevice, this->m_pDeviceContext };
+}
+
+void LowLevelGraphicsManager::TurnZBufferOn() noexcept
+{
+	this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOn.Get(), 1u);
+}
+
+void LowLevelGraphicsManager::TurnZBufferOff() noexcept
+{
+	this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOff.Get(), 1u);
 }
