@@ -2,7 +2,7 @@
 
 #include "Image.h"
 #include "../misc/DeviceInfo.h"
-#include "../misc/ShaderBindingLoading.h"
+#include "../shaders/ShaderBindingLoading.h"
 
 class Texture2DCreationException : public std::exception { };
 

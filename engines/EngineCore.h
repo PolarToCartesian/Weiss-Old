@@ -4,10 +4,10 @@
 #include "../managers/ShaderManager.h"
 #include "../managers/TextureManager.h"
 
-#include "../misc/Window.h"
+#include "../window/Window.h"
 #include "../misc/Defines.h"
 
-#include "../timers/Timer.h"
+#include "../misc/Timer.h"
 
 #include "../objects/Mesh.h"
 

@@ -2,7 +2,7 @@
 
 #include "../misc/Pch.h"
 #include "../misc/DeviceInfo.h"
-#include "../misc/ShaderBindingLoading.h"
+#include "ShaderBindingLoading.h"
 
 class PixelShaderCreationException : public std::exception { };
 

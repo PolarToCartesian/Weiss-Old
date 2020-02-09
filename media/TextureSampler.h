@@ -3,7 +3,7 @@
 #include "../misc/DeviceInfo.h"
 
 #include "../misc/Pch.h"
-#include "../misc/ShaderBindingLoading.h"
+#include "../shaders/ShaderBindingLoading.h"
 
 struct TextureSamplerDescriptor
 {

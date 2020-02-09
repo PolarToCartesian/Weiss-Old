@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../peripherals/Mouse.h"
-#include "../peripherals/Keyboard.h"
+#include "Mouse.h"
+#include "Keyboard.h"
 
 LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
 
