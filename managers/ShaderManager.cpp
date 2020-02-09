@@ -1,5 +1,10 @@
 #include "ShaderManager.h"
 
+ShaderManager::~ShaderManager()
+{
+	delete this->m_deviceInfo;
+}
+
 void ShaderManager::InitShaderManager(DeviceInfo& deviceInfo)
 {
 	this->m_deviceInfo = new DeviceInfo(deviceInfo);

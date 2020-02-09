@@ -1,5 +1,10 @@
 #include "BufferManager.h"
 
+BufferManager::~BufferManager()
+{
+	delete this->m_deviceInfo;
+}
+
 void BufferManager::InitBufferManager(DeviceInfo& deviceInfo)
 {
 	this->m_deviceInfo = new DeviceInfo(deviceInfo);

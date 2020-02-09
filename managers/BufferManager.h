@@ -21,6 +21,8 @@ protected:
 	void InitBufferManager(DeviceInfo& deviceInfo);
 
 public:
+	~BufferManager();
+
 	[[nodiscard]] size_t CreateIndexBuffer(const IndexBufferDescriptor& descriptor);
 
 	[[nodiscard]] size_t CreateVertexBuffer(const VertexBufferDescriptor& descriptor);

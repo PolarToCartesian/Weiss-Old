@@ -18,6 +18,8 @@ protected:
 	void InitShaderManager(DeviceInfo& deviceInfo);
 
 public:
+	~ShaderManager();
+
 	[[nodiscard]] size_t CreatePixelShader(const PixelShaderDescriptor& descriptor);
 
 	[[nodiscard]] size_t CreateVertexShader(const VertexShaderDescriptor& descriptor);
