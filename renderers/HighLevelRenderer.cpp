@@ -39,8 +39,8 @@ void HighLevelRenderer::CreateDefaultConstantBuffers()
 
 HighLevelRenderer::~HighLevelRenderer()
 {
-	delete this->m_orthographicCamera;
 	delete this->m_perspectiveCamera;
+	delete this->m_orthographicCamera;
 }
 
 void HighLevelRenderer::InitializeHighLevelRenderer(const HighLevelRendererDescriptor& desc, const size_t windowIndex)

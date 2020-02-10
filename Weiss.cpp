@@ -1,6 +1,6 @@
-#include "Engine.h"
+#include "Weiss.h"
 
-Engine::Engine()
+Weiss::Weiss()
 {
 	if (CoInitialize(NULL) != S_OK)
 	{
@@ -12,7 +12,7 @@ Engine::Engine()
 	}
 }
 
-void Engine::InitEngine(const EngineDescriptor& desc)
+void Weiss::InitializeWeiss(const EngineDescriptor& desc)
 {
 	this->windowIndex = Window::CreateNewWindow(desc.windowDesc);
 
@@ -22,7 +22,7 @@ void Engine::InitEngine(const EngineDescriptor& desc)
 	this->InitializeHighLevelRenderer(desc.highLevelRendererDesc, this->windowIndex);
 }
 
-void Engine::CaptureCursor()
+void Weiss::CaptureCursor()
 {
 	// Clip Cursor
 	const RECT windowRect = this->GetWindow().GetWindowRectangle();
@@ -41,7 +41,7 @@ void Engine::CaptureCursor()
 	this->mouse->Hide();
 }
 
-void Engine::PlayWavFile(const char* filename)
+void Weiss::PlayWavFile(const char* filename)
 {
 	if (!PlaySound(TEXT(filename), NULL, SND_ASYNC | SND_FILENAME))
 	{
@@ -51,7 +51,7 @@ void Engine::PlayWavFile(const char* filename)
 	}
 }
 
-[[nodiscard]] DataFromMeshFile Engine::LoadDataFromMeshFile(const char* filename)
+[[nodiscard]] DataFromMeshFile Weiss::LoadDataFromMeshFile(const char* filename)
 {
 	std::ifstream infile(filename);
 
@@ -103,22 +103,22 @@ void Engine::PlayWavFile(const char* filename)
 	return { vertices, indices };
 }
 
-[[nodiscard]] Mouse& Engine::GetMouse() noexcept
+[[nodiscard]] Mouse& Weiss::GetMouse() noexcept
 {
 	return *this->mouse;
 }
 
-[[nodiscard]] Window& Engine::GetWindow() noexcept
+[[nodiscard]] Window& Weiss::GetWindow() noexcept
 {
 	return Window::m_s_windows[this->windowIndex];
 }
 
-[[nodiscard]] Engine& Engine::GetEngine() noexcept
+[[nodiscard]] Weiss& Weiss::GetWeiss() noexcept
 {
 	return *this;
 }
 
-[[nodiscard]] Keyboard& Engine::GetKeybaord() noexcept
+[[nodiscard]] Keyboard& Weiss::GetKeybaord() noexcept
 {
 	return *this->keyboard;
 }

@@ -47,7 +47,7 @@
 #endif // _WIN32
 
 #include "math/Utils.h"
-#include "engines/Engine.h"
+#include "Weiss.h"
 
 #endif // __WEISS__
 

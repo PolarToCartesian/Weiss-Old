@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../misc/Colors.h"
+#include "misc/Colors.h"
 
-#include "../cameras/PerspectiveCamera.h"
-#include "../cameras/OrthographicCamera.h"
+#include "cameras/PerspectiveCamera.h"
+#include "cameras/OrthographicCamera.h"
 
-#include "../renderers/HighLevelRenderer.h"
+#include "renderers/HighLevelRenderer.h"
 
 struct EngineDescriptor
 {
@@ -21,7 +21,7 @@ struct DataFromMeshFile
 	std::vector<uint32_t> indices;
 };
 
-class Engine : public HighLevelRenderer
+class Weiss : public HighLevelRenderer
 {
 protected:
 	size_t windowIndex = 0u;
@@ -30,9 +30,9 @@ protected:
 	Keyboard* keyboard = nullptr;
 
 public:
-	Engine();
+	Weiss();
 
-	void InitEngine(const EngineDescriptor& desc);
+	void InitializeWeiss(const EngineDescriptor& desc);
 
 	void CaptureCursor();
 
@@ -42,6 +42,6 @@ public:
 
 	[[nodiscard]] Mouse&    GetMouse()    noexcept;
 	[[nodiscard]] Window&   GetWindow()   noexcept;
-	[[nodiscard]] Engine&   GetEngine()   noexcept;
+	[[nodiscard]] Weiss&    GetWeiss()    noexcept;
 	[[nodiscard]] Keyboard& GetKeybaord() noexcept;
 };
