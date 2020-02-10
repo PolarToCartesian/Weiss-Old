@@ -38,50 +38,9 @@ void EngineCore::InitEngineCore(const WindowDescriptor& windowDesc)
 	this->mouse = &(this->GetWindow().GetMouse());
 	this->keyboard = &(this->GetWindow().GetKeyboard());
 
-	this->InitializeLowLevelGraphics(Window::m_s_windows[windowIndex]);
-
-	DeviceInfo di = this->GetDeviceInfo();
-
-	this->InitBufferManager(di);
-	this->InitShaderManager(di);
-	this->InitTextureManager(di);
+	this->InitializeLowLevelRenderer(this->windowIndex);
 
 	this->CreateDefaultConstantBuffers();
-
-	this->GetWindow().OnResize([&](const Vec2u16 dimensions)
-	{
-		this->InitializeLowLevelGraphics(Window::m_s_windows[windowIndex]);
-	});
-}
-
-void EngineCore::Run(const bool useVSync, const uint16_t fps)
-{
-	Timer timer;
-	uint32_t frames = 0;
-
-	while (this->GetWindow().IsRunning())
-	{
-		const float elapsed = timer.GetElapsedTimeMs();
-
-		if (!useVSync)
-		{
-			if (elapsed >= 1 / static_cast<float>(fps) * 1000)
-			{
-				timer = Timer();
-			}
-			else
-			{
-				std::this_thread::yield();
-				continue;
-			}
-		}
-
-		this->GetWindow().Update();
-
-		this->OnRender(elapsed);
-
-		this->PresentFrame(useVSync);
-	}
 }
 
 void EngineCore::CaptureCursor()
@@ -111,52 +70,6 @@ void EngineCore::PlayWavFile(const char* filename)
 		MESSAGE_BOX_ERROR("Could Not Play Sound From File");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 	}
-}
-
-void EngineCore::DrawMesh(const size_t meshIndex, UINT count)
-{
-	Drawable& drawable = this->meshes[meshIndex];
-
-	if (drawable.vertexBufferIndex == WEISS_NO_RESOURCE_INDEX) return;
-
-	this->m_vertexBuffers[drawable.vertexBufferIndex].Bind();
-	this->m_vertexShaders[drawable.vertexShaderIndex].Bind();
-	this->m_pixelShaders[drawable.pixelShaderIndex].Bind();
-
-	for (const size_t textureIndex : drawable.textureIndices)
-		this->m_imageTexturePairs[textureIndex].textures[0]->Bind();
-
-	for (const size_t textureSamplerIndex : drawable.textureSamplerIndices)
-		this->m_textureSamplers[textureSamplerIndex].Bind();
-
-	for (const size_t cbIndex : drawable.constantBufferIndices)
-		this->m_constantBuffers[cbIndex].Bind();
-
-	this->m_pDeviceContext->IASetPrimitiveTopology(drawable.primitiveTopologyType);
-
-	if (drawable.indexBufferIndex.has_value())
-	{
-		this->m_indexBuffers[drawable.indexBufferIndex.value()].Bind();
-
-		if (count == 0u)
-			count = static_cast<UINT>(this->m_indexBuffers[drawable.indexBufferIndex.value()].GetSize());
-
-		this->m_pDeviceContext->DrawIndexed(count, 0u, 0u);
-	}
-	else
-	{
-		if (count == 0u)
-			count = static_cast<UINT>(this->m_vertexBuffers[drawable.vertexBufferIndex].GetElementCount());
-
-		this->m_pDeviceContext->Draw(count, 0u);
-	}
-}
-
-size_t EngineCore::CreateMeshFromVertices(const Drawable& mesh)
-{
-	this->meshes.push_back(mesh);
-
-	return this->meshes.size() - 1;
 }
 
 DataFromMeshFile EngineCore::LoadDataFromMeshFile(const char* filename)
@@ -210,8 +123,6 @@ DataFromMeshFile EngineCore::LoadDataFromMeshFile(const char* filename)
 
 	return { vertices, indices };
 }
-
-Drawable& EngineCore::GetMesh(const size_t index) noexcept { return this->meshes[index]; }
 
 // Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
 Window&     EngineCore::GetWindow()     noexcept { return Window::m_s_windows[this->windowIndex]; }

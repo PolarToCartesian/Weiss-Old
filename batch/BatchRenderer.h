@@ -59,7 +59,7 @@ public:
 		{
 			const UINT nVerticesToDraw = static_cast<UINT>((i != this->m_meshes.size() - 1u) ? WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER : this->m_triangles.size() * 3u - i * WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER);
 
-			this->m_engine.DrawMesh(this->m_meshes[i], nVerticesToDraw);
+			this->m_engine.Draw(this->m_meshes[i], nVerticesToDraw);
 		}
 	}
 };
