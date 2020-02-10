@@ -1,20 +1,6 @@
-#include "EngineCore.h"
+#include "Engine.h"
 
-void EngineCore::CreateDefaultConstantBuffers()
-{
-	const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX, WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_SLOT };
-
-	if (this->CreateConstantBuffer(cbd) != WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Create Default Constant Buffer #0 In Target Position");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw EngineInitializationException();
-	}
-}
-
-EngineCore::EngineCore()
+Engine::Engine()
 {
 	if (CoInitialize(NULL) != S_OK)
 	{
@@ -26,24 +12,17 @@ EngineCore::EngineCore()
 	}
 }
 
-EngineCore::~EngineCore()
+void Engine::InitEngine(const EngineDescriptor& desc)
 {
-	// No Need To Destroy Window Because It Destroys Itself
-}
-
-void EngineCore::InitEngineCore(const WindowDescriptor& windowDesc)
-{
-	this->windowIndex = Window::CreateNewWindow(windowDesc);
+	this->windowIndex = Window::CreateNewWindow(desc.windowDesc);
 
 	this->mouse = &(this->GetWindow().GetMouse());
 	this->keyboard = &(this->GetWindow().GetKeyboard());
 
-	this->InitializeLowLevelRenderer(this->windowIndex);
-
-	this->CreateDefaultConstantBuffers();
+	this->InitializeHighLevelRenderer(desc.highLevelRendererDesc, this->windowIndex);
 }
 
-void EngineCore::CaptureCursor()
+void Engine::CaptureCursor()
 {
 	// Clip Cursor
 	const RECT windowRect = this->GetWindow().GetWindowRectangle();
@@ -62,7 +41,7 @@ void EngineCore::CaptureCursor()
 	this->mouse->Hide();
 }
 
-void EngineCore::PlayWavFile(const char* filename)
+void Engine::PlayWavFile(const char* filename)
 {
 	if (!PlaySound(TEXT(filename), NULL, SND_ASYNC | SND_FILENAME))
 	{
@@ -72,7 +51,7 @@ void EngineCore::PlayWavFile(const char* filename)
 	}
 }
 
-DataFromMeshFile EngineCore::LoadDataFromMeshFile(const char* filename)
+[[nodiscard]] DataFromMeshFile Engine::LoadDataFromMeshFile(const char* filename)
 {
 	std::ifstream infile(filename);
 
@@ -124,8 +103,22 @@ DataFromMeshFile EngineCore::LoadDataFromMeshFile(const char* filename)
 	return { vertices, indices };
 }
 
-// Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
-Window&     EngineCore::GetWindow()     noexcept { return Window::m_s_windows[this->windowIndex]; }
-Mouse&      EngineCore::GetMouse()      noexcept { return *this->mouse;                           }
-Keyboard&   EngineCore::GetKeybaord()   noexcept { return *this->keyboard;                        }
-EngineCore& EngineCore::GetEngineCore() noexcept { return *this;                                  }
+[[nodiscard]] Mouse& Engine::GetMouse() noexcept
+{
+	return *this->mouse;
+}
+
+[[nodiscard]] Window& Engine::GetWindow() noexcept
+{
+	return Window::m_s_windows[this->windowIndex];
+}
+
+[[nodiscard]] Engine& Engine::GetEngine() noexcept
+{
+	return *this;
+}
+
+[[nodiscard]] Keyboard& Engine::GetKeybaord() noexcept
+{
+	return *this->keyboard;
+}

@@ -9,9 +9,9 @@
 #include "../managers/BufferManager.h"
 #include "../managers/ShaderManager.h"
 #include "../managers/TextureManager.h"
-#include "../managers/LowLevelGraphicsManager.h"
+#include "../managers/LowLevelGraphicsInitializer.h"
 
-class LowLevelRenderer : public TextureManager, public ShaderManager, public BufferManager, public LowLevelGraphicsManager
+class LowLevelRenderer : public TextureManager, public ShaderManager, public BufferManager, public LowLevelGraphicsInitializer
 {
 private:
 	size_t m_windowIndex;
@@ -31,7 +31,14 @@ public:
 
 	void Draw(const size_t drawableIndex, UINT count = 0u);
 
+	void PresentFrame(const bool useVSync);
+
+	void TurnZBufferOn()  noexcept;
+	void TurnZBufferOff() noexcept;
+
 	[[nodiscard]] size_t AddDrawable(const Drawable& drawable);
 
 	[[nodiscard]] Drawable& GetDrawable(const size_t index) noexcept;
+
+	[[nodiscard]] LowLevelRenderer& GetLowLevelRenderer() noexcept;
 };

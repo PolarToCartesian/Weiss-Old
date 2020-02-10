@@ -3,9 +3,9 @@
 #include "../window/Window.h"
 #include "../misc/DeviceInfo.h"
 
-class LowLevelGraphicsManagerException : public std::exception { };
+class LowLevelGraphicsInitializerException : public std::exception { };
 
-class LowLevelGraphicsManager
+class LowLevelGraphicsInitializer
 {
 protected:
 	Microsoft::WRL::ComPtr<ID3D11Device>            m_pDevice;
@@ -28,12 +28,5 @@ private:
 protected:
 	void InitializeLowLevelGraphics(Window& window);
 
-	void PresentFrame(const bool useVSync);
-
 	DeviceInfo GetDeviceInfo() noexcept;
-
-public:
-	void TurnZBufferOn() noexcept;
-
-	void TurnZBufferOff() noexcept;
 };

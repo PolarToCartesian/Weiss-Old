@@ -88,14 +88,44 @@ void LowLevelRenderer::Draw(const size_t meshIndex, UINT count)
 	}
 }
 
-size_t LowLevelRenderer::AddDrawable(const Drawable& mesh)
+void LowLevelRenderer::PresentFrame(const bool useVSync)
+{
+	if (this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u) != S_OK)
+	{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+		MESSAGE_BOX_ERROR("Could Not Present Frame");
+#endif
+
+		throw LowLevelGraphicsInitializerException();
+	}
+
+	// Clear Depth Stencil
+	this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
+}
+
+void LowLevelRenderer::TurnZBufferOn() noexcept
+{
+	this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOn.Get(), 1u);
+}
+
+void LowLevelRenderer::TurnZBufferOff() noexcept
+{
+	this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOff.Get(), 1u);
+}
+
+[[nodiscard]] size_t LowLevelRenderer::AddDrawable(const Drawable& mesh)
 {
 	this->drawables.push_back(mesh);
 
 	return this->drawables.size() - 1;
 }
 
-Drawable& LowLevelRenderer::GetDrawable(const size_t index) noexcept
+[[nodiscard]] Drawable& LowLevelRenderer::GetDrawable(const size_t index) noexcept
 {
 	return this->drawables[index];
+}
+
+[[nodiscard]] LowLevelRenderer& LowLevelRenderer::GetLowLevelRenderer() noexcept
+{
+	return *this;
 }

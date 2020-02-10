@@ -1,6 +1,6 @@
-#include "LowLevelGraphicsManager.h"
+#include "LowLevelGraphicsInitializer.h"
 
-void LowLevelGraphicsManager::CreateDeviceAndSwapChain(Window& window)
+void LowLevelGraphicsInitializer::CreateDeviceAndSwapChain(Window& window)
 {
 	DXGI_SWAP_CHAIN_DESC scd{};
 	scd.BufferDesc.Width = 0;
@@ -25,11 +25,11 @@ void LowLevelGraphicsManager::CreateDeviceAndSwapChain(Window& window)
 		MESSAGE_BOX_ERROR("Could Not Create Device And SwapChain");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		throw LowLevelGraphicsManagerException();
+		throw LowLevelGraphicsInitializerException();
 	}
 }
 
-void LowLevelGraphicsManager::CreateRenderTarget()
+void LowLevelGraphicsInitializer::CreateRenderTarget()
 {
 	Microsoft::WRL::ComPtr<ID3D11Resource> pBackBuffer;
 
@@ -39,7 +39,7 @@ void LowLevelGraphicsManager::CreateRenderTarget()
 		MESSAGE_BOX_ERROR("Could Not Get BackBuffer");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		throw LowLevelGraphicsManagerException();
+		throw LowLevelGraphicsInitializerException();
 	}
 
 	if (this->m_pDevice->CreateRenderTargetView(pBackBuffer.Get(), nullptr, &this->m_pRenderTarget) != S_OK)
@@ -48,11 +48,11 @@ void LowLevelGraphicsManager::CreateRenderTarget()
 		MESSAGE_BOX_ERROR("Could Not Create RenderTargetView");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		throw LowLevelGraphicsManagerException();
+		throw LowLevelGraphicsInitializerException();
 	}
 }
 
-void LowLevelGraphicsManager::CreateViewport(Window& window)
+void LowLevelGraphicsInitializer::CreateViewport(Window& window)
 {
 	D3D11_VIEWPORT vp;
 	vp.Width = static_cast<FLOAT>(window.GetClientWidth());
@@ -65,7 +65,7 @@ void LowLevelGraphicsManager::CreateViewport(Window& window)
 	this->m_pDeviceContext->RSSetViewports(1u, &vp);
 }
 
-void LowLevelGraphicsManager::CreateDepthStencilStates()
+void LowLevelGraphicsInitializer::CreateDepthStencilStates()
 {
 	D3D11_DEPTH_STENCIL_DESC dsDesc = {};
 	dsDesc.DepthEnable = TRUE;
@@ -88,7 +88,7 @@ void LowLevelGraphicsManager::CreateDepthStencilStates()
 		MESSAGE_BOX_ERROR("Could Not Create DepthStencilState");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		throw LowLevelGraphicsManagerException();
+		throw LowLevelGraphicsInitializerException();
 	}
 
 	dsDesc.DepthEnable = FALSE;
@@ -99,11 +99,13 @@ void LowLevelGraphicsManager::CreateDepthStencilStates()
 		MESSAGE_BOX_ERROR("Could Not Create EmptyDepthStencilState");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		throw LowLevelGraphicsManagerException();
+		throw LowLevelGraphicsInitializerException();
 	}
+
+	this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOn.Get(), 1u);
 }
 
-void LowLevelGraphicsManager::CreateDepthStencil(Window& window)
+void LowLevelGraphicsInitializer::CreateDepthStencil(Window& window)
 {
 	// Create Depth Texture
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
@@ -124,7 +126,7 @@ void LowLevelGraphicsManager::CreateDepthStencil(Window& window)
 		MESSAGE_BOX_ERROR("Could Not Create Texture2D");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		throw LowLevelGraphicsManagerException();
+		throw LowLevelGraphicsInitializerException();
 	}
 
 	// Create Depth Stencil Texture View
@@ -139,14 +141,14 @@ void LowLevelGraphicsManager::CreateDepthStencil(Window& window)
 		MESSAGE_BOX_ERROR("Could Not Create DepthStencilView");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		throw LowLevelGraphicsManagerException();
+		throw LowLevelGraphicsInitializerException();
 	}
 
 	this->m_pDeviceContext->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), this->m_pDepthStencilView.Get());
 }
 
 
-void LowLevelGraphicsManager::CreateAndBindBlendState()
+void LowLevelGraphicsInitializer::CreateAndBindBlendState()
 {
 	D3D11_BLEND_DESC blendDesc = {};
 	blendDesc.RenderTarget[0].BlendEnable = TRUE;
@@ -164,13 +166,13 @@ void LowLevelGraphicsManager::CreateAndBindBlendState()
 		MESSAGE_BOX_ERROR("Could not create Blend State");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
-		throw LowLevelGraphicsManagerException();
+		throw LowLevelGraphicsInitializerException();
 	}
 
 	this->m_pDeviceContext->OMSetBlendState(this->m_pBlendState.Get(), nullptr, 0xFFFFFFFFu);
 }
 
-void LowLevelGraphicsManager::InitializeLowLevelGraphics(Window& window)
+void LowLevelGraphicsInitializer::InitializeLowLevelGraphics(Window& window)
 {
 	this->CreateDeviceAndSwapChain(window);
 	this->CreateRenderTarget();
@@ -178,36 +180,9 @@ void LowLevelGraphicsManager::InitializeLowLevelGraphics(Window& window)
 	this->CreateDepthStencilStates();
 	this->CreateDepthStencil(window);
 	this->CreateAndBindBlendState();
-
-	this->TurnZBufferOn();
 }
 
-void LowLevelGraphicsManager::PresentFrame(const bool useVSync)
-{
-	if (this->m_pSwapChain->Present(useVSync ? 1u : 0u, 0u) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Present Frame");
-#endif
-
-		throw LowLevelGraphicsManagerException();
-	}
-
-	// Clear Depth Stencil
-	this->m_pDeviceContext->ClearDepthStencilView(this->m_pDepthStencilView.Get(), D3D11_CLEAR_DEPTH, 1.0f, 0u);
-}
-
-DeviceInfo LowLevelGraphicsManager::GetDeviceInfo() noexcept
+DeviceInfo LowLevelGraphicsInitializer::GetDeviceInfo() noexcept
 {
 	return DeviceInfo { this->m_pDevice, this->m_pDeviceContext };
-}
-
-void LowLevelGraphicsManager::TurnZBufferOn() noexcept
-{
-	this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOn.Get(), 1u);
-}
-
-void LowLevelGraphicsManager::TurnZBufferOff() noexcept
-{
-	this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOff.Get(), 1u);
 }

@@ -53,7 +53,6 @@
 
 #ifdef __WEISS_LAST_INCLUDE
 
-#include "last_includes/BatchRenderer.h"
 #include "last_includes/Window.h"
 
 #endif // __WEISS_LAST_INCLUDE
