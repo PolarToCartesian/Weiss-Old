@@ -115,44 +115,44 @@ void EngineCore::PlayWavFile(const char* filename)
 
 void EngineCore::DrawMesh(const size_t meshIndex, UINT count)
 {
-	Mesh& mesh = this->meshes[meshIndex];
+	Drawable& drawable = this->meshes[meshIndex];
 
-	if (mesh.vertexBufferIndex == WEISS_NO_RESOURCE_INDEX) return;
+	if (drawable.vertexBufferIndex == WEISS_NO_RESOURCE_INDEX) return;
 
-	this->m_vertexBuffers[mesh.vertexBufferIndex].Bind();
-	this->m_vertexShaders[mesh.vertexShaderIndex].Bind();
-	this->m_pixelShaders[mesh.pixelShaderIndex].Bind();
+	this->m_vertexBuffers[drawable.vertexBufferIndex].Bind();
+	this->m_vertexShaders[drawable.vertexShaderIndex].Bind();
+	this->m_pixelShaders[drawable.pixelShaderIndex].Bind();
 
-	for (const size_t textureIndex : mesh.textureIndices)
+	for (const size_t textureIndex : drawable.textureIndices)
 		this->m_imageTexturePairs[textureIndex].textures[0]->Bind();
 
-	for (const size_t textureSamplerIndex : mesh.textureSamplerIndices)
+	for (const size_t textureSamplerIndex : drawable.textureSamplerIndices)
 		this->m_textureSamplers[textureSamplerIndex].Bind();
 
-	for (const size_t cbIndex : mesh.constantBufferIndices)
+	for (const size_t cbIndex : drawable.constantBufferIndices)
 		this->m_constantBuffers[cbIndex].Bind();
 
-	this->m_pDeviceContext->IASetPrimitiveTopology(mesh.primitiveTopologyType);
+	this->m_pDeviceContext->IASetPrimitiveTopology(drawable.primitiveTopologyType);
 
-	if (mesh.indexBufferIndex.has_value())
+	if (drawable.indexBufferIndex.has_value())
 	{
-		this->m_indexBuffers[mesh.indexBufferIndex.value()].Bind();
+		this->m_indexBuffers[drawable.indexBufferIndex.value()].Bind();
 
 		if (count == 0u)
-			count = static_cast<UINT>(this->m_indexBuffers[mesh.indexBufferIndex.value()].GetSize());
+			count = static_cast<UINT>(this->m_indexBuffers[drawable.indexBufferIndex.value()].GetSize());
 
 		this->m_pDeviceContext->DrawIndexed(count, 0u, 0u);
 	}
 	else
 	{
 		if (count == 0u)
-			count = static_cast<UINT>(this->m_vertexBuffers[mesh.vertexBufferIndex].GetElementCount());
+			count = static_cast<UINT>(this->m_vertexBuffers[drawable.vertexBufferIndex].GetElementCount());
 
 		this->m_pDeviceContext->Draw(count, 0u);
 	}
 }
 
-size_t EngineCore::CreateMeshFromVertices(const Mesh& mesh)
+size_t EngineCore::CreateMeshFromVertices(const Drawable& mesh)
 {
 	this->meshes.push_back(mesh);
 
@@ -211,7 +211,7 @@ DataFromMeshFile EngineCore::LoadDataFromMeshFile(const char* filename)
 	return { vertices, indices };
 }
 
-Mesh&           EngineCore::GetMesh(const size_t index)           noexcept { return this->meshes[index];             }
+Drawable& EngineCore::GetMesh(const size_t index) noexcept { return this->meshes[index]; }
 
 // Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
 Window&     EngineCore::GetWindow()     noexcept { return Window::m_s_windows[this->windowIndex]; }

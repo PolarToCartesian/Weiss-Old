@@ -10,7 +10,7 @@
 
 #include "../misc/Timer.h"
 
-#include "../objects/Mesh.h"
+#include "../objects/Drawable.h"
 
 class EngineInitializationException : public std::exception { };
 
@@ -22,9 +22,8 @@ struct DataFromMeshFile
 
 class EngineCore : public TextureManager, public ShaderManager, public BufferManager, public LowLevelGraphicsManager
 {
-// --> ENGINE --> ENGINE CLASS --> CORE START
 protected:
-	std::vector<Mesh>           meshes;
+	std::vector<Drawable> meshes;
 
 	size_t    windowIndex = 0u;
 
@@ -51,11 +50,11 @@ public:
 
 	void DrawMesh(const size_t meshIndex, UINT count = 0u);
 
-	[[nodiscard]] size_t CreateMeshFromVertices(const Mesh& mesh);
+	[[nodiscard]] size_t CreateMeshFromVertices(const Drawable& mesh);
 
 	[[nodiscard]] DataFromMeshFile LoadDataFromMeshFile(const char* filename);
 
-	[[nodiscard]] Mesh& GetMesh(const size_t index) noexcept;
+	[[nodiscard]] Drawable& GetMesh(const size_t index) noexcept;
 
 	// Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
 	[[nodiscard]] Window&     GetWindow()     noexcept;

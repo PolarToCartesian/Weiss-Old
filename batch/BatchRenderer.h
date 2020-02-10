@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../objects/Mesh.h"
+#include "../objects/Drawable.h"
 #include "../objects/Triangles.h"
 #include "../buffers/VertexBuffer.h"
 

@@ -24,9 +24,9 @@ void BatchRenderer<V>::CreateNewMeshesIfNeeded() {
 		const VertexBufferDescriptor vbd{ junk, WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER, sizeof(V), true };
 		this->m_vertexBufferIndex = this->m_engine.CreateVertexBuffer(vbd);
 
-		Mesh mesh{ this->m_vertexBufferIndex, this->m_vertexShaderIndex, this->m_pixelShaderIndex };
+		Drawable drawable{ this->m_vertexBufferIndex, this->m_vertexShaderIndex, this->m_pixelShaderIndex };
 
-		this->m_meshes.push_back(this->m_engine.CreateMeshFromVertices(mesh));
+		this->m_meshes.push_back(this->m_engine.CreateMeshFromVertices(drawable));
 	}
 }
 
@@ -37,8 +37,8 @@ void BatchRenderer<V>::FillMeshesIfNeeded()
 	{
 		for (size_t i = 0u; i < this->m_meshes.size(); i++)
 		{
-			Mesh& mesh = this->m_engine.GetMesh(this->m_meshes[i]);
-			VertexBuffer& vertexBuffer = this->m_engine.GetVertexBuffer(mesh.vertexBufferIndex);
+			Drawable& drawable = this->m_engine.GetMesh(this->m_meshes[i]);
+			VertexBuffer& vertexBuffer = this->m_engine.GetVertexBuffer(drawable.vertexBufferIndex);
 
 			const void* srcPtr = this->m_triangles.data() + i * WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER;
 

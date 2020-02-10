@@ -2,7 +2,7 @@
 
 #include "../math/Vectors.h"
 
-struct Mesh {
+struct Drawable{
 	size_t vertexBufferIndex;
 
 	size_t vertexShaderIndex;
