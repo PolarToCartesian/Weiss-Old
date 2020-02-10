@@ -1,12 +1,13 @@
 #pragma once
 
 #include "../math/Vectors.h"
+#include "../misc/Defines.h"
 
-struct Drawable{
-	size_t vertexBufferIndex;
-
-	size_t vertexShaderIndex;
-	size_t pixelShaderIndex;
+struct Drawable
+{
+	size_t vertexBufferIndex = WEISS_NO_RESOURCE_INDEX;
+	size_t vertexShaderIndex = WEISS_NO_RESOURCE_INDEX;
+	size_t pixelShaderIndex  = WEISS_NO_RESOURCE_INDEX;
 
 	std::optional<size_t> indexBufferIndex = { };
 	std::vector<size_t> textureIndices = { };
