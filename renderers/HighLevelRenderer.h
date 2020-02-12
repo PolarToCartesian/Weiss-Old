@@ -42,12 +42,10 @@ public:
 
 	void Fill(const Coloru8& color);
 
-	void SetRenderMode2D();
-	void SetRenderMode3D();
+	void UpdateCameraConstantBuffer(const Camera* cameraPtr) noexcept;
 
-	void UpdateCameraConstantBuffer() noexcept;
-
-	[[nodiscard]] HighLevelRenderer&      GetHighLevelRenderer()      noexcept;
-	[[nodiscard]] PerspectiveCamera&      GetPerspectiveCamera()      noexcept;
-	[[nodiscard]] OrthographicCamera&     GetOrthographicCamera()     noexcept;
+	[[nodiscard]] ConstantBuffer&     GetCameraConstantBuffer() noexcept;
+	[[nodiscard]] HighLevelRenderer&  GetHighLevelRenderer()    noexcept;
+	[[nodiscard]] PerspectiveCamera&  GetPerspectiveCamera()    noexcept;
+	[[nodiscard]] OrthographicCamera& GetOrthographicCamera()   noexcept;
 };

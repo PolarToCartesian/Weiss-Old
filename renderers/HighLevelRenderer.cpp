@@ -33,6 +33,9 @@ void HighLevelRenderer::InitializeHighLevelRenderer(const HighLevelRendererDescr
 		throw HighLevelRendererException();
 	}
 
+	this->GetCameraConstantBuffer().Bind();
+	this->TurnZBufferOn();
+
 	this->InitializeHighLevelRenderer2D(desc.renderer2DDesc);
 	this->InitializeHighLevelRenderer3D(desc.renderer3DDesc);
 }
@@ -44,30 +47,14 @@ void HighLevelRenderer::Fill(const Coloru8& color)
 	this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&colorf);
 }
 
-void HighLevelRenderer::SetRenderMode2D()
+void HighLevelRenderer::UpdateCameraConstantBuffer(const Camera* cameraPtr) noexcept
 {
-	// Camera Transform
-	ConstantBuffer& cameraTransformConstantBuffer = this->m_constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
-	const DirectX::XMMATRIX orthographicCameraTransposedTransform = this->m_orthographicCamera->GetTransposedTransform();
-	cameraTransformConstantBuffer.SetData(&orthographicCameraTransposedTransform);
-	cameraTransformConstantBuffer.Bind();
-
-	this->TurnZBufferOff();
+	this->GetCameraConstantBuffer().SetData(&cameraPtr->GetTransposedTransform());
 }
 
-void HighLevelRenderer::SetRenderMode3D()
+[[nodiscard]] ConstantBuffer& HighLevelRenderer::GetCameraConstantBuffer() noexcept
 {
-	ConstantBuffer& cameraTransformConstantBuffer = this->m_constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
-	cameraTransformConstantBuffer.Bind();
-
-	this->TurnZBufferOn();
-}
-
-void HighLevelRenderer::UpdateCameraConstantBuffer() noexcept
-{
-	ConstantBuffer& cameraTransformConstantBuffer = this->m_constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
-	const DirectX::XMMATRIX perspectiveCameraTransposedTransform = this->m_perspectiveCamera->GetTransposedTransform();
-	cameraTransformConstantBuffer.SetData(&perspectiveCameraTransposedTransform);
+	return this->GetConstantBuffer(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX);
 }
 
 [[nodiscard]] HighLevelRenderer& HighLevelRenderer::GetHighLevelRenderer() noexcept
