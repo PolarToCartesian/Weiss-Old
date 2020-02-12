@@ -45,6 +45,8 @@ public:
 	void SetRenderMode2D();
 	void SetRenderMode3D();
 
+	void UpdateCameraConstantBuffer() noexcept;
+
 	[[nodiscard]] HighLevelRenderer&      GetHighLevelRenderer()      noexcept;
 	[[nodiscard]] PerspectiveCamera&      GetPerspectiveCamera()      noexcept;
 	[[nodiscard]] OrthographicCamera&     GetOrthographicCamera()     noexcept;

@@ -58,11 +58,16 @@ void HighLevelRenderer::SetRenderMode2D()
 void HighLevelRenderer::SetRenderMode3D()
 {
 	ConstantBuffer& cameraTransformConstantBuffer = this->m_constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
-	const DirectX::XMMATRIX perspectiveCameraTransposedTransform = this->m_perspectiveCamera->GetTransposedTransform();
-	cameraTransformConstantBuffer.SetData(&perspectiveCameraTransposedTransform);
 	cameraTransformConstantBuffer.Bind();
 
 	this->TurnZBufferOn();
+}
+
+void HighLevelRenderer::UpdateCameraConstantBuffer() noexcept
+{
+	ConstantBuffer& cameraTransformConstantBuffer = this->m_constantBuffers[WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX];
+	const DirectX::XMMATRIX perspectiveCameraTransposedTransform = this->m_perspectiveCamera->GetTransposedTransform();
+	cameraTransformConstantBuffer.SetData(&perspectiveCameraTransposedTransform);
 }
 
 [[nodiscard]] HighLevelRenderer& HighLevelRenderer::GetHighLevelRenderer() noexcept
