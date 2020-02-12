@@ -53,6 +53,12 @@ Window::Window(const WindowDescriptor& descriptor)
 
 	if (descriptor.iconPath != nullptr)
 		this->SetIcon(descriptor.iconPath);
+
+	#ifdef _WIN64
+		SetWindowLongPtr(this->m_handle, GWLP_USERDATA, (LONG_PTR)this);
+	#else
+		SetWindowLong(this->m_handle, GWLP_USERDATA, (LONG)this);
+	#endif
 }
 
 // Misc
@@ -198,9 +204,9 @@ Window::~Window()
 	this->Destroy();
 }
 
-size_t Window::CreateNewWindow(const WindowDescriptor& windowDesc)
+Window& Window::Create(const WindowDescriptor& windowDesc)
 {
 	Window::m_s_windows.emplace_back(windowDesc);
 
-	return Window::m_s_windows.size() - 1u;
+	return Window::m_s_windows.back();
 }

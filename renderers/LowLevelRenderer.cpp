@@ -1,10 +1,10 @@
 #include "LowLevelRenderer.h"
 
-void LowLevelRenderer::InitializeLowLevelRenderer(const size_t windowIndex)
+void LowLevelRenderer::InitializeLowLevelRenderer(Window* window)
 {
-	this->m_windowIndex = windowIndex;
+	this->m_window = window;
 
-	this->InitializeLowLevelGraphics(Window::m_s_windows[this->m_windowIndex]);
+	this->InitializeLowLevelGraphics(this->m_window);
 
 	this->m_deviceInfo = new DeviceInfo(this->GetDeviceInfo());
 
@@ -23,7 +23,7 @@ void LowLevelRenderer::Run(const bool useVSync, const uint16_t fps)
 	Timer timer;
 	uint32_t frames = 0;
 
-	while (Window::m_s_windows[this->m_windowIndex].IsRunning())
+	while (this->m_window->IsRunning())
 	{
 		const float elapsed = timer.GetElapsedTimeMs();
 
@@ -40,7 +40,7 @@ void LowLevelRenderer::Run(const bool useVSync, const uint16_t fps)
 			}
 		}
 
-		Window::m_s_windows[this->m_windowIndex].Update();
+		this->m_window->Update();
 
 		this->OnRender(elapsed);
 

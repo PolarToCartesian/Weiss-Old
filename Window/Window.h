@@ -95,8 +95,7 @@ public:
 	~Window();
 
 public:
-	static std::vector<Window> m_s_windows;
+	static std::list<Window> m_s_windows;
 
-	// Only Interact With A Window Through Its Index Because The "m_s_windows" Array Changes When New Windows Are Created
-	static size_t CreateNewWindow(const WindowDescriptor& windowDesc);
+	static Window& Create(const WindowDescriptor& windowDesc);
 };

@@ -24,10 +24,7 @@ struct DataFromMeshFile
 class Weiss : public HighLevelRenderer
 {
 protected:
-	size_t windowIndex = 0u;
-
-	Mouse* mouse = nullptr;
-	Keyboard* keyboard = nullptr;
+	Window* m_window = nullptr;
 
 public:
 	Weiss();

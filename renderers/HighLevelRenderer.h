@@ -26,7 +26,7 @@ struct HighLevelRendererDescriptor
 class HighLevelRenderer : public LowLevelRenderer
 {
 private:
-	size_t m_windowIndex;
+	Window* m_window;
 
 	OrthographicCamera* m_orthographicCamera = nullptr;
 	PerspectiveCamera*  m_perspectiveCamera  = nullptr;
@@ -38,7 +38,7 @@ private:
 public:
 	~HighLevelRenderer();
 
-	void InitializeHighLevelRenderer(const HighLevelRendererDescriptor& desc, const size_t windowIndex);
+	void InitializeHighLevelRenderer(const HighLevelRendererDescriptor& desc, Window* window);
 
 	void Fill(const Coloru8& color);
 

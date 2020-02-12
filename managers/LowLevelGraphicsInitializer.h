@@ -18,15 +18,15 @@ protected:
 	Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_pDepthStencilStateForZBufferOff;
 
 private:
-	void CreateDeviceAndSwapChain(Window& window);
+	void CreateDeviceAndSwapChain(Window* window);
 	void CreateRenderTarget();
-	void CreateViewport(Window& window);
+	void CreateViewport(Window* window);
 	void CreateDepthStencilStates();
-	void CreateDepthStencil(Window& window);
+	void CreateDepthStencil(Window* window);
 	void CreateAndBindBlendState();
 
 protected:
-	void InitializeLowLevelGraphics(Window& window);
+	void InitializeLowLevelGraphics(Window* window);
 
 	DeviceInfo GetDeviceInfo() noexcept;
 };

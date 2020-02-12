@@ -2,7 +2,7 @@
 
 #include "../misc/Timer.h"
 
-#include "../Window/Window.h"
+#include "../window/Window.h"
 
 #include "../objects/Drawable.h"
 
@@ -14,14 +14,14 @@
 class LowLevelRenderer : public TextureManager, public ShaderManager, public BufferManager, public LowLevelGraphicsInitializer
 {
 private:
-	size_t m_windowIndex;
+	Window* m_window;
 	
 	DeviceInfo* m_deviceInfo;
 
 	std::vector<Drawable> drawables;
 
 public:
-	void InitializeLowLevelRenderer(const size_t windowIndex);
+	void InitializeLowLevelRenderer(Window* window);
 
 	~LowLevelRenderer();
 

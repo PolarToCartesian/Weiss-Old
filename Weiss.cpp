@@ -14,12 +14,9 @@ Weiss::Weiss()
 
 void Weiss::InitializeWeiss(const EngineDescriptor& desc)
 {
-	this->windowIndex = Window::CreateNewWindow(desc.windowDesc);
+	this->m_window = &Window::Create(desc.windowDesc);
 
-	this->mouse = &(this->GetWindow().GetMouse());
-	this->keyboard = &(this->GetWindow().GetKeyboard());
-
-	this->InitializeHighLevelRenderer(desc.highLevelRendererDesc, this->windowIndex);
+	this->InitializeHighLevelRenderer(desc.highLevelRendererDesc, this->m_window);
 }
 
 void Weiss::CaptureCursor()
@@ -35,10 +32,10 @@ void Weiss::CaptureCursor()
 	boundingRect.right -= 10; // padding
 	boundingRect.bottom -= 10; // padding
 
-	this->mouse->Clip(boundingRect);
+	this->m_window->GetMouse().Clip(boundingRect);
 
 	// Hide Cursor
-	this->mouse->Hide();
+	this->m_window->GetMouse().Hide();
 }
 
 void Weiss::PlayWavFile(const char* filename)
@@ -105,12 +102,12 @@ void Weiss::PlayWavFile(const char* filename)
 
 [[nodiscard]] Mouse& Weiss::GetMouse() noexcept
 {
-	return *this->mouse;
+	return this->m_window->GetMouse();
 }
 
 [[nodiscard]] Window& Weiss::GetWindow() noexcept
 {
-	return Window::m_s_windows[this->windowIndex];
+	return *this->m_window;
 }
 
 [[nodiscard]] Weiss& Weiss::GetWeiss() noexcept
@@ -120,5 +117,5 @@ void Weiss::PlayWavFile(const char* filename)
 
 [[nodiscard]] Keyboard& Weiss::GetKeybaord() noexcept
 {
-	return *this->keyboard;
+	return this->m_window->GetKeyboard();
 }

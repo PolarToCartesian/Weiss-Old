@@ -1,6 +1,6 @@
 #include "LowLevelGraphicsInitializer.h"
 
-void LowLevelGraphicsInitializer::CreateDeviceAndSwapChain(Window& window)
+void LowLevelGraphicsInitializer::CreateDeviceAndSwapChain(Window* window)
 {
 	DXGI_SWAP_CHAIN_DESC scd{};
 	scd.BufferDesc.Width = 0;
@@ -14,7 +14,7 @@ void LowLevelGraphicsInitializer::CreateDeviceAndSwapChain(Window& window)
 	scd.SampleDesc.Quality = 0;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.BufferCount = 1;
-	scd.OutputWindow = window.GetHandle();
+	scd.OutputWindow = window->GetHandle();
 	scd.Windowed = TRUE;
 	scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 	scd.Flags = 0;
@@ -52,11 +52,11 @@ void LowLevelGraphicsInitializer::CreateRenderTarget()
 	}
 }
 
-void LowLevelGraphicsInitializer::CreateViewport(Window& window)
+void LowLevelGraphicsInitializer::CreateViewport(Window* window)
 {
 	D3D11_VIEWPORT vp;
-	vp.Width = static_cast<FLOAT>(window.GetClientWidth());
-	vp.Height = static_cast<FLOAT>(window.GetClientHeight());
+	vp.Width  = static_cast<FLOAT>(window->GetClientWidth());
+	vp.Height = static_cast<FLOAT>(window->GetClientHeight());
 	vp.MinDepth = 0;
 	vp.MaxDepth = 1;
 	vp.TopLeftX = 0;
@@ -105,13 +105,13 @@ void LowLevelGraphicsInitializer::CreateDepthStencilStates()
 	this->m_pDeviceContext->OMSetDepthStencilState(this->m_pDepthStencilStateForZBufferOn.Get(), 1u);
 }
 
-void LowLevelGraphicsInitializer::CreateDepthStencil(Window& window)
+void LowLevelGraphicsInitializer::CreateDepthStencil(Window* window)
 {
 	// Create Depth Texture
 	Microsoft::WRL::ComPtr<ID3D11Texture2D> pDepthStencil;
 	D3D11_TEXTURE2D_DESC descDepth = {};
-	descDepth.Width  = window.GetClientWidth();
-	descDepth.Height = window.GetClientHeight();
+	descDepth.Width  = window->GetClientWidth();
+	descDepth.Height = window->GetClientHeight();
 	descDepth.MipLevels = 1u;
 	descDepth.ArraySize = 1u;
 	descDepth.Format = DXGI_FORMAT_D32_FLOAT;
@@ -172,7 +172,7 @@ void LowLevelGraphicsInitializer::CreateAndBindBlendState()
 	this->m_pDeviceContext->OMSetBlendState(this->m_pBlendState.Get(), nullptr, 0xFFFFFFFFu);
 }
 
-void LowLevelGraphicsInitializer::InitializeLowLevelGraphics(Window& window)
+void LowLevelGraphicsInitializer::InitializeLowLevelGraphics(Window* window)
 {
 	this->CreateDeviceAndSwapChain(window);
 	this->CreateRenderTarget();

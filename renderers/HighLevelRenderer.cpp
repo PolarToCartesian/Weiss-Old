@@ -2,12 +2,12 @@
 
 void HighLevelRenderer::InitializeHighLevelRenderer2D(const HighLevelRenderer2DDescriptor& desc)
 {
-	this->m_orthographicCamera = new OrthographicCamera(Window::m_s_windows[this->m_windowIndex], desc.orthographicCameraDesc);
+	this->m_orthographicCamera = new OrthographicCamera(*this->m_window, desc.orthographicCameraDesc);
 }
 
 void HighLevelRenderer::InitializeHighLevelRenderer3D(const HighLevelRenderer3DDescriptor& desc)
 {
-	this->m_perspectiveCamera = new PerspectiveCamera(Window::m_s_windows[this->m_windowIndex], desc.perspectiveCameraDesc);
+	this->m_perspectiveCamera = new PerspectiveCamera(*this->m_window, desc.perspectiveCameraDesc);
 }
 
 HighLevelRenderer::~HighLevelRenderer()
@@ -16,11 +16,11 @@ HighLevelRenderer::~HighLevelRenderer()
 	delete this->m_orthographicCamera;
 }
 
-void HighLevelRenderer::InitializeHighLevelRenderer(const HighLevelRendererDescriptor& desc, const size_t windowIndex)
+void HighLevelRenderer::InitializeHighLevelRenderer(const HighLevelRendererDescriptor& desc, Window* window)
 {
-	this->m_windowIndex = windowIndex;
+	this->m_window = window;
 
-	this->InitializeLowLevelRenderer(this->m_windowIndex);
+	this->InitializeLowLevelRenderer(this->m_window);
 
 	const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX, WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_SLOT };
 
