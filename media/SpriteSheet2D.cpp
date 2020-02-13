@@ -26,6 +26,16 @@ SpriteSheet2D::SpriteSheet2D(const SpriteSheet2DDescriptor& descriptor)
 	}
 }
 
+[[nodiscard]] uint16_t SpriteSheet2D::GetSpriteWidth() const noexcept
+{
+	return this->m_spriteWidth;
+}
+
+[[nodiscard]] uint16_t SpriteSheet2D::GetSpriteHeight() const noexcept
+{
+	return this->m_spriteHeight;
+}
+
 [[nodiscard]] Vec2u16 SpriteSheet2D::GetSpriteLocation(const std::string& spriteName) const noexcept
 {
 	return this->m_spriteLocations.at(spriteName);
