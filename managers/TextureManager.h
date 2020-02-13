@@ -39,7 +39,7 @@ public:
 	}
 
 	template <typename T>
-	[[nodiscard]] size_t AddTextureResource(const Texture2DSettings& settings, const T& image)
+	[[nodiscard]] size_t AddImageResource(const Texture2DSettings& settings, const T& image)
 	{
 		Texture2DDescriptor t2dd{ settings, image };
 		ImageTexturePair itp = { image, settings };
