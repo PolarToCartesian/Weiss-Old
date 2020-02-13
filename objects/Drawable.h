@@ -10,7 +10,7 @@ struct Drawable
 	size_t pixelShaderIndex  = WEISS_NO_RESOURCE_INDEX;
 
 	std::optional<size_t> indexBufferIndex = { };
-	std::vector<size_t> textureIndices = { };
+	std::vector<std::string> textureNames = { };
 	std::vector<size_t> textureSamplerIndices = { };
 
 	std::vector<size_t> constantBufferIndices = { };

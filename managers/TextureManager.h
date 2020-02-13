@@ -16,8 +16,8 @@ struct ImageTexturePair {
 class TextureManager
 {
 protected:
-	std::vector<ImageTexturePair> m_imageTexturePairs;
-	std::vector<TextureSampler>   m_textureSamplers;
+	std::vector<TextureSampler> m_textureSamplers;
+	std::unordered_map<std::string, ImageTexturePair> m_imageTexturePairs;
 
 private:
 	DeviceInfo* m_deviceInfo = nullptr;
@@ -29,9 +29,9 @@ public:
 	~TextureManager();
 
 	template <typename T>
-	void GenerateTexture(const size_t pairIndex, const size_t textureIndex = 0u)
+	void GenerateTexture(const std::string& textureName, const size_t textureIndex = 0u)
 	{
-		ImageTexturePair& pair = this->m_imageTexturePairs[pairIndex];
+		ImageTexturePair& pair = this->m_imageTexturePairs[textureName];
 		Texture2DDescriptor t2dd{ pair.settings, std::get<T>(pair.image) };
 
 		delete pair.textures[textureIndex];
@@ -39,27 +39,25 @@ public:
 	}
 
 	template <typename T>
-	[[nodiscard]] size_t AddImageResource(const Texture2DSettings& settings, const T& image)
+	[[nodiscard]] void AddImageResource(const std::string& textureName, const Texture2DSettings& settings, const T& image)
 	{
 		Texture2DDescriptor t2dd{ settings, image };
 		ImageTexturePair itp = { image, settings };
 
 		itp.textures.push_back(new Texture2D(*this->m_deviceInfo, t2dd));
 
-		this->m_imageTexturePairs.emplace_back(itp);
-
-		return this->m_imageTexturePairs.size() - 1u;
+		this->m_imageTexturePairs.insert({ textureName, itp });
 	}
 	
 	[[nodiscard]] size_t CreateTextureSampler(const TextureSamplerDescriptor& descriptor);
 
 	template <typename T>
-	[[nodiscard]] T& GetImage(const size_t texturePairIndex) noexcept
+	[[nodiscard]] T& GetImage(const std::string& textureName) noexcept
 	{
-		return std::get<T>(this->m_imageTexturePairs[texturePairIndex].image);
+		return std::get<T>(this->m_imageTexturePairs.at(textureName).image);
 	}
 
-	[[nodiscard]] Texture2D& GetTexture(const size_t texturePairIndex, const size_t textureIndex = 0u) noexcept;
+	[[nodiscard]] Texture2D& GetTexture(const std::string& textureName, const size_t textureIndex = 0u) noexcept;
 
 	[[nodiscard]] TextureSampler& GetTextureSampler(const size_t index) noexcept;
 };

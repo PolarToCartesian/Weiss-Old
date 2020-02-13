@@ -59,8 +59,8 @@ void LowLevelRenderer::Draw(const size_t meshIndex, UINT count)
 	this->m_vertexShaders[drawable.vertexShaderIndex].Bind();
 	this->m_pixelShaders[drawable.pixelShaderIndex].Bind();
 
-	for (const size_t textureIndex : drawable.textureIndices)
-		this->m_imageTexturePairs[textureIndex].textures[0]->Bind();
+	for (const std::string& textureName : drawable.textureNames)
+		this->m_imageTexturePairs.at(textureName).textures[0]->Bind();
 
 	for (const size_t textureSamplerIndex : drawable.textureSamplerIndices)
 		this->m_textureSamplers[textureSamplerIndex].Bind();

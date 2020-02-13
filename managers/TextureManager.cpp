@@ -17,9 +17,9 @@ TextureManager::~TextureManager()
 	return this->m_textureSamplers.size() - 1u;
 }
 
-[[nodiscard]] Texture2D& TextureManager::GetTexture(const size_t texturePairIndex, const size_t textureIndex) noexcept
+[[nodiscard]] Texture2D& TextureManager::GetTexture(const std::string& textureName, const size_t textureIndex) noexcept
 {
-	return *this->m_imageTexturePairs[texturePairIndex].textures[textureIndex];
+	return *this->m_imageTexturePairs.at(textureName).textures[textureIndex];
 }
 
 [[nodiscard]] TextureSampler& TextureManager::GetTextureSampler(const size_t index) noexcept
