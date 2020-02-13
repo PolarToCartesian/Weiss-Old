@@ -12,7 +12,7 @@ Window::Window(const WindowDescriptor& descriptor)
 		WindowProcessMessages,
 		0,
 		0,
-		descriptor.hInstance,
+		GetModuleHandle(NULL),
 		NULL,
 		LoadCursor(nullptr, IDC_ARROW),
 		(HBRUSH)COLOR_WINDOW, NULL,
@@ -35,7 +35,7 @@ Window::Window(const WindowDescriptor& descriptor)
 
 	this->m_handle = CreateWindowA("WNDCLASSA", descriptor.title, windowStyle,
 		descriptor.windowPositionX, descriptor.windowPositionY, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
-		NULL, NULL, descriptor.hInstance, NULL);
+		NULL, NULL, GetModuleHandle(NULL), NULL);
 
 	if (this->m_handle == NULL)
 	{

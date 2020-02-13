@@ -32,7 +32,6 @@ struct WindowDescriptor
 	const char* title      = nullptr;
 	const char* iconPath   = nullptr;
 	const bool isResizable = true;
-	const HINSTANCE hInstance;
 };
 
 class Window
