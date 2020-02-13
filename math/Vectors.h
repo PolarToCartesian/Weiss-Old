@@ -42,7 +42,7 @@ struct Vector2D
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Vector2D<T>& v)
 {
-	os << '(' << v.x << ", " << v.y << ")\n";
+	os << '(' << v.x << ", " << v.y << ")";
 	return os;
 }
 
@@ -133,7 +133,7 @@ template <typename T, typename K>
 template <typename T>
 std::ostream& operator<<(std::ostream& os, const Vector3D<T>& v)
 {
-	os << '(' << v.x << ", " << v.y << ", " << v.z << ")\n";
+	os << '(' << v.x << ", " << v.y << ", " << v.z << ")";
 	return os;
 }
 
