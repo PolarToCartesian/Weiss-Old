@@ -1,26 +1,14 @@
 #pragma once
 
-#include "../misc/Pch.h"
-#include "../misc/DeviceInfo.h"
-#include "ShaderBindingLoading.h"
+#include "Shader.h"
 
 class PixelShaderCreationException : public std::exception { };
 
-struct PixelShaderDescriptor
-{
-	ShaderLoadingMethod loadingMethod;
-	const wchar_t*      binaryFilename;
-	const char*         sourceCode;
-};
-
-class PixelShader {
-private:
-	const DeviceInfo& m_deviceInfo;
-
-	Microsoft::WRL::ComPtr<ID3D11PixelShader> m_pPixelShader;
-
+class PixelShader : public Shader<ID3D11PixelShader> {
 public:
-	PixelShader(const DeviceInfo& deviceInfo, const PixelShaderDescriptor& descriptor);
+	PixelShader(const DeviceInfo& deviceInfo, const char* sourceFilename);
 
-	void Bind() const noexcept;
+	virtual void Load() override;
+
+	virtual void Bind() const noexcept override;
 };

@@ -10,16 +10,16 @@ void ShaderManager::InitShaderManager(DeviceInfo& deviceInfo)
 	this->m_deviceInfo = new DeviceInfo(deviceInfo);
 }
 
-[[nodiscard]] size_t ShaderManager::CreatePixelShader(const PixelShaderDescriptor& descriptor)
+[[nodiscard]] size_t ShaderManager::CreatePixelShader(const char* sourceFilename)
 {
-	this->m_pixelShaders.emplace_back(*this->m_deviceInfo, descriptor);
+	this->m_pixelShaders.emplace_back(*this->m_deviceInfo, sourceFilename);
 
 	return this->m_pixelShaders.size() - 1u;
 }
 
-[[nodiscard]] size_t ShaderManager::CreateVertexShader(const VertexShaderDescriptor& descriptor)
+[[nodiscard]] size_t ShaderManager::CreateVertexShader(const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* sourceFilename)
 {
-	this->m_vertexShaders.emplace_back(*this->m_deviceInfo, descriptor);
+	this->m_vertexShaders.emplace_back(*this->m_deviceInfo, ieds, sourceFilename);
 
 	return this->m_vertexShaders.size() - 1u;
 }

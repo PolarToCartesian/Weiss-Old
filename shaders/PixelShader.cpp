@@ -1,42 +1,28 @@
 #include "PixelShader.h"
 
-PixelShader::PixelShader(const DeviceInfo& deviceInfo, const PixelShaderDescriptor& descriptor)
-	: m_deviceInfo(deviceInfo)
+PixelShader::PixelShader(const DeviceInfo& deviceInfo, const char* sourceFilename)
+	: Shader<ID3D11PixelShader>(deviceInfo, sourceFilename)
+{
+	this->Load();
+}
+
+void PixelShader::Load()
 {
 	Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
 
-	if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_BINARY_FILE)
-	{
-		if (D3DReadFileToBlob(descriptor.binaryFilename, &pBlob) != S_OK)
-		{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-			MESSAGE_BOX_ERROR("Could Not Read Pixel Shader File");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
+	std::ifstream fileStream(this->m_sourceFilename);
+	std::string sourceCode((std::istreambuf_iterator<char>(fileStream)), (std::istreambuf_iterator<char>()));
 
-			throw PixelShaderCreationException();
-		}
-	}
-	else if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_SOURCE_CODE)
-	{
-		if (D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "ps_5_0", 0, 0, &pBlob, NULL) != S_OK)
-		{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-			MESSAGE_BOX_ERROR("Could Not Compile Pixel Shader");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-			throw PixelShaderCreationException();
-		}
-	}
-	else
+	if (D3DCompile(sourceCode.c_str(), sourceCode.size(), NULL, NULL, NULL, "main", "ps_5_0", 0, 0, &pBlob, NULL) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Your Specified Shader Loading Method Is Not Supported From Pixel Shaders");
+		MESSAGE_BOX_ERROR("Could Not Compile Pixel Shader");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
 		throw PixelShaderCreationException();
 	}
 
-	if (this->m_deviceInfo.m_pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pPixelShader) != S_OK)
+	if (this->m_deviceInfo.m_pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_shaderResource) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 		MESSAGE_BOX_ERROR("Could Not Create Pixel Shader");
@@ -48,5 +34,5 @@ PixelShader::PixelShader(const DeviceInfo& deviceInfo, const PixelShaderDescript
 
 void PixelShader::Bind() const noexcept
 {
-	this->m_deviceInfo.m_pDeviceContext->PSSetShader(this->m_pPixelShader.Get(), nullptr, 0u);
+	this->m_deviceInfo.m_pDeviceContext->PSSetShader(this->m_shaderResource.Get(), nullptr, 0u);
 }

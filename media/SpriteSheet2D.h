@@ -20,7 +20,7 @@ private:
 public:
 	SpriteSheet2D(const SpriteSheet2DDescriptor& descriptor);
 
-	[[nodiscard]] uint16_t GetSpriteWidth() const noexcept;
+	[[nodiscard]] uint16_t GetSpriteWidth()  const noexcept;
 	[[nodiscard]] uint16_t GetSpriteHeight() const noexcept;
-	[[nodiscard]] Vec2u16 GetSpriteLocation(const std::string& spriteName) const noexcept;
+	[[nodiscard]] Vec2u16  GetSpriteLocation(const std::string& spriteName) const noexcept;
 };

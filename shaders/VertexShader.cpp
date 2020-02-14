@@ -1,64 +1,35 @@
 #include "VertexShader.h"
 
-VertexShader::VertexShader(const DeviceInfo& deviceInfo, const VertexShaderDescriptor& descriptor)
-	: m_deviceInfo(deviceInfo)
+VertexShader::VertexShader(const DeviceInfo& deviceInfo, const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* sourceFilename)
+	: Shader<ID3D11VertexShader>(deviceInfo, sourceFilename)
 {
-	Microsoft::WRL::ComPtr<ID3DBlob> pBlob;
+	this->Load();
+	this->m_inputLayout = new InputLayout(deviceInfo, ieds, this->m_pBlob);
+}
 
-	if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_BINARY_FILE)
-	{
-		if (D3DReadFileToBlob(descriptor.binaryFilename, &pBlob) != S_OK)
-		{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-			MESSAGE_BOX_ERROR("Could Not Read Vertex Shader File");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
+VertexShader::~VertexShader()
+{
+	delete this->m_inputLayout;
+}
 
-			throw VertexShaderCreationException();
-		}
-	}
-	else if (descriptor.loadingMethod == ShaderLoadingMethod::FROM_SOURCE_CODE)
-	{
-		if (D3DCompile(descriptor.sourceCode, strlen(descriptor.sourceCode), NULL, NULL, NULL, "main", "vs_5_0", 0, 0, &pBlob, NULL) != S_OK)
-		{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-			MESSAGE_BOX_ERROR("Could Not Compile Vertex Shader");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
+void VertexShader::Load()
+{
+	std::ifstream fileStream(this->m_sourceFilename);
+	std::string sourceCode((std::istreambuf_iterator<char>(fileStream)), (std::istreambuf_iterator<char>()));
 
-			throw VertexShaderCreationException();
-		}
-	}
-	else
+	if (D3DCompile(sourceCode.c_str(), sourceCode.size(), NULL, NULL, NULL, "main", "vs_5_0", 0, 0, &this->m_pBlob, NULL) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Your Specified Shader Loading Method Is Not Supported From Vertex Shaders");
+		MESSAGE_BOX_ERROR("Could Not Compile Pixel Shader");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
 		throw VertexShaderCreationException();
 	}
 
-	if (this->m_deviceInfo.m_pDevice->CreateVertexShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pVertexShader) != S_OK)
+	if (this->m_deviceInfo.m_pDevice->CreateVertexShader(this->m_pBlob->GetBufferPointer(), this->m_pBlob->GetBufferSize(), nullptr, &this->m_shaderResource) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Create Vertex Shader");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw VertexShaderCreationException();
-	}
-
-	std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementDescriptors(descriptor.inputElementDescriptors.size());
-	for (uint32_t i = 0; i < inputElementDescriptors.size(); i++)
-	{
-		inputElementDescriptors[i] = D3D11_INPUT_ELEMENT_DESC{};
-		inputElementDescriptors[i].SemanticName = descriptor.inputElementDescriptors[i].first;
-		inputElementDescriptors[i].Format = descriptor.inputElementDescriptors[i].second;
-		inputElementDescriptors[i].AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-		inputElementDescriptors[i].InputSlotClass = D3D11_INPUT_CLASSIFICATION::D3D11_INPUT_PER_VERTEX_DATA;
-	}
-
-	if (this->m_deviceInfo.m_pDevice->CreateInputLayout(inputElementDescriptors.data(), (UINT)inputElementDescriptors.size(), pBlob->GetBufferPointer(), pBlob->GetBufferSize(), &m_pInputLayout) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Create Input Layout");
+		MESSAGE_BOX_ERROR("Could Not Create Pixel Shader");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
 		throw VertexShaderCreationException();
@@ -67,6 +38,6 @@ VertexShader::VertexShader(const DeviceInfo& deviceInfo, const VertexShaderDescr
 
 void VertexShader::Bind() const noexcept
 {
-	this->m_deviceInfo.m_pDeviceContext->IASetInputLayout(this->m_pInputLayout.Get());
-	this->m_deviceInfo.m_pDeviceContext->VSSetShader(this->m_pVertexShader.Get(), nullptr, 0u);
+	this->m_inputLayout->Bind();
+	this->m_deviceInfo.m_pDeviceContext->VSSetShader(this->m_shaderResource.Get(), nullptr, 0u);
 }

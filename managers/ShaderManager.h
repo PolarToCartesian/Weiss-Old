@@ -20,9 +20,9 @@ protected:
 public:
 	~ShaderManager();
 
-	[[nodiscard]] size_t CreatePixelShader(const PixelShaderDescriptor& descriptor);
+	[[nodiscard]] size_t CreatePixelShader(const char* sourceFilename);
 
-	[[nodiscard]] size_t CreateVertexShader(const VertexShaderDescriptor& descriptor);
+	[[nodiscard]] size_t CreateVertexShader(const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* sourceFilename);
 
 	[[nodiscard]] PixelShader& GetPixelShader(const size_t index) noexcept;
 
