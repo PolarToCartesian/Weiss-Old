@@ -23,11 +23,27 @@ protected:
 public:
 	~BufferManager();
 
-	[[nodiscard]] size_t CreateIndexBuffer(const IndexBufferDescriptor& descriptor);
+	template <typename CONTAINER>
+	[[nodiscard]] size_t CreateIndexBuffer(const CONTAINER& arr, const bool isUpdatable)
+	{
+		this->m_indexBuffers.emplace_back(*this->m_deviceInfo, arr, isUpdatable);
 
-	[[nodiscard]] size_t CreateVertexBuffer(const VertexBufferDescriptor& descriptor);
+		return this->m_indexBuffers.size() - 1u;
+	}
 
-	[[nodiscard]] size_t CreateConstantBuffer(const ConstantBufferDescriptor& descriptor);
+	[[nodiscard]] size_t CreateIndexBuffer(const void* buff, const UINT nIndices, const bool isUpdatable);
+
+	template <typename CONTAINER>
+	[[nodiscard]] size_t CreateVertexBuffer(const CONTAINER& arr, const bool isUpdatable)
+	{
+		this->m_vertexBuffers.emplace_back(*this->m_deviceInfo, arr, isUpdatable);
+
+		return this->m_vertexBuffers.size() - 1u;
+	}
+
+	[[nodiscard]] size_t CreateVertexBuffer(const void* buff, const size_t nVertices, const size_t vertexSize, const bool isUpdatable);
+
+	[[nodiscard]] size_t CreateConstantBuffer(const ShaderBindingType bindingType, const void* buff, const UINT objSize, const UINT slotVS, const UINT slotPS);
 
 	[[nodiscard]] IndexBuffer&    GetIndexBuffer(const size_t index)    noexcept;
 	[[nodiscard]] VertexBuffer&   GetVertexBuffer(const size_t index)   noexcept;

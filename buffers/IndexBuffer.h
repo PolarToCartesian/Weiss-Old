@@ -1,27 +1,29 @@
 #pragma once
 
-#include "../misc/Pch.h"
-#include "../misc/DeviceInfo.h"
+#include "Buffer.h"
 
 class IndexBufferCreationException : public std::exception { };
 
-struct IndexBufferDescriptor
-{
-	std::vector<uint32_t> indices;
-};
+class IndexBufferDataSettingException : public std::exception { };
 
-class IndexBuffer {
+class IndexBuffer : public Buffer<IndexBufferCreationException> {
 private:
-	const DeviceInfo& m_deviceInfo;
-
-	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pIndexBuffer;
-
-	size_t m_nBytes;
+	size_t m_nIndices;
 
 public:
-	IndexBuffer(const DeviceInfo& deviceInfo, const IndexBufferDescriptor& descriptor);
+	IndexBuffer(const DeviceInfo& deviceInfo, const void* buff, const UINT nIndices, const bool isUpdatable);
 
-	[[nodiscard]] size_t GetSize() const;
+	template <typename CONTAINER>
+	IndexBuffer(const DeviceInfo& deviceInfo, const CONTAINER& arr, const bool isUpdatable)
+		: IndexBuffer(deviceInfo, arr.data(), arr.size(), isUpdatable)
+	{ }
 
-	void Bind() const noexcept;
+	[[nodiscard]] size_t GetIndexCount() const;
+
+	void SetData(const void* buff, const UINT nIndices) const;
+
+	template <typename CONTAINER>
+	void SetData(const CONTAINER& arr) { this->SetData(arr.data(), arr.size()); }
+
+	virtual void Bind() const noexcept override;
 };

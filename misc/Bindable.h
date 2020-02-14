@@ -8,7 +8,7 @@ class Bindable {
 protected:
 	const DeviceInfo& m_deviceInfo;
 
-	Microsoft::WRL::ComPtr<T> m_shaderResource;
+	Microsoft::WRL::ComPtr<T> m_pResource;
 
 public:
 	Bindable(const DeviceInfo& deviceInfo)

@@ -22,7 +22,7 @@ void PixelShader::Load()
 		throw PixelShaderCreationException();
 	}
 
-	if (this->m_deviceInfo.m_pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_shaderResource) != S_OK)
+	if (this->m_deviceInfo.m_pDevice->CreatePixelShader(pBlob->GetBufferPointer(), pBlob->GetBufferSize(), nullptr, &this->m_pResource) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 		MESSAGE_BOX_ERROR("Could Not Create Pixel Shader");
@@ -34,5 +34,5 @@ void PixelShader::Load()
 
 void PixelShader::Bind() const noexcept
 {
-	this->m_deviceInfo.m_pDeviceContext->PSSetShader(this->m_shaderResource.Get(), nullptr, 0u);
+	this->m_deviceInfo.m_pDeviceContext->PSSetShader(this->m_pResource.Get(), nullptr, 0u);
 }

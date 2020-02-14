@@ -10,23 +10,23 @@ void BufferManager::InitBufferManager(DeviceInfo& deviceInfo)
 	this->m_deviceInfo = new DeviceInfo(deviceInfo);
 }
 
-[[nodiscard]] size_t BufferManager::CreateIndexBuffer(const IndexBufferDescriptor& descriptor)
+[[nodiscard]] size_t BufferManager::CreateIndexBuffer(const void* buff, const UINT nIndices, const bool isUpdatable)
 {
-	this->m_indexBuffers.emplace_back(*this->m_deviceInfo, descriptor);
+	this->m_indexBuffers.emplace_back(*this->m_deviceInfo, buff, nIndices, isUpdatable);
 
 	return this->m_indexBuffers.size() - 1u;
 }
 
-[[nodiscard]] size_t BufferManager::CreateVertexBuffer(const VertexBufferDescriptor& descriptor)
+[[nodiscard]] size_t BufferManager::CreateVertexBuffer(const void* buff, const size_t nVertices, const size_t vertexSize, const bool isUpdatable)
 {
-	this->m_vertexBuffers.emplace_back(*this->m_deviceInfo, descriptor);
+	this->m_vertexBuffers.emplace_back(*this->m_deviceInfo, buff, nVertices, vertexSize, isUpdatable);
 
 	return this->m_vertexBuffers.size() - 1u;
 }
 
-[[nodiscard]] size_t BufferManager::CreateConstantBuffer(const ConstantBufferDescriptor& descriptor)
+[[nodiscard]] size_t BufferManager::CreateConstantBuffer(const ShaderBindingType bindingType, const void* buff, const UINT objSize, const UINT slotVS, const UINT slotPS)
 {
-	this->m_constantBuffers.emplace_back(*this->m_deviceInfo, descriptor);
+	this->m_constantBuffers.emplace_back(*this->m_deviceInfo, bindingType, buff, objSize, slotVS, slotPS);
 
 	return this->m_constantBuffers.size() - 1u;
 }

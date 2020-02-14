@@ -75,7 +75,7 @@ void LowLevelRenderer::Draw(const size_t meshIndex, UINT count)
 		this->m_indexBuffers[drawable.indexBufferIndex.value()].Bind();
 
 		if (count == 0u)
-			count = static_cast<UINT>(this->m_indexBuffers[drawable.indexBufferIndex.value()].GetSize());
+			count = static_cast<UINT>(this->m_indexBuffers[drawable.indexBufferIndex.value()].GetIndexCount());
 
 		this->m_pDeviceContext->DrawIndexed(count, 0u, 0u);
 	}

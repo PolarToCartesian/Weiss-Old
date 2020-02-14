@@ -1,39 +1,22 @@
 #include "VertexBuffer.h"
 
-VertexBuffer::VertexBuffer(const DeviceInfo& deviceInfo, const VertexBufferDescriptor& descriptor)
-	: m_nElements(descriptor.nElements), m_elementSize(descriptor.elementSize), m_deviceInfo(deviceInfo)
+VertexBuffer::VertexBuffer(const DeviceInfo& deviceInfo, const void* buff, const size_t nVertices, const size_t vertexSize, const bool isUpdatable)
+	: Buffer(deviceInfo, buff, vertexSize*nVertices, vertexSize, D3D11_BIND_VERTEX_BUFFER, isUpdatable),
+	  m_nVertices(nVertices), m_vertexSize(vertexSize)
 {
-	D3D11_BUFFER_DESC bd = {};
-	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-	bd.Usage = (descriptor.isUpdatable) ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
-	bd.CPUAccessFlags = (descriptor.isUpdatable) ? D3D11_CPU_ACCESS_WRITE : 0u;
-	bd.MiscFlags = 0u;
-	bd.ByteWidth = static_cast<UINT>(this->m_elementSize * this->m_nElements);
-	bd.StructureByteStride = static_cast<UINT>(this->m_elementSize);
 
-	D3D11_SUBRESOURCE_DATA sd = {};
-	sd.pSysMem = descriptor.memoryPtr;
-
-	if (this->m_deviceInfo.m_pDevice->CreateBuffer(&bd, &sd, &this->m_pVertexBuffer) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Unable To Create Vertex Buffer");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw VertexBufferCreationException();
-	}
 }
 
 size_t VertexBuffer::GetElementCount() const noexcept
 {
-	return this->m_nElements;
+	return this->m_nVertices;
 }
 
-void VertexBuffer::SetData(const void* memoryPtr, const size_t nElements)
+void VertexBuffer::SetData(const void* buff, const size_t nVertices) const
 {
 	D3D11_MAPPED_SUBRESOURCE resource;
 
-	if (this->m_deviceInfo.m_pDeviceContext->Map(this->m_pVertexBuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource) != S_OK)
+	if (this->m_deviceInfo.m_pDeviceContext->Map(this->m_pResource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 		MESSAGE_BOX_ERROR("Could Not Map VertexBuffer Memory");
@@ -42,17 +25,15 @@ void VertexBuffer::SetData(const void* memoryPtr, const size_t nElements)
 		throw VertexBufferDataSettingException();
 	}
 
-	this->m_nElements = nElements;
+	std::memcpy(resource.pData, buff, nVertices * this->m_vertexSize);
 
-	std::memcpy(resource.pData, memoryPtr, this->m_nElements * this->m_elementSize);
-
-	this->m_deviceInfo.m_pDeviceContext->Unmap(this->m_pVertexBuffer.Get(), 0);
+	this->m_deviceInfo.m_pDeviceContext->Unmap(this->m_pResource.Get(), 0);
 }
 
 void VertexBuffer::Bind() const noexcept
 {
-	const UINT stride = static_cast<UINT>(this->m_elementSize);
+	const UINT stride = static_cast<UINT>(this->m_vertexSize);
 	const UINT offset = 0u;
 
-	this->m_deviceInfo.m_pDeviceContext->IASetVertexBuffers(0u, 1u, this->m_pVertexBuffer.GetAddressOf(), &stride, &offset);
+	this->m_deviceInfo.m_pDeviceContext->IASetVertexBuffers(0u, 1u, this->m_pResource.GetAddressOf(), &stride, &offset);
 }

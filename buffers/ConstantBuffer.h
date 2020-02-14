@@ -1,31 +1,22 @@
 #pragma once
 
-#include "../misc/Pch.h"
-#include "../misc/DeviceInfo.h"
+#include "Buffer.h"
 #include "../shaders/ShaderBindingLoading.h"
 
-class ConstantBufferCreationException : public std::exception { };
+class ConstantBufferDataSettingException : public std::exception { };
+class ConstantBufferCreationException    : public std::exception { };
 
-struct ConstantBufferDescriptor
-{
-	const ShaderBindingType bindingType = ShaderBindingType::VERTEX;
-	const size_t            objSize     = 0u;
-	const UINT              slotVS      = 0u; // Ignored if ShaderBindingType is PIXEL
-	const UINT              slotPS      = 0u; // Ignored if ShaderBindingType is VERTEX
-};
-
-class ConstantBuffer {
+class ConstantBuffer : public Buffer<ConstantBufferCreationException> {
 private:
-	const DeviceInfo& m_deviceInfo;
-
-	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pConstantBuffer;
-
-	ConstantBufferDescriptor m_descriptor;
+	ShaderBindingType m_bindingType;
+	UINT m_slotVS;
+	UINT m_slotPS;
+	UINT m_objSize;
 
 public:
-	ConstantBuffer(const DeviceInfo& deviceInfo, const ConstantBufferDescriptor& descriptor);
+	ConstantBuffer(const DeviceInfo& deviceInfo, const ShaderBindingType bindingType, const void* buff, const UINT objSize, const UINT slotVS, const UINT slotPS);
 
-	void SetData(const void* objPtr);
+	void SetData(const void* objPtr) const;
 
-	void Bind() const noexcept;
+	virtual void Bind() const noexcept override;
 };

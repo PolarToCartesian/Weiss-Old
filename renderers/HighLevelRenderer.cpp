@@ -22,9 +22,7 @@ void HighLevelRenderer::InitializeHighLevelRenderer(const HighLevelRendererDescr
 
 	this->InitializeLowLevelRenderer(this->m_window);
 
-	const ConstantBufferDescriptor cbd = { ShaderBindingType::VERTEX, sizeof(DirectX::XMMATRIX), WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX, WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_SLOT };
-
-	if (this->CreateConstantBuffer(cbd) != WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX)
+	if (this->CreateConstantBuffer(ShaderBindingType::VERTEX, nullptr, sizeof(DirectX::XMMATRIX), WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_SLOT, 0u) != WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 		MESSAGE_BOX_ERROR("Could Not Create Default Constant Buffer #0 In Target Position");

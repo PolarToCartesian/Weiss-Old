@@ -26,7 +26,7 @@ void VertexShader::Load()
 		throw VertexShaderCreationException();
 	}
 
-	if (this->m_deviceInfo.m_pDevice->CreateVertexShader(this->m_pBlob->GetBufferPointer(), this->m_pBlob->GetBufferSize(), nullptr, &this->m_shaderResource) != S_OK)
+	if (this->m_deviceInfo.m_pDevice->CreateVertexShader(this->m_pBlob->GetBufferPointer(), this->m_pBlob->GetBufferSize(), nullptr, &this->m_pResource) != S_OK)
 	{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 		MESSAGE_BOX_ERROR("Could Not Create Pixel Shader");
@@ -39,5 +39,5 @@ void VertexShader::Load()
 void VertexShader::Bind() const noexcept
 {
 	this->m_inputLayout->Bind();
-	this->m_deviceInfo.m_pDeviceContext->VSSetShader(this->m_shaderResource.Get(), nullptr, 0u);
+	this->m_deviceInfo.m_pDeviceContext->VSSetShader(this->m_pResource.Get(), nullptr, 0u);
 }

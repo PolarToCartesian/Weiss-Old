@@ -1,35 +1,29 @@
 #pragma once
 
-#include "../misc/Pch.h"
-#include "../misc/DeviceInfo.h"
+#include "Buffer.h"
 
 class VertexBufferDataSettingException : public std::exception { };
+class VertexBufferCreationException    : public std::exception { };
 
-class VertexBufferCreationException : public std::exception { };
-
-struct VertexBufferDescriptor
-{
-	void* memoryPtr    = nullptr;
-	size_t nElements   = 0u;
-	size_t elementSize = 0u;
-	bool isUpdatable   = false;
-};
-
-class VertexBuffer {
+class VertexBuffer : public Buffer<VertexBufferCreationException> {
 private:
-	size_t m_nElements;
-	size_t m_elementSize;
-
-	const DeviceInfo& m_deviceInfo;
-
-	Microsoft::WRL::ComPtr<ID3D11Buffer> m_pVertexBuffer;
+	size_t m_nVertices;
+	size_t m_vertexSize;
 
 public:
-	VertexBuffer(const DeviceInfo& deviceInfo, const VertexBufferDescriptor& descriptor);
+	VertexBuffer(const DeviceInfo& deviceInfo, const void* buff, const size_t nVertices, const size_t vertexSize, const bool isUpdatable);
+
+	template <typename CONTAINER>
+	VertexBuffer(const DeviceInfo& deviceInfo, const CONTAINER& arr, const bool isUpdatable)
+		: VertexBuffer(deviceInfo, arr.data(), arr.size(), sizeof(arr[0]), isUpdatable)
+	{ }
 
 	[[nodiscard]] size_t GetElementCount() const noexcept;
 
-	void SetData(const void* memoryPtr, const size_t nElements);
+	void SetData(const void* buff, const size_t nVertices) const;
+
+	template <typename CONTAINER>
+	void SetData(const CONTAINER& arr) { this->SetData(arr.data(), arr.size()); }
 
 	void Bind() const noexcept;
 };
