@@ -14,20 +14,7 @@ size_t VertexBuffer::GetElementCount() const noexcept
 
 void VertexBuffer::SetData(const void* buff, const size_t nVertices) const
 {
-	D3D11_MAPPED_SUBRESOURCE resource;
-
-	if (this->m_deviceInfo.m_pDeviceContext->Map(this->m_pResource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Map VertexBuffer Memory");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw VertexBufferDataSettingException();
-	}
-
-	std::memcpy(resource.pData, buff, nVertices * this->m_vertexSize);
-
-	this->m_deviceInfo.m_pDeviceContext->Unmap(this->m_pResource.Get(), 0);
+	this->__Buffer__SetData(buff, nVertices * this->m_vertexSize);
 }
 
 void VertexBuffer::Bind() const noexcept

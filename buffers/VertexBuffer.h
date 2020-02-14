@@ -2,10 +2,10 @@
 
 #include "Buffer.h"
 
-class VertexBufferDataSettingException : public std::exception { };
-class VertexBufferCreationException    : public std::exception { };
+class VertexBufferMappingException  : public std::exception { };
+class VertexBufferCreationException : public std::exception { };
 
-class VertexBuffer : public Buffer<VertexBufferCreationException> {
+class VertexBuffer : public Buffer<VertexBufferCreationException, VertexBufferMappingException> {
 private:
 	size_t m_nVertices;
 	size_t m_vertexSize;

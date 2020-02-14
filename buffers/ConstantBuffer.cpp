@@ -9,20 +9,7 @@ ConstantBuffer::ConstantBuffer(const DeviceInfo& deviceInfo, const ShaderBinding
 
 void ConstantBuffer::SetData(const void* objPtr) const
 {
-	D3D11_MAPPED_SUBRESOURCE resource;
-
-	if (this->m_deviceInfo.m_pDeviceContext->Map(this->m_pResource.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &resource) != S_OK)
-	{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-		MESSAGE_BOX_ERROR("Could Not Map ConstantBuffer Memory");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-		throw ConstantBufferDataSettingException();
-	}
-
-	std::memcpy(resource.pData, objPtr, this->m_objSize);
-
-	this->m_deviceInfo.m_pDeviceContext->Unmap(this->m_pResource.Get(), 0);
+	this->__Buffer__SetData(objPtr, this->m_objSize);
 }
 
 void ConstantBuffer::Bind() const noexcept

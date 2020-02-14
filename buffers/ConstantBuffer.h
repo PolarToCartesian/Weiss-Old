@@ -3,10 +3,10 @@
 #include "Buffer.h"
 #include "../shaders/ShaderBindingLoading.h"
 
-class ConstantBufferDataSettingException : public std::exception { };
-class ConstantBufferCreationException    : public std::exception { };
+class ConstantBufferMapping           : public std::exception { };
+class ConstantBufferCreationException : public std::exception { };
 
-class ConstantBuffer : public Buffer<ConstantBufferCreationException> {
+class ConstantBuffer : public Buffer<ConstantBufferCreationException, ConstantBufferMapping> {
 private:
 	ShaderBindingType m_bindingType;
 	UINT m_slotVS;

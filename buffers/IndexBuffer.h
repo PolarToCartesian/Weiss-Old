@@ -3,10 +3,9 @@
 #include "Buffer.h"
 
 class IndexBufferCreationException : public std::exception { };
+class IndexBufferMappingException  : public std::exception { };
 
-class IndexBufferDataSettingException : public std::exception { };
-
-class IndexBuffer : public Buffer<IndexBufferCreationException> {
+class IndexBuffer : public Buffer<IndexBufferCreationException, IndexBufferMappingException> {
 private:
 	size_t m_nIndices;
 
