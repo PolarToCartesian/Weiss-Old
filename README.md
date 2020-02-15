@@ -2,27 +2,17 @@
 
 > Weiss is a header-only rendering engine for windows built with DirectX 11 in c++17. It is intended to be a wrapper around low-level apis to make the developpement of 2D and 3D applications simpler and faster.
 
----
-
 ## Usage
 
 Clone the repository with [Git](https://git-scm.com/)
 
-```
-git clone "https://github.com/PolarToCartesian/Weiss"
-```
-
-The last time you include Weiss, please `#define __WEISS_LAST_INCLUDE`.
-
-While debugging, you can `#define __WEISS_SHOW_DEBUG_ERRORS` to get pop-ups when errors occur. If you want to have the console you can use the `ENABLE_CONSOLE()` function macro.
+The last time you include Weiss, please `#define __WEISS_LAST_INCLUDE`. While debugging, you can `#define __WEISS_SHOW_DEBUG_ERRORS` to get pop-ups when errors occur. If you want to have the console you can use the `ENABLE_CONSOLE()` function macro.
 
 ## Compiling
 
-Remember to set your subsystem to windows. If you are using the visual studio developer command prompt and cl.exe, specify `/link /SUBSYSTEM:WINDOWS`
+Remember to set your subsystem to windows. If you are using the visual studio developer command prompt and cl.exe, specify `/std:c++17 /link /SUBSYSTEM:WINDOWS`.
 
 Example : `cl Source.cpp /std:c++17 /link /SUBSYSTEM:WINDOWS`
-
----
 
 ## Roadmap
 
@@ -42,5 +32,5 @@ Example : `cl Source.cpp /std:c++17 /link /SUBSYSTEM:WINDOWS`
 | 2D-3D Switch            | :x:    | 2D Object Transforms   | :x:                | 3D Object Transforms   | :x:                |
 |                         |        | 2D Lighting            | :x:                | 3D Lighting            | :x:                |
 |                         |        | Batch Renderer         | :x:                | Batch Renderer         | :x:                |
-| Post Processing         |        | Sprite Sheet Generator | :heavy_check_mark: |                        |                    |
-| Multithreaded Rendering |        | 2D Animation           | :x:                | 3D Animation           | :x:                |
+| Post Processing         | :x:    | Sprite Sheet Generator | :heavy_check_mark: |                        |                    |
+| Multithreaded Rendering | :x:    | 2D Animation           | :x:                | 3D Animation           | :x:                |
