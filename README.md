@@ -27,9 +27,9 @@ Example : `cl Source.cpp /std:c++17 /link /SUBSYSTEM:WINDOWS`
 
 | Renderer                | Status             | 2D Renderer            | Status             | 3D Renderer            | Status             |
 | ----------------------- | ------------------ | ---------------------- | ------------------ | ---------------------- | ------------------ |
-| Material System         | :heavy_check_mark: | Orthographic Camera    | :heavy_check_mark: | Perspective Camera     | :heavy_check_mark: |
+| Material System         | :x:                | Orthographic Camera    | :heavy_check_mark: | Perspective Camera     | :heavy_check_mark: |
 | Scene Graph             | :x:                | 2D Object Abstraction  | :x:                | 3D Object Abstraction  | :x:                | 
-| 2D-3D Switch            | :x:                | 2D Object Transforms   | :x:                | 3D Object Transforms   | :x:                |
+| 2D-3D Switch            | :heavy_check_mark: | 2D Object Transforms   | :x:                | 3D Object Transforms   | :x:                |
 |                         |                    | 2D Lighting            | :x:                | 3D Lighting            | :x:                |
 |                         |                    | Batch Renderer         | :x:                | Batch Renderer         | :x:                |
 | Post Processing         | :x:                | Sprite Sheet Generator | :heavy_check_mark: |                        |                    |

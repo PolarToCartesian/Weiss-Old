@@ -90,6 +90,7 @@
 #undef _WINSOCKAPI_
 #undef _WINSOCK_DEPRECATED_NO_WARNINGS
 #undef NOMINMAX
+#undef GetObject
 
 class WeissException : public std::exception {  };
 
@@ -850,48 +851,18 @@ LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARA
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
-constexpr const size_t WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE      = 1024u;
-constexpr const size_t WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER  = 600u;
-constexpr const size_t WEISS_MAX_VERTICES_PER_BATCH_VERTEX_BUFFER   = 3u * WEISS_MAX_TRIANGLES_PER_BATCH_VERTEX_BUFFER;
-constexpr const size_t WEISS_NO_RESOURCE_INDEX                      = std::numeric_limits<size_t>::max();
+constexpr const size_t WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE = 1024u;
+constexpr const size_t WEISS_NO_RESOURCE_INDEX                 = std::numeric_limits<size_t>::max();
 
 constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0u;
 constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_SLOT  = 0u;
+constexpr const size_t WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_INDEX = 1u;
+constexpr const size_t WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_SLOT  = 1u;
 
-constexpr const size_t WEISS_LIGHTING_CONSTANT_BUFFER_IN_VS_INDEX = 1u;
-constexpr const size_t WEISS_LIGHTING_CONSTANT_BUFFER_IN_VS_SLOT  = 1u;
-
-constexpr const uint32_t WEISS_COLORED_BATCH_RENDERER_2D_FLAG_APPLY_TRANSFORM = 1u << 0u;
-constexpr const uint32_t WEISS_COLORED_BATCH_RENDERER_2D_FLAG_APPLY_LIGHTING  = 1u << 1u;
-
-constexpr const uint32_t WEISS_COLORED_BATCH_RENDERER_2D_ALL_FLAGS = WEISS_COLORED_BATCH_RENDERER_2D_FLAG_APPLY_TRANSFORM | WEISS_COLORED_BATCH_RENDERER_2D_FLAG_APPLY_LIGHTING;
+constexpr const size_t WEISS_DIFFUSE_VERTEX_SHADER_INDEX = 0u;
+constexpr const size_t WEISS_DIFFUSE_PIXEL_SHADER_INDEX  = 0u;
 
 constexpr const uint16_t WEISS_SPRITE_SHEET_SIDE_LENGTH = 1024u; // 2^10
-
-constexpr const char* WEISS_COLORED_BATCH_2D_RENDERER_VS_SOURCE = ""
-"cbuffer cbuff0 { matrix transform; }\n"
-"cbuffer cbuff1 { float4 ambiant; }\n"
-"struct VSoutput { float4 out_color : Color; float4 out_positionSV : SV_Position; };\n"
-"VSoutput main(float2 in_position : Position, float4 in_color : Color, uint in_flags : Flags) {"
-	"VSoutput output;\n"
-	"output.out_color = in_color;\n"
-	"output.out_positionSV = float4(in_position, 0.0f, 1.0f);\n"
-	"if ((in_flags & 2) > 0) { output.out_color = output.out_color + ambiant; }\n"
-	"if ((in_flags & 1) > 0) { output.out_positionSV = mul(output.out_positionSV, transform); }\n"
-	"return output;\n"
-"}";
-
-constexpr const char* WEISS_COLORED_BATCH_2D_RENDERER_PS_SOURCE = ""
-"float4 main(float4 color : Color) : SV_TARGET {"
-	"return color;\n"
-"}";
-
-const std::vector<std::pair<const char*, DXGI_FORMAT>> WEISS_COLORED_BATCH_2D_RENDERER_IEDS =
-{
-	{ "Position", DXGI_FORMAT::DXGI_FORMAT_R32G32_FLOAT   },
-	{ "Color",    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM },
-	{ "Flags",    DXGI_FORMAT::DXGI_FORMAT_R32_UINT       },
-};
 
 struct Drawable
 {
@@ -1289,8 +1260,8 @@ public:
 
 class ShaderManager {
 protected:
-	std::vector<PixelShader>  m_pixelShaders;
-	std::vector<VertexShader> m_vertexShaders;
+	std::vector<std::unique_ptr<PixelShader>>  m_pPixelShaders;
+	std::vector<std::unique_ptr<VertexShader>> m_pVertexShaders;
 
 private:
 	DeviceInfo* m_deviceInfo = nullptr;
@@ -1309,26 +1280,26 @@ public:
 
 	[[nodiscard]] size_t CreatePixelShader(const char* sourceFilename)
     {
-        this->m_pixelShaders.emplace_back(*this->m_deviceInfo, sourceFilename);
+        this->m_pPixelShaders.emplace_back(std::make_unique<PixelShader>(*this->m_deviceInfo, sourceFilename));
 
-        return this->m_pixelShaders.size() - 1u;
+        return this->m_pPixelShaders.size() - 1u;
     }
 
 	[[nodiscard]] size_t CreateVertexShader(const std::vector<std::pair<const char*, DXGI_FORMAT>>& ieds, const char* sourceFilename)
     {
-        this->m_vertexShaders.emplace_back(*this->m_deviceInfo, ieds, sourceFilename);
+        this->m_pVertexShaders.emplace_back(std::make_unique<VertexShader>(*this->m_deviceInfo, ieds, sourceFilename));
 
-        return this->m_vertexShaders.size() - 1u;
+        return this->m_pVertexShaders.size() - 1u;
     }
 
 	[[nodiscard]] PixelShader& GetPixelShader(const size_t index) noexcept
     {
-        return this->m_pixelShaders[index];
+        return *this->m_pPixelShaders[index];
     }
 
 	[[nodiscard]] VertexShader& GetVertexShader(const size_t index) noexcept
     {
-        return this->m_vertexShaders[index];
+        return *this->m_pVertexShaders[index];
     }
 };
 
@@ -1952,11 +1923,13 @@ public:
     {
         Drawable& drawable = this->drawables[drawableIndex];
 
+		if (drawable.vertexShaderIndex == WEISS_NO_RESOURCE_INDEX) return;
+		if (drawable.pixelShaderIndex == WEISS_NO_RESOURCE_INDEX) return;
         if (drawable.vertexBufferIndex == WEISS_NO_RESOURCE_INDEX) return;
 
-        this->m_vertexBuffers[drawable.vertexBufferIndex].Bind();
-        this->m_vertexShaders[drawable.vertexShaderIndex].Bind();
-        this->m_pixelShaders[drawable.pixelShaderIndex].Bind();
+        this->GetVertexBuffer(drawable.vertexBufferIndex).Bind();
+		this->GetVertexShader(drawable.vertexShaderIndex).Bind();
+        this->GetPixelShader(drawable.pixelShaderIndex).Bind();
 
         for (const std::string& textureName : drawable.textureNames)
             this->m_imageTexturePairs.at(textureName).textures[0]->Bind();
@@ -2260,30 +2233,6 @@ public:
     }
 };
 
-struct Material {
-	const char* textureName = nullptr;
-	Coloru8 diffuseColor{ 255,255,255,255 };
-	float reflectivity = 0.5f;
-};
-
-class MaterialManager {
-private:
-	std::unordered_map<std::string, Material> m_materials;
-
-public:
-	void InitMaterialManager() noexcept { }
-
-	void AddMaterial(const std::string& materialName, const Material& material) noexcept
-	{
-		this->m_materials.insert({ materialName, material });
-	}
-
-	[[nodiscard]] Material& GetMaterial(const std::string& materialName) noexcept
-	{
-		return this->m_materials.at(materialName);
-	}
-};
-
 class HighLevelRendererException : std::exception { };
 
 struct HighLevelRenderer2DDescriptor
@@ -2302,19 +2251,109 @@ struct HighLevelRendererDescriptor
 	const HighLevelRenderer3DDescriptor renderer3DDesc;
 };
 
+struct Transform {
+	Vec3f translation { 0.f, 0.f, 0.f };
+	Vec3f rotation    { 0.f, 0.f, 0.f };
+
+	float scaling = 1.f;
+
+	DirectX::XMMATRIX GetMatrix() const noexcept
+	{
+		return DirectX::XMMatrixScaling(scaling, scaling, scaling)
+			 * DirectX::XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z)
+			 * DirectX::XMMatrixTranslation(translation.x, translation.y, translation.z);
+	}
+
+	DirectX::XMMATRIX GetTransposed() const noexcept
+	{
+		return DirectX::XMMatrixTranspose(this->GetMatrix());
+	}
+};
+
+struct DiffuseVertex {
+	Vec3f position;
+	Coloru8 color;
+};
+
+template <typename T = DiffuseVertex>
+struct Object : public Drawable {
+public:
+	Transform transform;
+	std::vector<T> vertices;
+
+	size_t drawableIndex = WEISS_NO_RESOURCE_INDEX;
+
+public:
+	Object(BufferManager* pBufferManger, std::vector<T> v)
+		: vertices(v) 
+	{
+		this->vertexShaderIndex = WEISS_DIFFUSE_VERTEX_SHADER_INDEX;
+		this->pixelShaderIndex  = WEISS_DIFFUSE_PIXEL_SHADER_INDEX;
+		this->vertexBufferIndex = pBufferManger->CreateVertexBuffer(vertices, true);
+	}
+};
+
 class HighLevelRenderer : public LowLevelRenderer
 {
 private:
 	Window* m_window;
 
+	std::vector<Object<DiffuseVertex>> m_objects;
+
 	OrthographicCamera* m_orthographicCamera = nullptr;
 	PerspectiveCamera*  m_perspectiveCamera  = nullptr;
 
 private:
+	void InitializeHighLevelRendererCommon()
+	{
+		const DirectX::XMMATRIX identityMatrix = DirectX::XMMatrixIdentity();
+
+		if (this->CreateConstantBuffer(ShaderBindingType::VERTEX, &identityMatrix, sizeof(DirectX::XMMATRIX), WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_SLOT, 0u) != WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("Could Not Create Default Constant Buffer #0 In Target Position");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw HighLevelRendererException();
+		}
+
+		if (this->CreateConstantBuffer(ShaderBindingType::VERTEX, &identityMatrix, sizeof(DirectX::XMMATRIX), WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_SLOT, 0u) != WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_INDEX)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("Could Not Create Default Constant Buffer #1 In Target Position");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw HighLevelRendererException();
+		}
+
+		std::vector<std::pair<const char*, DXGI_FORMAT>> ieds{
+			{ "POSITION", DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT },
+			{ "COLOR",    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM }
+		};
+
+		if (this->CreateVertexShader(ieds, "engine/vs_diffuse.hlsl") != WEISS_DIFFUSE_VERTEX_SHADER_INDEX)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("Could Not Create Default Vertex Shader #0 In Target Position");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw HighLevelRendererException();
+		}
+
+		if (this->CreatePixelShader("engine/ps_diffuse.hlsl") != WEISS_DIFFUSE_PIXEL_SHADER_INDEX)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("Could Not Create Default Pixel Shader #0 In Target Position");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw HighLevelRendererException();
+		}
+	}
+
 	void InitializeHighLevelRenderer2D(const HighLevelRenderer2DDescriptor& desc)
     {
         this->m_orthographicCamera = new OrthographicCamera(*this->m_window, desc.orthographicCameraDesc);
-    }
+	}
 
 	void InitializeHighLevelRenderer3D(const HighLevelRenderer3DDescriptor& desc)
     {
@@ -2334,17 +2373,12 @@ public:
 
         this->InitializeLowLevelRenderer(this->m_window);
 
-        if (this->CreateConstantBuffer(ShaderBindingType::VERTEX, nullptr, sizeof(DirectX::XMMATRIX), WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_SLOT, 0u) != WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX)
-        {
-    #ifdef __WEISS_SHOW_DEBUG_ERRORS
-            MESSAGE_BOX_ERROR("Could Not Create Default Constant Buffer #0 In Target Position");
-    #endif // __WEISS_SHOW_DEBUG_ERRORS
-
-            throw HighLevelRendererException();
-        }
-
-        this->GetCameraConstantBuffer().Bind();
         this->TurnZBufferOn();
+
+		this->InitializeHighLevelRendererCommon();
+
+		this->GetConstantBuffer(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX).Bind();
+		this->GetConstantBuffer(WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_INDEX).Bind();
 
         this->InitializeHighLevelRenderer2D(desc.renderer2DDesc);
         this->InitializeHighLevelRenderer3D(desc.renderer3DDesc);
@@ -2357,10 +2391,36 @@ public:
         this->m_pDeviceContext->ClearRenderTargetView(this->m_pRenderTarget.Get(), (float*)&colorf);
     }
 
-	void UpdateCameraConstantBuffer(const Camera* cameraPtr) noexcept
+	void UseOrthographicCamera() noexcept
     {
-        this->GetCameraConstantBuffer().SetData(&cameraPtr->GetTransposedTransform());
+        this->GetOrthographicCamera().CalculateTransform();
+        this->GetCameraConstantBuffer().SetData(&this->GetOrthographicCamera().GetTransposedTransform());
     }
+	
+    void UsePerspectiveCamera() noexcept
+    {
+        this->GetPerspectiveCamera().CalculateTransform();
+        this->GetCameraConstantBuffer().SetData(&this->GetPerspectiveCamera().GetTransposedTransform());
+    }
+
+	[[nodiscard]] size_t CreateObject(std::vector<DiffuseVertex> vertices) noexcept
+	{
+		this->m_objects.push_back(Object<DiffuseVertex>(this, vertices));
+
+		this->m_objects.back().drawableIndex = this->AddDrawable(this->m_objects.back());
+
+		return this->m_objects.size() - 1u;
+	}
+
+	Object<DiffuseVertex>& GetObject(const size_t objIndex) noexcept {
+		return this->m_objects[objIndex];
+	}
+
+	void DrawObject(const size_t objIndex) noexcept
+	{
+		this->GetConstantBuffer(WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_INDEX).SetData(&this->GetObject(objIndex).transform.GetTransposed());
+		this->Draw(this->GetObject(objIndex).drawableIndex);
+	}
 
 	[[nodiscard]] ConstantBuffer&     GetCameraConstantBuffer() noexcept { return this->GetConstantBuffer(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX); }
 	[[nodiscard]] HighLevelRenderer&  GetHighLevelRenderer()    noexcept { return *this; }
