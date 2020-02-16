@@ -2260,6 +2260,30 @@ public:
     }
 };
 
+struct Material {
+	const char* textureName = nullptr;
+	Coloru8 diffuseColor{ 255,255,255,255 };
+	float reflectivity = 0.5f;
+};
+
+class MaterialManager {
+private:
+	std::unordered_map<std::string, Material> m_materials;
+
+public:
+	void InitMaterialManager() noexcept { }
+
+	void AddMaterial(const std::string& materialName, const Material& material) noexcept
+	{
+		this->m_materials.insert({ materialName, material });
+	}
+
+	[[nodiscard]] Material& GetMaterial(const std::string& materialName) noexcept
+	{
+		return this->m_materials.at(materialName);
+	}
+};
+
 class HighLevelRendererException : std::exception { };
 
 struct HighLevelRenderer2DDescriptor

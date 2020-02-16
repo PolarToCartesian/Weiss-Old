@@ -25,12 +25,12 @@ Example : `cl Source.cpp /std:c++17 /link /SUBSYSTEM:WINDOWS`
 | Z-Buffer Creation         | :heavy_check_mark: | Keyboard Getters         | :heavy_check_mark: | HTTP Requests          | :x:                 |
 | | | | | HTTPS Requests | :x:
 
-| Renderer                | Status | 2D Renderer            | Status             | 3D Renderer            | Status             |
-| ----------------------- | ------ | ---------------------- | ------------------ | ---------------------- | ------------------ |
-| Material System         | :x:    | Orthographic Camera    | :heavy_check_mark: | Perspective Camera     | :heavy_check_mark: |
-| Scene Graph             | :x:    | 2D Object Abstraction  | :x:                | 3D Object Abstraction  | :x:                | 
-| 2D-3D Switch            | :x:    | 2D Object Transforms   | :x:                | 3D Object Transforms   | :x:                |
-|                         |        | 2D Lighting            | :x:                | 3D Lighting            | :x:                |
-|                         |        | Batch Renderer         | :x:                | Batch Renderer         | :x:                |
-| Post Processing         | :x:    | Sprite Sheet Generator | :heavy_check_mark: |                        |                    |
-| Multithreaded Rendering | :x:    | 2D Animation           | :x:                | 3D Animation           | :x:                |
+| Renderer                | Status             | 2D Renderer            | Status             | 3D Renderer            | Status             |
+| ----------------------- | ------------------ | ---------------------- | ------------------ | ---------------------- | ------------------ |
+| Material System         | :heavy_check_mark: | Orthographic Camera    | :heavy_check_mark: | Perspective Camera     | :heavy_check_mark: |
+| Scene Graph             | :x:                | 2D Object Abstraction  | :x:                | 3D Object Abstraction  | :x:                | 
+| 2D-3D Switch            | :x:                | 2D Object Transforms   | :x:                | 3D Object Transforms   | :x:                |
+|                         |                    | 2D Lighting            | :x:                | 3D Lighting            | :x:                |
+|                         |                    | Batch Renderer         | :x:                | Batch Renderer         | :x:                |
+| Post Processing         | :x:                | Sprite Sheet Generator | :heavy_check_mark: |                        |                    |
+| Multithreaded Rendering | :x:                | 2D Animation           | :x:                | 3D Animation           | :x:                |
