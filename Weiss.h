@@ -304,6 +304,12 @@ struct Coloru8
 	uint8_t alpha;
 };
 
+constexpr const Coloru8 COLOR_U8_RED   = Coloru8{ 255, 0,   0,   255 };
+constexpr const Coloru8 COLOR_U8_GREEN = Coloru8{ 0,   255, 0,   255 };
+constexpr const Coloru8 COLOR_U8_BLUE  = Coloru8{ 0,   0,   255, 255 };
+constexpr const Coloru8 COLOR_U8_WHITE = Coloru8{ 255, 255, 255, 255 };
+constexpr const Coloru8 COLOR_U8_BLACK = Coloru8{ 0,   0,   0,   255 };
+
 struct Colorf32
 {
 	float red;
@@ -311,6 +317,12 @@ struct Colorf32
 	float blue;
 	float alpha;
 };
+
+constexpr const Colorf32 COLOR_F32_RED   = Colorf32{ 1.f, 0.f, 0.f, 1.f };
+constexpr const Colorf32 COLOR_F32_GREEN = Colorf32{ 0.f, 1.f, 0.f, 1.f };
+constexpr const Colorf32 COLOR_F32_BLUE  = Colorf32{ 0.f, 0.f, 1.f, 1.f };
+constexpr const Colorf32 COLOR_F32_WHITE = Colorf32{ 1.f, 1.f, 1.f, 1.f };
+constexpr const Colorf32 COLOR_F32_BLACK = Colorf32{ 0.f, 0.f, 0.f, 1.f };
 
 class Timer {
 private:
@@ -856,8 +868,6 @@ constexpr const size_t WEISS_NO_RESOURCE_INDEX                 = std::numeric_li
 
 constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX = 0u;
 constexpr const size_t WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_SLOT  = 0u;
-constexpr const size_t WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_INDEX = 1u;
-constexpr const size_t WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_SLOT  = 1u;
 
 constexpr const size_t WEISS_DIFFUSE_VERTEX_SHADER_INDEX = 0u;
 constexpr const size_t WEISS_DIFFUSE_PIXEL_SHADER_INDEX  = 0u;
@@ -1486,7 +1496,14 @@ public:
         samplerDescriptor.MaxLOD = D3D11_FLOAT32_MAX;
 
         this->m_deviceInfo.m_pDevice->CreateSamplerState(&samplerDescriptor, &this->m_pSamplerState);
-    }
+	}
+
+	~TextureSampler()
+	{
+
+	}
+
+	[[nodiscard]] TextureSamplerDescriptor GetDescriptor() const noexcept { return this->m_descriptor; }
 
 	void Bind() const noexcept
     {
@@ -1571,6 +1588,8 @@ public:
             this->m_deviceInfo.m_pDeviceContext->GenerateMips(this->m_pResource.Get());
     }
 
+	[[nodiscard]] Texture2DSettings GetSettings() const noexcept { return this->m_settings; }
+
 	virtual void Bind() const noexcept override
     {
         if (this->m_settings.bindingType == ShaderBindingType::VERTEX || this->m_settings.bindingType == ShaderBindingType::BOTH)
@@ -1604,21 +1623,28 @@ protected:
 public:
 	~TextureManager()
     {
+		for (auto& pair : this->m_imageTexturePairs)
+			for (const Texture2D* texturePtr : pair.second.textures)
+				delete texturePtr;
+
         delete this->m_deviceInfo;
     }
 
 	template <typename T>
-	void GenerateTexture(const std::string& textureName, const size_t textureIndex = 0u)
+	void GenerateTextures(const std::string& textureName)
 	{
 		ImageTexturePair& pair = this->m_imageTexturePairs[textureName];
 		Texture2DDescriptor t2dd{ pair.settings, std::get<T>(pair.image) };
+		
+		for (Texture2D* texturePtr : pair.textures)
+			delete texturePtr;
 
-		delete pair.textures[textureIndex];
-		pair.textures[textureIndex] = new Texture2D(*this->m_deviceInfo, t2dd);
+		pair.textures.clear();
+		pair.textures.push_back(new Texture2D(*this->m_deviceInfo, t2dd));
 	}
 
 	template <typename T>
-	[[nodiscard]] void AddImageResource(const std::string& textureName, const Texture2DSettings& settings, const T& image)
+	void AddImageResource(const std::string& textureName, const Texture2DSettings& settings, const T& image)
 	{
 		Texture2DDescriptor t2dd{ settings, image };
 		ImageTexturePair itp = { image, settings };
@@ -1932,7 +1958,8 @@ public:
         this->GetPixelShader(drawable.pixelShaderIndex).Bind();
 
         for (const std::string& textureName : drawable.textureNames)
-            this->m_imageTexturePairs.at(textureName).textures[0]->Bind();
+			for (const Texture2D* texturePtr : this->m_imageTexturePairs.at(textureName).textures)
+				texturePtr->Bind();
 
         for (const size_t textureSamplerIndex : drawable.textureSamplerIndices)
             this->m_textureSamplers[textureSamplerIndex].Bind();
@@ -2233,6 +2260,37 @@ public:
     }
 };
 
+struct Material {
+	Coloru8 m_diffuseColor    = COLOR_U8_WHITE;
+	const char* m_textureName = nullptr;
+
+	Material(const Coloru8& diffuseColor)
+		: m_diffuseColor(diffuseColor)
+	{ }
+
+	Material(const char* textureName)
+		: m_textureName(textureName)
+	{ }
+
+	inline bool isColored()  const noexcept { return this->m_textureName == nullptr; }
+	inline bool isTextured() const noexcept { return this->m_textureName != nullptr; }
+};
+
+class MaterialManager {
+protected:
+	std::unordered_map<std::string, Material> m_materials;
+
+public:
+	void AddMaterial(const std::string& materialName, const Material& material) noexcept
+	{
+		this->m_materials.insert({ materialName, material });
+	}
+
+	[[nodiscard]] Material& GetMaterial(const std::string& materialName) noexcept {
+		return this->m_materials.at(materialName);
+	}
+};
+
 class HighLevelRendererException : std::exception { };
 
 struct HighLevelRenderer2DDescriptor
@@ -2270,35 +2328,10 @@ struct Transform {
 	}
 };
 
-struct DiffuseVertex {
-	Vec3f position;
-	Coloru8 color;
-};
-
-template <typename T = DiffuseVertex>
-struct Object : public Drawable {
-public:
-	Transform transform;
-	std::vector<T> vertices;
-
-	size_t drawableIndex = WEISS_NO_RESOURCE_INDEX;
-
-public:
-	Object(BufferManager* pBufferManger, std::vector<T> v)
-		: vertices(v) 
-	{
-		this->vertexShaderIndex = WEISS_DIFFUSE_VERTEX_SHADER_INDEX;
-		this->pixelShaderIndex  = WEISS_DIFFUSE_PIXEL_SHADER_INDEX;
-		this->vertexBufferIndex = pBufferManger->CreateVertexBuffer(vertices, true);
-	}
-};
-
 class HighLevelRenderer : public LowLevelRenderer
 {
 private:
 	Window* m_window;
-
-	std::vector<Object<DiffuseVertex>> m_objects;
 
 	OrthographicCamera* m_orthographicCamera = nullptr;
 	PerspectiveCamera*  m_perspectiveCamera  = nullptr;
@@ -2312,38 +2345,6 @@ private:
 		{
 #ifdef __WEISS_SHOW_DEBUG_ERRORS
 			MESSAGE_BOX_ERROR("Could Not Create Default Constant Buffer #0 In Target Position");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-			throw HighLevelRendererException();
-		}
-
-		if (this->CreateConstantBuffer(ShaderBindingType::VERTEX, &identityMatrix, sizeof(DirectX::XMMATRIX), WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_SLOT, 0u) != WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_INDEX)
-		{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-			MESSAGE_BOX_ERROR("Could Not Create Default Constant Buffer #1 In Target Position");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-			throw HighLevelRendererException();
-		}
-
-		std::vector<std::pair<const char*, DXGI_FORMAT>> ieds{
-			{ "POSITION", DXGI_FORMAT::DXGI_FORMAT_R32G32B32_FLOAT },
-			{ "COLOR",    DXGI_FORMAT::DXGI_FORMAT_R8G8B8A8_UNORM }
-		};
-
-		if (this->CreateVertexShader(ieds, "engine/vs_diffuse.hlsl") != WEISS_DIFFUSE_VERTEX_SHADER_INDEX)
-		{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-			MESSAGE_BOX_ERROR("Could Not Create Default Vertex Shader #0 In Target Position");
-#endif // __WEISS_SHOW_DEBUG_ERRORS
-
-			throw HighLevelRendererException();
-		}
-
-		if (this->CreatePixelShader("engine/ps_diffuse.hlsl") != WEISS_DIFFUSE_PIXEL_SHADER_INDEX)
-		{
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-			MESSAGE_BOX_ERROR("Could Not Create Default Pixel Shader #0 In Target Position");
 #endif // __WEISS_SHOW_DEBUG_ERRORS
 
 			throw HighLevelRendererException();
@@ -2378,7 +2379,6 @@ public:
 		this->InitializeHighLevelRendererCommon();
 
 		this->GetConstantBuffer(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX).Bind();
-		this->GetConstantBuffer(WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_INDEX).Bind();
 
         this->InitializeHighLevelRenderer2D(desc.renderer2DDesc);
         this->InitializeHighLevelRenderer3D(desc.renderer3DDesc);
@@ -2402,25 +2402,6 @@ public:
         this->GetPerspectiveCamera().CalculateTransform();
         this->GetCameraConstantBuffer().SetData(&this->GetPerspectiveCamera().GetTransposedTransform());
     }
-
-	[[nodiscard]] size_t CreateObject(std::vector<DiffuseVertex> vertices) noexcept
-	{
-		this->m_objects.push_back(Object<DiffuseVertex>(this, vertices));
-
-		this->m_objects.back().drawableIndex = this->AddDrawable(this->m_objects.back());
-
-		return this->m_objects.size() - 1u;
-	}
-
-	Object<DiffuseVertex>& GetObject(const size_t objIndex) noexcept {
-		return this->m_objects[objIndex];
-	}
-
-	void DrawObject(const size_t objIndex) noexcept
-	{
-		this->GetConstantBuffer(WEISS_OBJECT_TRANSFORM_CONSTANT_BUFFER_INDEX).SetData(&this->GetObject(objIndex).transform.GetTransposed());
-		this->Draw(this->GetObject(objIndex).drawableIndex);
-	}
 
 	[[nodiscard]] ConstantBuffer&     GetCameraConstantBuffer() noexcept { return this->GetConstantBuffer(WEISS_CAMERA_TRANSFORM_CONSTANT_BUFFER_INDEX); }
 	[[nodiscard]] HighLevelRenderer&  GetHighLevelRenderer()    noexcept { return *this; }
