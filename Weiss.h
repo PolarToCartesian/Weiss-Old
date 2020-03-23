@@ -42,15 +42,100 @@
 #ifndef __WEISS__
 #define __WEISS__
 
-#ifndef _WIN32
-#error Weiss Is Windows Only! (for now)
-#endif // _WIN32
+#ifdef _WIN32
 
-#define _WINSOCKAPI_ // Stops Windows.h from including winsock2
-#define _WINSOCK_DEPRECATED_NO_WARNINGS // Lets us use htons()
-#define NOMINMAX // Stops The Importing Of min() And max() From Windef.h
+	#define __WEISS__OS_WINDOWS
 
-#include <wrl.h>
+	#ifdef _WIN64
+		#define __WEISS__PLATFORM_X64
+
+	#else // End Of #ifdef _WIN64
+		#define __WEISS__PLATFORM_X86
+	#endif
+
+	#define _WINSOCKAPI_ // Stops Windows.h from including winsock2
+	#define _WINSOCK_DEPRECATED_NO_WARNINGS // Lets us use htons()
+	#define NOMINMAX // Stops The Importing Of min() And max() From Windef.h
+
+	// Windows Includes
+	#include <wrl.h>
+	#include <strsafe.h>
+	#include <Windows.h>
+	
+	// Windows Networking Includes
+	#include <winhttp.h>
+	#include <winsock2.h>
+	#include <ws2tcpip.h>
+
+	// Windows Image Includes
+	#include <wincodec.h>
+
+	// Windows DirectX 11 Includes
+	#include <d3d11.h>
+	#include <windowsx.h>
+	#include <d3dcompiler.h>
+	#include <DirectXMath.h>
+
+	// Windows Vulkan Includes
+	#define VK_USE_PLATFORM_WIN32_KHR
+
+	// Linking
+	#pragma comment (lib, "winmm.lib")
+	#pragma comment (lib, "d3d11.lib")
+	#pragma comment (lib, "user32.lib")
+	#pragma comment (lib, "Ws2_32.lib")
+	#pragma comment (lib, "Mswsock.lib")
+	#pragma comment (lib, "winhttp.lib")
+	#pragma comment (lib, "kernel32.lib")
+	#pragma comment (lib, "AdvApi32.lib")
+	#pragma comment (lib, "D3DCompiler.lib")
+	#pragma comment (lib, "windowscodecs.lib")
+
+	#undef _WINSOCKAPI_
+	#undef _WINSOCK_DEPRECATED_NO_WARNINGS
+	#undef NOMINMAX
+
+#elif defined __APPLE__
+
+	#include <TargetConditionals.h>
+
+	#ifdef TARGET_OS_OSX
+	
+		#define __WEISS__OS_OSX
+
+	#else
+		#error The Weiss Engine Is Not Supported On Your Platform
+	#endif
+
+	//#if TARGET_IPHONE_SIMULATOR
+	//#elif TARGET_OS_IPHONE
+	//#elif TARGET_OS_MAC
+
+#elif defined __linux__
+	
+	#define __WEISS__OS_LINUX
+
+	#ifdef __ANDROID__
+		#define __WEISS__OS_ANDROID
+	#endif
+
+	#include <sys/types.h>
+	#include <sys/socket.h>
+	#include <netinet/in.h>
+	#include <netdb.h> 
+
+#else
+	#error The Weiss Engine Is Not Supported On Your Platform
+#endif
+
+// Vulkan Includes
+#include <vulkan/vulkan.h>
+
+#pragma comment(lib, "vulkan-1.lib")
+
+// Standard C++17 Library Includes
+
+#include <list>
 #include <array>
 #include <thread>
 #include <chrono>
@@ -58,39 +143,13 @@
 #include <vector>
 #include <memory>
 #include <variant>
-#include <d3d11.h>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <optional>
 #include <exception>
-#include <strsafe.h>
-#include <Windows.h>
 #include <algorithm>
-#include <winhttp.h>
 #include <functional>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <wincodec.h>
-#include <windowsx.h>
-#include <d3dcompiler.h>
-#include <DirectXMath.h>
-
-#pragma comment (lib, "winmm.lib")
-#pragma comment (lib, "d3d11.lib")
-#pragma comment (lib, "user32.lib")
-#pragma comment (lib, "Ws2_32.lib")
-#pragma comment (lib, "Mswsock.lib")
-#pragma comment (lib, "winhttp.lib")
-#pragma comment (lib, "kernel32.lib")
-#pragma comment (lib, "AdvApi32.lib")
-#pragma comment (lib, "D3DCompiler.lib")
-#pragma comment (lib, "windowscodecs.lib")
-
-#undef _WINSOCKAPI_
-#undef _WINSOCK_DEPRECATED_NO_WARNINGS
-#undef NOMINMAX
-#undef GetObject
 
 class WeissException : public std::exception {  };
 
@@ -2260,34 +2319,22 @@ public:
     }
 };
 
-struct Material {
-	Coloru8 m_diffuseColor    = COLOR_U8_WHITE;
-	const char* m_textureName = nullptr;
+struct Transform {
+	Vec3f translation { 0.f, 0.f, 0.f };
+	Vec3f rotation    { 0.f, 0.f, 0.f };
 
-	Material(const Coloru8& diffuseColor)
-		: m_diffuseColor(diffuseColor)
-	{ }
+	float scaling = 1.f;
 
-	Material(const char* textureName)
-		: m_textureName(textureName)
-	{ }
-
-	inline bool isColored()  const noexcept { return this->m_textureName == nullptr; }
-	inline bool isTextured() const noexcept { return this->m_textureName != nullptr; }
-};
-
-class MaterialManager {
-protected:
-	std::unordered_map<std::string, Material> m_materials;
-
-public:
-	void AddMaterial(const std::string& materialName, const Material& material) noexcept
+	DirectX::XMMATRIX GetMatrix() const noexcept
 	{
-		this->m_materials.insert({ materialName, material });
+		return DirectX::XMMatrixScaling(scaling, scaling, scaling)
+			 * DirectX::XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z)
+			 * DirectX::XMMatrixTranslation(translation.x, translation.y, translation.z);
 	}
 
-	[[nodiscard]] Material& GetMaterial(const std::string& materialName) noexcept {
-		return this->m_materials.at(materialName);
+	DirectX::XMMATRIX GetTransposed() const noexcept
+	{
+		return DirectX::XMMatrixTranspose(this->GetMatrix());
 	}
 };
 
@@ -2307,25 +2354,6 @@ struct HighLevelRendererDescriptor
 {
 	const HighLevelRenderer2DDescriptor renderer2DDesc;
 	const HighLevelRenderer3DDescriptor renderer3DDesc;
-};
-
-struct Transform {
-	Vec3f translation { 0.f, 0.f, 0.f };
-	Vec3f rotation    { 0.f, 0.f, 0.f };
-
-	float scaling = 1.f;
-
-	DirectX::XMMATRIX GetMatrix() const noexcept
-	{
-		return DirectX::XMMatrixScaling(scaling, scaling, scaling)
-			 * DirectX::XMMatrixRotationRollPitchYaw(rotation.x, rotation.y, rotation.z)
-			 * DirectX::XMMatrixTranslation(translation.x, translation.y, translation.z);
-	}
-
-	DirectX::XMMATRIX GetTransposed() const noexcept
-	{
-		return DirectX::XMMatrixTranspose(this->GetMatrix());
-	}
 };
 
 class HighLevelRenderer : public LowLevelRenderer
