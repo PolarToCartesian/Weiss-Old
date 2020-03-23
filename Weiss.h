@@ -95,6 +95,16 @@
 	#undef _WINSOCK_DEPRECATED_NO_WARNINGS
 	#undef NOMINMAX
 
+	// Windows Macros
+	#define MESSAGE_BOX_ERROR(errorMsg) {\
+		MessageBox(NULL, (std::string("Error in File: ") + std::string(__FILE__) + std::string("\nAt line: ") + std::to_string(__LINE__) + std::string("\nIn Function: ") + std::string(__FUNCTION__) + std::string("\nError: ") + std::string(errorMsg)).c_str(), "Weiss Engine Error", MB_ABORTRETRYIGNORE);\
+	}
+
+	#define ENABLE_CONSOLE() {\
+		AllocConsole();\
+		freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);\
+	}
+
 #elif defined __APPLE__
 
 	#include <TargetConditionals.h>
@@ -151,140 +161,236 @@
 #include <algorithm>
 #include <functional>
 
+// Universal Macros
+#define CHECK_BIT(var,pos) ((var) & ( 1 << (pos)))
+
+// Default Exceptions
 class WeissException : public std::exception {  };
 
+// Math
 template <typename T>
 struct Vector2D
 {
 	T x;
 	T y;
+
+	Vector2D() {}
+
+	template <typename K>
+	Vector2D(const K& n) : x(static_cast<T>(n)), y(static_cast<T>(n)) {}
+
+	template <typename K, typename L>
+	Vector2D(const K& x, const L& y) : x(static_cast<T>(x)), y(static_cast<T>(y)) {}
 	
 	template <typename K>
-	void operator+=(const Vector2D<K>& v) { this->x += v.x; this->y += v.y; }
+	inline void operator+=(const Vector2D<K>& v) { this->x += v.x; this->y += v.y; }
 
 	template <typename K>
-	void operator-=(const Vector2D<K>& v) { this->x -= v.x; this->y -= v.y; }
+	inline void operator-=(const Vector2D<K>& v) { this->x -= v.x; this->y -= v.y; }
 
 	template <typename K>
-	void operator*=(const Vector2D<K>& v) { this->x *= v.x; this->y *= v.y; }
+	inline void operator*=(const Vector2D<K>& v) { this->x *= v.x; this->y *= v.y; }
 
 	template <typename K>
-	void operator/=(const Vector2D<K>& v) { this->x /= v.x; this->y /= v.y; }
+	inline void operator/=(const Vector2D<K>& v) { this->x /= v.x; this->y /= v.y; }
 
 	template <typename K>
-	void operator+=(const K& n) { this->x += n; this->y += n; }
+	inline void operator+=(const K& n) { this->x += n; this->y += n; }
 
 	template <typename K>
-	void operator-=(const K& n) { this->x -= n; this->y -= n; }
+	inline void operator-=(const K& n) { this->x -= n; this->y -= n; }
 
 	template <typename K>
-	void operator*=(const K& n) { this->x *= n; this->y *= n; }
+	inline void operator*=(const K& n) { this->x *= n; this->y *= n; }
 
 	template <typename K>
-	void operator/=(const K& n) { this->x /= n; this->y /= n; }
+	inline void operator/=(const K& n) { this->x /= n; this->y /= n; }
 
 	template<typename K>
-	bool operator==(const Vector2D<K>& v) { return this->x == v.x && this->y == v.y; }
+	[[nodiscard]] inline bool operator==(const Vector2D<K>& v) { return this->x == v.x && this->y == v.y; }
 
 	template<typename K>
-	bool operator!=(const Vector2D<K>& v) { return this->x != v.x || this->y != v.y; }
+	[[nodiscard]] inline bool operator!=(const Vector2D<K>& v) { return this->x != v.x || this->y != v.y; }
 };
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Vector2D<T>& v)
+inline std::ostream& operator<<(std::ostream& os, const Vector2D<T>& v)
 {
 	os << '(' << v.x << ", " << v.y << ")";
 	return os;
 }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator+(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x + b.x, a.y + b.y }; }
+[[nodiscard]] inline Vector2D<T> operator+(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x + b.x, a.y + b.y }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator-(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x - b.x, a.y - b.y }; }
+[[nodiscard]] inline Vector2D<T> operator-(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x - b.x, a.y - b.y }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator*(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x * b.x, a.y * b.y }; }
+[[nodiscard]] inline Vector2D<T> operator*(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x * b.x, a.y * b.y }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator/(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x / b.x, a.y / b.y }; }
+[[nodiscard]] inline Vector2D<T> operator/(const Vector2D<T>& a, const Vector2D<K>& b) { return Vector2D<T>{ a.x / b.x, a.y / b.y }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator+(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x + n, v.y + n }; }
+[[nodiscard]] inline Vector2D<T> operator+(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x + n, v.y + n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator-(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x - n, v.y - n }; }
+[[nodiscard]] inline Vector2D<T> operator-(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x - n, v.y - n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator*(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x * n, v.y * n }; }
+[[nodiscard]] inline Vector2D<T> operator*(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x * n, v.y * n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector2D<T> operator/(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x / n, v.y / n }; }
+[[nodiscard]] inline Vector2D<T> operator/(const Vector2D<T>& v, const K& n) { return Vector2D<T>{ v.x / n, v.y / n }; }
 
 template <typename T>
 struct Vector3D : Vector2D<T>
 {
 	T z;
 
-	template <typename K>
-	void operator+=(const Vector3D<K>& v) { this->x += v.x; this->y += v.y; this->z += v.z; }
+	Vector3D() {}
 
 	template <typename K>
-	void operator-=(const Vector3D<K>& v) { this->x -= v.x; this->y -= v.y; this->z -= v.z; }
+	Vector3D(const K& n) : Vector2D<T>(n), z(static_cast<T>(n)) {}
+
+	template <typename K, typename L, typename M>
+	Vector3D(const K& x, const L& y, const M& z) : Vector2D<T>(x, y), z(static_cast<T>(z)) {}
 
 	template <typename K>
-	void operator*=(const Vector3D<K>& v) { this->x *= v.x; this->y *= v.y; this->z *= v.z; }
+	inline void operator+=(const Vector3D<K>& v) { this->x += v.x; this->y += v.y; this->z += v.z; }
 
 	template <typename K>
-	void operator/=(const Vector3D<K>& v) { this->x /= v.x; this->y /= v.y; this->z /= v.z; }
+	inline void operator-=(const Vector3D<K>& v) { this->x -= v.x; this->y -= v.y; this->z -= v.z; }
 
 	template <typename K>
-	void operator+=(const K& n) { this->x += n; this->y += n; this->z += n; }
+	inline void operator*=(const Vector3D<K>& v) { this->x *= v.x; this->y *= v.y; this->z *= v.z; }
 
 	template <typename K>
-	void operator-=(const K& n) { this->x -= n; this->y -= n; this->z -= n; }
+	inline void operator/=(const Vector3D<K>& v) { this->x /= v.x; this->y /= v.y; this->z /= v.z; }
 
 	template <typename K>
-	void operator*=(const K& n) { this->x *= n; this->y *= n; this->z *= n; }
+	inline void operator+=(const K& n) { this->x += n; this->y += n; this->z += n; }
 
 	template <typename K>
-	void operator/=(const K& n) { this->x /= n; this->y /= n; this->z /= n; }
+	inline void operator-=(const K& n) { this->x -= n; this->y -= n; this->z -= n; }
+
+	template <typename K>
+	inline void operator*=(const K& n) { this->x *= n; this->y *= n; this->z *= n; }
+
+	template <typename K>
+	inline void operator/=(const K& n) { this->x /= n; this->y /= n; this->z /= n; }
 
 	template<typename K>
-	bool operator==(const Vector3D<K>& v) { return this->x == v.x && this->y == v.y && this->z == v.z; }
+	[[nodiscard]] inline bool operator==(const Vector3D<K>& v) { return this->x == v.x && this->y == v.y && this->z == v.z; }
 
 	template<typename K>
-	bool operator!=(const Vector3D<K>& v) { return this->x != v.x || this->y != v.y || this->z != v.z; }
+	[[nodiscard]] inline bool operator!=(const Vector3D<K>& v) { return this->x != v.x || this->y != v.y || this->z != v.z; }
 };
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator+(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x + b.x, a.y + b.y, a.z + b.z }; }
+[[nodiscard]] inline Vector3D<T> operator+(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x + b.x, a.y + b.y, a.z + b.z }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator-(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x - b.x, a.y - b.y, a.z - b.z }; }
+[[nodiscard]] inline Vector3D<T> operator-(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x - b.x, a.y - b.y, a.z - b.z }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator*(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x * b.x, a.y * b.y, a.z * b.z }; }
+[[nodiscard]] inline Vector3D<T> operator*(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x * b.x, a.y * b.y, a.z * b.z }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator/(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x / b.x, a.y / b.y, a.z / b.z }; }
+[[nodiscard]] inline Vector3D<T> operator/(const Vector3D<T>& a, const Vector3D<K>& b) { return Vector3D<T>{ a.x / b.x, a.y / b.y, a.z / b.z }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator+(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x + n, v.y + n, v.z + n }; }
+[[nodiscard]] inline Vector3D<T> operator+(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x + n, v.y + n, v.z + n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator-(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x - n, v.y - n, v.z - n }; }
+[[nodiscard]] inline Vector3D<T> operator-(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x - n, v.y - n, v.z - n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator*(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x * n, v.y * n, v.z * n }; }
+[[nodiscard]] inline Vector3D<T> operator*(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x * n, v.y * n, v.z * n }; }
 
 template <typename T, typename K>
-[[nodiscard]] Vector3D<T> operator/(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x / n, v.y / n, v.z / n }; }
+[[nodiscard]] inline Vector3D<T> operator/(const Vector3D<T>& v, const K& n) { return Vector3D<T>{ v.x / n, v.y / n, v.z / n }; }
 
 template <typename T>
-std::ostream& operator<<(std::ostream& os, const Vector3D<T>& v)
+inline std::ostream& operator<<(std::ostream& os, const Vector3D<T>& v)
 {
 	os << '(' << v.x << ", " << v.y << ", " << v.z << ")";
+	return os;
+}
+
+template <typename T>
+struct Vector4D : Vector3D<T>
+{
+	T w;
+
+	Vector4D() {}
+
+	template <typename K>
+	Vector4D(const K& n) : Vector3D<T>(n), w(static_cast<T>(w)) {}
+
+	template <typename K, typename L, typename M, typename N>
+	Vector4D(const K& x, const L& y, const M& z, const N& w) : Vector3D<T>(x, y, z), w(static_cast<T>(w)) {}
+
+	template <typename K>
+	inline void operator+=(const Vector4D<K>& v) { this->x += v.x; this->y += v.y; this->z += v.z; this->w += v.w; }
+
+	template <typename K>
+	inline void operator-=(const Vector4D<K>& v) { this->x -= v.x; this->y -= v.y; this->z -= v.z; this->w -= v.w; }
+
+	template <typename K>
+	inline void operator*=(const Vector4D<K>& v) { this->x *= v.x; this->y *= v.y; this->z *= v.z; this->w *= v.w; }
+
+	template <typename K>
+	inline void operator/=(const Vector4D<K>& v) { this->x /= v.x; this->y /= v.y; this->z /= v.z; this->w /= v.w; }
+
+	template <typename K>
+	inline void operator+=(const K& n) { this->x += n; this->y += n; this->z += n; this->w += n; }
+
+	template <typename K>
+	inline void operator-=(const K& n) { this->x -= n; this->y -= n; this->z -= n; this->w -= n; }
+
+	template <typename K>
+	inline void operator*=(const K& n) { this->x *= n; this->y *= n; this->z *= n; this->w *= n; }
+
+	template <typename K>
+	inline void operator/=(const K& n) { this->x /= n; this->y /= n; this->z /= n; this->w /= n; }
+
+	template<typename K>
+	[[nodiscard]] inline bool operator==(const Vector4D<K>& v) { return this->x == v.x && this->y == v.y && this->z == v.z && this->w == v.w;; }
+
+	template<typename K>
+	[[nodiscard]] inline bool operator!=(const Vector4D<K>& v) { return this->x != v.x || this->y != v.y || this->z != v.z || this->w != v.w;; }
+};
+
+template <typename T, typename K>
+[[nodiscard]] inline Vector4D<T> operator+(const Vector4D<T>& a, const Vector4D<K>& b) { return Vector4D<T>{ a.x + b.x, a.y + b.y, a.z + b.z, a.w + b.w }; }
+
+template <typename T, typename K>
+[[nodiscard]] inline Vector4D<T> operator-(const Vector4D<T>& a, const Vector4D<K>& b) { return Vector4D<T>{ a.x - b.x, a.y - b.y, a.z - b.z, a.w - b.w }; }
+
+template <typename T, typename K>
+[[nodiscard]] inline Vector4D<T> operator*(const Vector4D<T>& a, const Vector4D<K>& b) { return Vector4D<T>{ a.x * b.x, a.y * b.y, a.z * b.z, a.w * b.w }; }
+
+template <typename T, typename K>
+[[nodiscard]] inline Vector4D<T> operator/(const Vector4D<T>& a, const Vector4D<K>& b) { return Vector4D<T>{ a.x / b.x, a.y / b.y, a.z / b.z, a.w / b.w }; }
+
+template <typename T, typename K>
+[[nodiscard]] inline Vector4D<T> operator+(const Vector4D<T>& v, const K& n) { return Vector4D<T>{ v.x + n, v.y + n, v.z + n, v.w + n }; }
+
+template <typename T, typename K>
+[[nodiscard]] inline Vector4D<T> operator-(const Vector4D<T>& v, const K& n) { return Vector4D<T>{ v.x - n, v.y - n, v.z - n, v.w - n }; }
+
+template <typename T, typename K>
+[[nodiscard]] inline Vector4D<T> operator*(const Vector4D<T>& v, const K& n) { return Vector4D<T>{ v.x * n, v.y * n, v.z * n, v.w * n }; }
+
+template <typename T, typename K>
+[[nodiscard]] inline Vector4D<T> operator/(const Vector4D<T>& v, const K& n) { return Vector4D<T>{ v.x / n, v.y / n, v.z / n, v.w / n }; }
+
+template <typename T>
+inline std::ostream& operator<<(std::ostream& os, const Vector4D<T>& v)
+{
+	os << '(' << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ")";
 	return os;
 }
 
@@ -307,6 +413,16 @@ typedef Vector3D<uint8_t>  Vec3u8;
 typedef Vector3D<uint16_t> Vec3u16;
 typedef Vector3D<uint32_t> Vec3u32;
 typedef Vector3D<uint64_t> Vec3u64;
+
+typedef Vector4D<float>    Vec4f;
+typedef Vector4D<int8_t>   Vec4i8;
+typedef Vector4D<int16_t>  Vec4i16;
+typedef Vector4D<int32_t>  Vec4i32;
+typedef Vector4D<int64_t>  Vec4i64;
+typedef Vector4D<uint8_t>  Vec4u8;
+typedef Vector4D<uint16_t> Vec4u16;
+typedef Vector4D<uint32_t> Vec4u32;
+typedef Vector4D<uint64_t> Vec4u64;
 
 constexpr float PI             = 3.14159265359f;
 constexpr float TWO_PI         = 2.0f * PI;
@@ -355,19 +471,40 @@ constexpr float QUARTER_TAU = HALF_PI;
 	};
 }
 
-struct Coloru8
+template <typename T, size_t R, size_t C>
+class Matrix
 {
-	uint8_t red;
-	uint8_t green;
-	uint8_t blue;
-	uint8_t alpha;
+	T m[R][C];
+
+	Matrix(const bool bIsIdentity = false)
+	{
+		if (bIsIdentity)
+			for (size_t r = 0u; r < R; r++)
+				for (size_t c = 0u; c < C; c++)
+					this->m[r][c] = 1.f;
+	}
+
+	[[nodiscard]] size_t GetRowCount() const noexcept { return R; }
+	[[nodiscard]] size_t GetColCount() const noexcept { return C; }
+
+	T* operator[](const size_t r) noexcept { return &this->m[r]; }
+	T& operator()(const size_t r, const size_t c) noexcept { return this->m[r][c]; }
 };
 
-constexpr const Coloru8 COLOR_U8_RED   = Coloru8{ 255, 0,   0,   255 };
-constexpr const Coloru8 COLOR_U8_GREEN = Coloru8{ 0,   255, 0,   255 };
-constexpr const Coloru8 COLOR_U8_BLUE  = Coloru8{ 0,   0,   255, 255 };
-constexpr const Coloru8 COLOR_U8_WHITE = Coloru8{ 255, 255, 255, 255 };
-constexpr const Coloru8 COLOR_U8_BLACK = Coloru8{ 0,   0,   0,   255 };
+// Colors
+struct Coloru8
+{
+	uint8_t red   = 0u;
+	uint8_t green = 0u;
+	uint8_t blue  = 0u;
+	uint8_t alpha = 0u;
+};
+
+constexpr const Coloru8 COLOR_U8_RED   = Coloru8{ 255u, 0u,   0u,   255u };
+constexpr const Coloru8 COLOR_U8_GREEN = Coloru8{ 0u,   255u, 0u,   255u };
+constexpr const Coloru8 COLOR_U8_BLUE  = Coloru8{ 0u,   0u,   255u, 255u };
+constexpr const Coloru8 COLOR_U8_WHITE = Coloru8{ 255u, 255u, 255u, 255u };
+constexpr const Coloru8 COLOR_U8_BLACK = Coloru8{ 0u,   0u,   0u,   255u };
 
 struct Colorf32
 {
@@ -383,6 +520,7 @@ constexpr const Colorf32 COLOR_F32_BLUE  = Colorf32{ 0.f, 0.f, 1.f, 1.f };
 constexpr const Colorf32 COLOR_F32_WHITE = Colorf32{ 1.f, 1.f, 1.f, 1.f };
 constexpr const Colorf32 COLOR_F32_BLACK = Colorf32{ 0.f, 0.f, 0.f, 1.f };
 
+// Timers
 class Timer {
 private:
 	std::chrono::high_resolution_clock::time_point m_start;
@@ -402,12 +540,45 @@ public:
     }
 };
 
+struct Rect { // basicly Window's RECT
+	uint16_t left = 0u;
+	uint16_t top = 0u;
+	uint16_t right = 0u;
+	uint16_t bottom = 0u;
+
+	Rect() { }
+
+	Rect(const RECT& rect)
+	{
+		this->left = static_cast<uint16_t>(rect.left);
+		this->top = static_cast<uint16_t>(rect.top);
+		this->right = static_cast<uint16_t>(rect.right);
+		this->bottom = static_cast<uint16_t>(rect.bottom);
+	}
+
+#ifdef __WEISS__OS_WINDOWS
+	operator RECT() const noexcept { return RECT{ left, top, right, bottom }; }
+#endif // __WEISS__OS_WINDOWS
+};
+
+// -------  -------
+
 class PeripheralDevice {
 public:
-	virtual void __OnWindowUpdateBegin() = 0;
-	virtual bool __HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) = 0;
-	virtual void __OnWindowUpdateEnd() = 0;
+	virtual void __OnWindowUpdateBegin() { }
+	virtual void __OnWindowUpdateEnd() { }
 };
+
+#ifdef __WEISS__OS_WINDOWS
+
+class WindowsPeripheralDevice : public PeripheralDevice {
+public:
+	virtual bool __HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) = 0;
+};
+
+#endif // __WEISS__OS_WINDOWS
+
+// -------  -------
 
 class MouseEventInterface {
 protected:
@@ -423,236 +594,252 @@ protected:
 	std::vector<std::function<void(const Vec2u16, const Vec2i16)>> m_onCursorMoveFunctors;
 
 public:
-	void OnLeftButtonUp   (const std::function<void(Vec2u16)>& functor)                      { this->m_onLeftButtonUpFunctors.push_back(functor);    }
-	void OnLeftButtonDown (const std::function<void(Vec2u16)>& functor)                      { this->m_onLeftButtonDownFunctors.push_back(functor);  }
-	void OnRightButtonUp  (const std::function<void(Vec2u16)>& functor)                      { this->m_onRightButtonUpFunctors.push_back(functor);   }
-	void OnRightButtonDown(const std::function<void(Vec2u16)>& functor)                      { this->m_onRightButtonDownFunctors.push_back(functor); }
-	void OnWheelTurn      (const std::function<void(const int16_t)>& functor)                { this->m_onWheelTurnFunctors.push_back(functor);       }
-	void OnMouseMove      (const std::function<void(const Vec2u16, const Vec2i16)>& functor) { this->m_onMouseMoveFunctors.push_back(functor);       }
-	void OnCursorMove     (const std::function<void(const Vec2u16, const Vec2i16)>& functor) { this->m_onCursorMoveFunctors.push_back(functor);      }
+	void OnLeftButtonUp(const std::function<void(Vec2u16)>& functor) { this->m_onLeftButtonUpFunctors.push_back(functor); }
+	void OnLeftButtonDown(const std::function<void(Vec2u16)>& functor) { this->m_onLeftButtonDownFunctors.push_back(functor); }
+	void OnRightButtonUp(const std::function<void(Vec2u16)>& functor) { this->m_onRightButtonUpFunctors.push_back(functor); }
+	void OnRightButtonDown(const std::function<void(Vec2u16)>& functor) { this->m_onRightButtonDownFunctors.push_back(functor); }
+	void OnWheelTurn(const std::function<void(const int16_t)>& functor) { this->m_onWheelTurnFunctors.push_back(functor); }
+	void OnMouseMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor) { this->m_onMouseMoveFunctors.push_back(functor); }
+	void OnCursorMove(const std::function<void(const Vec2u16, const Vec2i16)>& functor) { this->m_onCursorMoveFunctors.push_back(functor); }
 };
 
-class Mouse : PeripheralDevice, public MouseEventInterface {
-private:
+// -------  -------
+
+class Mouse : public MouseEventInterface {
+protected:
 	Vec2u16 m_position{ 0, 0 };
 	Vec2i16 m_deltaPosition{ 0, 0 };
 
 	int16_t m_wheelDelta = 0;
 
-	bool m_isLeftButtonDown  = false;
+	bool m_isLeftButtonDown = false;
 	bool m_isRightButtonDown = false;
 
-	bool m_wasMouseMovedDuringUpdate  = false;
+	bool m_wasMouseMovedDuringUpdate = false;
 	bool m_wasCursorMovedDuringUpdate = false;
 
 	bool m_isCursorInWindow = false;
 
 public:
-	Mouse()
-    {
-        RAWINPUTDEVICE mouseInputDevice;
-        mouseInputDevice.usUsagePage = 0x01;
-        mouseInputDevice.usUsage = 0x02;
-        mouseInputDevice.dwFlags = 0;
-        mouseInputDevice.hwndTarget = nullptr;
+	Mouse() {  }
 
-        RegisterRawInputDevices(&mouseInputDevice, 1, sizeof(RAWINPUTDEVICE));
-    }
+	virtual ~Mouse() { }
 
-	[[nodiscard]] bool IsLeftButtonUp()    const { return !this->m_isLeftButtonDown;  }
-	[[nodiscard]] bool IsLeftButtonDown()  const { return this->m_isLeftButtonDown;   }
+	[[nodiscard]] bool IsLeftButtonUp()    const { return !this->m_isLeftButtonDown; }
+	[[nodiscard]] bool IsLeftButtonDown()  const { return this->m_isLeftButtonDown; }
+
 	[[nodiscard]] bool IsRightButtonUp()   const { return !this->m_isRightButtonDown; }
-	[[nodiscard]] bool IsRightButtonDown() const { return this->m_isRightButtonDown;  }
-	[[nodiscard]] bool IsCursorInWindow()  const { return this->m_isCursorInWindow;   }
+	[[nodiscard]] bool IsRightButtonDown() const { return this->m_isRightButtonDown; }
 
-	void Show() const { ShowCursor(true);  }
-	void Hide() const { ShowCursor(false); }
+	[[nodiscard]] bool IsCursorInWindow()  const { return this->m_isCursorInWindow; }
 
-	void Clip(const RECT& rect) const { ClipCursor(&rect); }
+	virtual void Show() const noexcept = 0;
+	virtual void Hide() const noexcept = 0;
 
-	virtual void __OnWindowUpdateBegin() override
-    {
-        this->m_wheelDelta = 0;
-        this->m_deltaPosition = { 0, 0 };
-        this->m_wasMouseMovedDuringUpdate = false;
-        this->m_wasCursorMovedDuringUpdate = false;
-    }
-
-	virtual bool __HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override
-    {
-        switch (msg)
-        {
-        case WM_INPUT:
-        {
-            UINT size = 0;
-
-            // WINDOWS API LOGIC
-            if (!GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER)))
-            {
-                std::vector<char> rawBuffer(size);
-
-                if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawBuffer.data(), &size, sizeof(RAWINPUTHEADER)) == size)
-                {
-                    const RAWINPUT& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
-
-                    if (ri.header.dwType == RIM_TYPEMOUSE && (ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0))
-                    {
-                        this->m_deltaPosition += Vec2i16{ static_cast<int16_t>(ri.data.mouse.lLastX), static_cast<int16_t>(ri.data.mouse.lLastY) };
-
-                        this->m_wasMouseMovedDuringUpdate = true;
-                    }
-                }
-            }
-
-            return true;
-        }
-
-        break;
-        case WM_MOUSELEAVE:
-            this->m_isCursorInWindow = false;
-
-            return true;
-        case WM_MOUSEMOVE:
-        {
-            this->m_position = { static_cast<uint16_t>(GET_X_LPARAM(lParam)), static_cast<uint16_t>(GET_Y_LPARAM(lParam)) };
-            this->m_wasCursorMovedDuringUpdate = true;
-        }
-
-        this->m_isCursorInWindow = true;
-
-        return true;
-        case WM_LBUTTONDOWN:
-            this->m_isLeftButtonDown = true;
-
-            for (auto& functor : this->m_onLeftButtonDownFunctors)
-                functor(this->m_position);
-
-            return true;
-        case WM_LBUTTONUP:
-            this->m_isLeftButtonDown = false;
-
-            for (auto& functor : this->m_onLeftButtonUpFunctors)
-                functor(this->m_position);
-
-            return true;
-        case WM_RBUTTONDOWN:
-            this->m_isRightButtonDown = true;
-
-            for (auto& functor : this->m_onRightButtonDownFunctors)
-                functor(this->m_position);
-
-            return true;
-        case WM_RBUTTONUP:
-            this->m_isRightButtonDown = false;
-
-            for (auto& functor : this->m_onRightButtonUpFunctors)
-                functor(this->m_position);
-
-            return true;
-        case WM_MOUSEWHEEL:
-            this->m_wheelDelta += GET_WHEEL_DELTA_WPARAM(wParam);
-            return true;
-        default:
-            return false;
-        }
-    }
-
-	virtual void __OnWindowUpdateEnd() override
-    {
-        if (this->m_wasMouseMovedDuringUpdate)
-            for (auto& functor : this->m_onMouseMoveFunctors)
-                functor(this->m_position, this->m_deltaPosition);
-
-        if (this->m_wasCursorMovedDuringUpdate)
-            for (auto& functor : this->m_onCursorMoveFunctors)
-                functor(this->m_position, this->m_deltaPosition);
-
-        if (this->m_wheelDelta != 0)
-            for (auto& functor : this->m_onWheelTurnFunctors)
-                functor(this->m_wheelDelta);
-    }
+	virtual void Clip(const Rect& rect) const noexcept = 0;
 };
 
-#define CHECK_BIT(var,pos) ((var) & ( 1 << (pos)))
+#ifdef __WEISS__OS_WINDOWS
 
-#define ENABLE_CONSOLE() {\
-	AllocConsole();\
-	freopen_s((FILE**)stdout, "CONOUT$", "w", stdout);\
-}
+class WindowsMouse : public Mouse, public WindowsPeripheralDevice {
+public:
+	WindowsMouse()
+	{
+		RAWINPUTDEVICE mouseInputDevice;
+		mouseInputDevice.usUsagePage = 0x01;
+		mouseInputDevice.usUsage = 0x02;
+		mouseInputDevice.dwFlags = 0;
+		mouseInputDevice.hwndTarget = nullptr;
 
-#define MESSAGE_BOX_ERROR(errorMsg) {\
-	MessageBox(NULL, (std::string("Error in File: ") + std::string(__FILE__) + std::string("\nAt line: ") + std::to_string(__LINE__) + std::string("\nIn Function: ") + std::string(__FUNCTION__) + std::string("\nError: ") + std::string(errorMsg)).c_str(), "Weiss Engine Error", MB_ABORTRETRYIGNORE);\
-}
+		RegisterRawInputDevices(&mouseInputDevice, 1, sizeof(RAWINPUTDEVICE));
+	}
 
+	virtual void Show() const noexcept override { ShowCursor(true); }
+	virtual void Hide() const noexcept override { ShowCursor(false); }
 
-class Keyboard : PeripheralDevice {
-private:
+	virtual void Clip(const Rect& rect) const noexcept override
+	{
+		RECT winRect{ rect.left, rect.top, rect.right, rect.bottom };
+		ClipCursor(&winRect);
+	}
+
+	virtual void __OnWindowUpdateBegin() override
+	{
+		this->m_wheelDelta = 0;
+		this->m_deltaPosition = { 0, 0 };
+		this->m_wasMouseMovedDuringUpdate = false;
+		this->m_wasCursorMovedDuringUpdate = false;
+	}
+
+	virtual bool __HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override
+	{
+		switch (msg)
+		{
+		case WM_INPUT:
+		{
+			UINT size = 0;
+
+			// WINDOWS API LOGIC
+			if (!GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &size, sizeof(RAWINPUTHEADER)))
+			{
+				std::vector<char> rawBuffer(size);
+
+				if (GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawBuffer.data(), &size, sizeof(RAWINPUTHEADER)) == size)
+				{
+					const RAWINPUT& ri = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
+
+					if (ri.header.dwType == RIM_TYPEMOUSE && (ri.data.mouse.lLastX != 0 || ri.data.mouse.lLastY != 0))
+					{
+						this->m_deltaPosition += Vec2i16{ static_cast<int16_t>(ri.data.mouse.lLastX), static_cast<int16_t>(ri.data.mouse.lLastY) };
+
+						this->m_wasMouseMovedDuringUpdate = true;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		break;
+		case WM_MOUSELEAVE:
+			this->m_isCursorInWindow = false;
+
+			return true;
+		case WM_MOUSEMOVE:
+		{
+			this->m_position = { static_cast<uint16_t>(GET_X_LPARAM(lParam)), static_cast<uint16_t>(GET_Y_LPARAM(lParam)) };
+			this->m_wasCursorMovedDuringUpdate = true;
+		}
+
+		this->m_isCursorInWindow = true;
+
+		return true;
+		case WM_LBUTTONDOWN:
+			this->m_isLeftButtonDown = true;
+
+			for (auto& functor : this->m_onLeftButtonDownFunctors)
+				functor(this->m_position);
+
+			return true;
+		case WM_LBUTTONUP:
+			this->m_isLeftButtonDown = false;
+
+			for (auto& functor : this->m_onLeftButtonUpFunctors)
+				functor(this->m_position);
+
+			return true;
+		case WM_RBUTTONDOWN:
+			this->m_isRightButtonDown = true;
+
+			for (auto& functor : this->m_onRightButtonDownFunctors)
+				functor(this->m_position);
+
+			return true;
+		case WM_RBUTTONUP:
+			this->m_isRightButtonDown = false;
+
+			for (auto& functor : this->m_onRightButtonUpFunctors)
+				functor(this->m_position);
+
+			return true;
+		case WM_MOUSEWHEEL:
+			this->m_wheelDelta += GET_WHEEL_DELTA_WPARAM(wParam);
+			return true;
+		default:
+			return false;
+		}
+	}
+
+	virtual void __OnWindowUpdateEnd() override
+	{
+		if (this->m_wasMouseMovedDuringUpdate)
+			for (auto& functor : this->m_onMouseMoveFunctors)
+				functor(this->m_position, this->m_deltaPosition);
+
+		if (this->m_wasCursorMovedDuringUpdate)
+			for (auto& functor : this->m_onCursorMoveFunctors)
+				functor(this->m_position, this->m_deltaPosition);
+
+		if (this->m_wheelDelta != 0)
+			for (auto& functor : this->m_onWheelTurnFunctors)
+				functor(this->m_wheelDelta);
+	}
+};
+
+#endif // __WEISS__OS_WINDOWS
+
+// -------  -------
+
+class KeyboardEventInterface {
+protected:
 	std::vector<uint8_t> m_downKeys;
 
 	std::vector<std::function<void(const uint8_t)>> m_onKeyUpFunctors;
 	std::vector<std::function<void(const uint8_t)>> m_onKeyDownFunctors;
 
 public:
-	Keyboard()
-    {
-
-    }
-
-	void OnKeyUp  (const std::function<void(const uint8_t)>& functor) { this->m_onKeyUpFunctors.push_back(functor);   }
+	void OnKeyUp(const std::function<void(const uint8_t)>& functor) { this->m_onKeyUpFunctors.push_back(functor); }
 	void OnKeyDown(const std::function<void(const uint8_t)>& functor) { this->m_onKeyDownFunctors.push_back(functor); }
-
-	bool IsKeyDown(const uint8_t key)
-    {
-	    return this->m_downKeys.end() != std::find(this->m_downKeys.begin(), this->m_downKeys.end(), key);
-    }
-
-	virtual void __OnWindowUpdateBegin() override
-    {
-
-    }
-
-	virtual bool __HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override
-    {
-        switch (msg)
-        {
-        case WM_KEYDOWN:
-        {
-            const uint8_t keyCode = static_cast<uint8_t>(wParam);
-
-            // Verify that the key was not down before the message was sent
-            if (!CHECK_BIT(lParam, 30))
-            {
-                this->m_downKeys.push_back(keyCode);
-
-                for (auto& functor : this->m_onKeyDownFunctors)
-                    functor(keyCode);
-            }
-
-            return true;
-        }
-        case WM_KEYUP:
-        {
-            const uint8_t keyCode = static_cast<uint8_t>(wParam);
-
-            this->m_downKeys.erase(std::remove(this->m_downKeys.begin(), this->m_downKeys.end(), keyCode), this->m_downKeys.end());
-
-            for (auto& functor : this->m_onKeyUpFunctors)
-                functor(keyCode);
-
-            return true;
-        }
-        }
-
-        return false;
-    }
-
-	virtual void __OnWindowUpdateEnd() override
-    {
-
-    }
 };
 
-LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
+class Keyboard : public KeyboardEventInterface {
+protected:
+	std::vector<uint8_t> m_downKeys;
+
+public:
+	Keyboard() {  }
+
+	virtual ~Keyboard() { }
+
+	bool IsKeyDown(const uint8_t key) const noexcept
+	{
+		return this->m_downKeys.end() != std::find(this->m_downKeys.begin(), this->m_downKeys.end(), key);
+	}
+};
+
+#ifdef __WEISS__OS_WINDOWS
+
+class WindowsKeyboard : public Keyboard, public WindowsPeripheralDevice {
+public:
+	virtual bool __HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam) override
+	{
+		switch (msg)
+		{
+		case WM_KEYDOWN:
+		{
+			const uint8_t keyCode = static_cast<uint8_t>(wParam);
+
+			// Verify that the key was not down before the message was sent
+			if (!CHECK_BIT(lParam, 30))
+			{
+				this->m_downKeys.push_back(keyCode);
+
+				for (auto& functor : this->m_onKeyDownFunctors)
+					functor(keyCode);
+			}
+
+			return true;
+		}
+		case WM_KEYUP:
+		{
+			const uint8_t keyCode = static_cast<uint8_t>(wParam);
+
+			this->m_downKeys.erase(std::remove(this->m_downKeys.begin(), this->m_downKeys.end(), keyCode), this->m_downKeys.end());
+
+			for (auto& functor : this->m_onKeyUpFunctors)
+				functor(keyCode);
+
+			return true;
+		}
+		}
+
+		return false;
+	}
+};
+
+#endif // __WEISS__OS_WINDOWS
+
+// -------  -------
 
 enum class WindowCreationExceptionErrorType
 {
@@ -668,7 +855,7 @@ private:
 
 public:
 	WindowCreationException(const WindowCreationExceptionErrorType& type)
-        : m_type(type) { }
+		: m_type(type) { }
 
 	WindowCreationExceptionErrorType getErrorType() const { return this->m_type; }
 };
@@ -678,249 +865,285 @@ struct WindowDescriptor
 	const uint16_t windowPositionX = 0u;
 	const uint16_t windowPositionY = 0u;
 	const uint16_t width, height;
-	const char* title      = nullptr;
-	const char* iconPath   = nullptr;
+	const char* title = nullptr;
+	const char* iconPath = nullptr;
 	const bool isResizable = true;
 };
 
 class Window {
-friend LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
+protected:
+	Mouse* m_pMouse = nullptr;
+	Keyboard* m_pKeyboard = nullptr;
 
-private:
-	HWND m_handle = 0;
-
-	Mouse    m_mouse;
-	Keyboard m_keyboard;
-
-	bool m_isRunning   = false;
+	bool m_isRunning = false;
 	bool m_isMinimized = false;
 
 	std::vector<std::function<void(const Vec2u16)>> m_onResizeFunctors;
 
 public:
-	Window(const WindowDescriptor& descriptor)
-    {
-        WNDCLASSA wc;
-        ZeroMemory(&wc, sizeof(WNDCLASSA));
+	Window() {  }
 
-        wc.style         = CS_HREDRAW | CS_VREDRAW;
-        wc.lpfnWndProc   = WindowProcessMessages;
-        wc.hInstance     = GetModuleHandle(NULL);
-        wc.hCursor       = LoadCursor(nullptr, IDC_ARROW);
-        wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
-        wc.lpszClassName = "WEISS_WNDCLASSA";
+	virtual ~Window()
+	{
+		if (this->m_pMouse != nullptr)
+			delete this->m_pMouse;
 
-        if (!RegisterClassA(&wc))
-        {
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-            MESSAGE_BOX_ERROR("[WINDOW] Could Not Register Window Class");
-#endif
+		if (this->m_pKeyboard != nullptr)
+			delete this->m_pKeyboard;
+	}
 
-            throw WindowCreationException(WindowCreationExceptionErrorType::CLASS_REGISTRATION_ERROR);
-        }
-
-        const uint32_t windowStyle = descriptor.isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
-
-        RECT windowRect{ 0, 0, descriptor.width, descriptor.height };
-        AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
-
-        this->m_handle = CreateWindowA("WEISS_WNDCLASSA", descriptor.title, windowStyle,
-            descriptor.windowPositionX, descriptor.windowPositionY, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
-            NULL, NULL, wc.hInstance, NULL);
-
-        if (this->m_handle == NULL)
-        {
-#ifdef __WEISS_SHOW_DEBUG_ERRORS
-            MESSAGE_BOX_ERROR("[WINDOW] Could Not Create Window");
-#endif
-
-            throw WindowCreationException(WindowCreationExceptionErrorType::WINDOW_CREATION_ERROR);
-        }
-
-        ShowWindow(this->m_handle, SW_SHOW);
-        UpdateWindow(this->m_handle);
-
-        this->m_isRunning = true;
-
-        if (descriptor.iconPath != nullptr)
-            this->SetIcon(descriptor.iconPath);
-
-        #ifdef _WIN64
-            SetWindowLongPtr(this->m_handle, GWLP_USERDATA, (LONG_PTR)this);
-        #else
-            SetWindowLong(this->m_handle, GWLP_USERDATA, (LONG)this);
-        #endif
-    }
-
-	// Misc
 	void OnResize(const std::function<void(const Vec2u16)>& functor)
-    {
-	    this->m_onResizeFunctors.push_back(functor);
-    }
+	{
+		this->m_onResizeFunctors.push_back(functor);
+	}
 
-	// Getters
 	[[nodiscard]] bool      IsRunning() const { return this->m_isRunning; }
-	[[nodiscard]] Keyboard& GetKeyboard()     { return this->m_keyboard;  }
-	[[nodiscard]] Mouse&    GetMouse()        { return this->m_mouse;     }
-	[[nodiscard]] HWND      GetHandle() const { return this->m_handle;    }
+	[[nodiscard]] Keyboard& GetKeyboard() { return *this->m_pKeyboard; }
+	[[nodiscard]] Mouse& GetMouse() { return *this->m_pMouse; }
 
-	[[nodiscard]] uint16_t GetWindowPositionX() const { return static_cast<uint16_t>(this->GetWindowRectangle().left);   }
-	[[nodiscard]] uint16_t GetWindowPositionY() const { return static_cast<uint16_t>(this->GetWindowRectangle().top);    }
-	[[nodiscard]] uint16_t GetClientWidth()     const { return static_cast<uint16_t>(this->GetClientRectangle().right);  }
+	[[nodiscard]] uint16_t GetWindowPositionX() const { return static_cast<uint16_t>(this->GetWindowRectangle().left); }
+	[[nodiscard]] uint16_t GetWindowPositionY() const { return static_cast<uint16_t>(this->GetWindowRectangle().top); }
+	[[nodiscard]] uint16_t GetClientWidth()     const { return static_cast<uint16_t>(this->GetClientRectangle().right); }
 	[[nodiscard]] uint16_t GetClientHeight()    const { return static_cast<uint16_t>(this->GetClientRectangle().bottom); }
 
 	[[nodiscard]] uint16_t GetWindowWidth() const
-    {
-        const RECT rect = this->GetWindowRectangle();
+	{
+		const Rect rect = this->GetWindowRectangle();
 
-        return static_cast<uint16_t>(rect.right - rect.left);
-    }
+		return static_cast<uint16_t>(rect.right - rect.left);
+	}
 
 	[[nodiscard]] uint16_t GetWindowHeight() const
-    {
-        const RECT rect = this->GetWindowRectangle();
+	{
+		const Rect rect = this->GetWindowRectangle();
 
-        return static_cast<uint16_t>(rect.bottom - rect.top);
-    }
+		return static_cast<uint16_t>(rect.bottom - rect.top);
+	}
 
-	[[nodiscard]] RECT GetWindowRectangle() const
-    {
-        RECT result;
-        GetWindowRect(this->m_handle, &result);
+	[[nodiscard]] virtual Rect GetWindowRectangle() const = 0;
+	[[nodiscard]] virtual Rect GetClientRectangle() const = 0;
 
-        return result;
-    }
+	virtual void SetWindowSize(const uint16_t width, const uint16_t height) = 0;
+	virtual void SetClientSize(const uint16_t width, const uint16_t height) = 0;
+	virtual void SetTitle(const char* title) const = 0;
+	virtual void SetIcon(const char* pathname) = 0;
 
-	[[nodiscard]] RECT GetClientRectangle() const
-    {
-        RECT result;
-        GetClientRect(this->m_handle, &result);
-
-        return result;
-    }
-
-	// Setters
-	void SetWindowSize(const uint16_t width, const uint16_t height)
-    {
-        SetWindowPos(this->m_handle, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOOWNERZORDER);
-    }
-
-	void SetClientSize(const uint16_t width, const uint16_t height)
-    {
-        const uint16_t topBottomWindowPadding = this->GetWindowHeight() - this->GetClientHeight();
-        const uint16_t leftRightWindowPadding = this->GetWindowWidth()  - this->GetClientWidth();
-
-        this->SetWindowSize(width + leftRightWindowPadding, height + topBottomWindowPadding);
-    }
-
-	void SetTitle(const char* title) const noexcept
-    {
-        SetWindowTextA(this->m_handle, title);
-    }
-
-	void SetIcon(const char* pathname)
-    {
-        const HICON hIcon = (HICON)LoadImageA(NULL, pathname, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
-
-        if (hIcon == NULL)
-        {
-    #ifdef __WEISS_SHOW_DEBUG_ERRORS
-            MESSAGE_BOX_ERROR("Could Not Load Icon");
-    #endif
-
-            throw IconLoadingException();
-        }
-
-        SendMessage(this->m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
-    }
-
-	// MESSAGE HANDLING
-	void Update()
-    {
-        this->m_mouse.__OnWindowUpdateBegin();
-        this->m_keyboard.__OnWindowUpdateBegin();
-
-        MSG msg;
-
-        while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) > 0)
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-
-        this->m_mouse.__OnWindowUpdateEnd();
-        this->m_keyboard.__OnWindowUpdateEnd();
-    }
-
-	[[nodiscard]] LRESULT HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
-    {
-        switch (msg)
-        {
-        case WM_SIZE:
-        {
-            const Vec2u16 client_area_dimensions = {
-                static_cast<uint16_t>(GET_X_LPARAM(lParam)),
-                static_cast<uint16_t>(GET_Y_LPARAM(lParam))
-            };
-
-            this->m_isMinimized = (client_area_dimensions.x == 0 && client_area_dimensions.y == 0);
-
-            for (auto& functor : this->m_onResizeFunctors)
-                functor(client_area_dimensions);
-        }
-
-        return 0;
-        case WM_DESTROY:
-            this->Destroy();
-
-            return 0;
-        }
-
-        // Dispatch Message To Peripheral Devices
-        if (this->m_mouse.__HandleMessage(msg, wParam, lParam)) return 0;
-        if (this->m_keyboard.__HandleMessage(msg, wParam, lParam)) return 0;
-
-        // Otherwise Let Windows Handle The Message
-        return DefWindowProc(this->m_handle, msg, wParam, lParam);
-    }
-
-	// DESTROYING
-	void Destroy()
-    {
-        this->m_isRunning = !DestroyWindow(this->m_handle);
-    }
-
-	~Window()
-    {
-        this->Destroy();
-    }
+	virtual void Update() = 0;
 
 public:
-	static std::list<Window> m_s_windows;
-
-	static Window& Create(const WindowDescriptor& windowDesc)
-    {
-        Window::m_s_windows.emplace_back(windowDesc);
-
-        return Window::m_s_windows.back();
-    }
+	// To Be Defined Per Platform
+	static Window* Create(const WindowDescriptor& descriptor);
 };
 
-std::list<Window> Window::m_s_windows = std::list<Window>();
+#ifdef __WEISS__OS_WINDOWS
+
+LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
+
+class WindowsWindow : public Window {
+	friend LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lparam);
+
+private:
+	HWND m_handle = 0;
+
+public:
+	WindowsWindow(const WindowDescriptor& descriptor)
+	{
+		WNDCLASSA wc;
+		ZeroMemory(&wc, sizeof(WNDCLASSA));
+
+		wc.style = CS_HREDRAW | CS_VREDRAW;
+		wc.lpfnWndProc = WindowProcessMessages;
+		wc.hInstance = GetModuleHandle(NULL);
+		wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
+		wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+		wc.lpszClassName = "WEISS_WNDCLASSA";
+
+		if (!RegisterClassA(&wc))
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("[WINDOW] Could Not Register Window Class");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw WindowCreationException(WindowCreationExceptionErrorType::CLASS_REGISTRATION_ERROR);
+		}
+
+		const uint32_t windowStyle = descriptor.isResizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX | WS_MAXIMIZEBOX);
+
+		RECT windowRect{ 0, 0, descriptor.width, descriptor.height };
+		AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, FALSE);
+
+		this->m_handle = CreateWindowA("WEISS_WNDCLASSA", descriptor.title, windowStyle,
+			descriptor.windowPositionX, descriptor.windowPositionY, windowRect.right - windowRect.left, windowRect.bottom - windowRect.top,
+			NULL, NULL, wc.hInstance, NULL);
+
+		if (this->m_handle == NULL)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+
+			MESSAGE_BOX_ERROR("[WINDOW] Could Not Create Window");
+
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw WindowCreationException(WindowCreationExceptionErrorType::WINDOW_CREATION_ERROR);
+		}
+
+
+#ifdef __WEISS__PLATFORM_X64
+
+		SetWindowLongPtr(this->m_handle, GWLP_USERDATA, (LONG_PTR)this);
+
+#else
+
+		SetWindowLong(this->m_handle, GWLP_USERDATA, (LONG)this);
+
+#endif
+
+		this->m_pMouse = new WindowsMouse();
+		this->m_pKeyboard = new WindowsKeyboard();
+
+		ShowWindow(this->m_handle, SW_SHOW);
+		UpdateWindow(this->m_handle);
+
+		this->m_isRunning = true;
+
+		if (descriptor.iconPath != nullptr)
+			this->SetIcon(descriptor.iconPath);
+	}
+
+	[[nodiscard]] HWND GetHandle() const { return this->m_handle; }
+
+	[[nodiscard]] virtual Rect GetWindowRectangle() const override
+	{
+		RECT windowRect;
+		GetWindowRect(this->m_handle, &windowRect);
+
+		return Rect(windowRect);
+	}
+	[[nodiscard]] virtual Rect GetClientRectangle() const override
+	{
+		RECT clientRect;
+		GetClientRect(this->m_handle, &clientRect);
+
+		return Rect(clientRect);
+	}
+
+	[[nodiscard]] LRESULT HandleMessage(UINT msg, WPARAM wParam, LPARAM lParam)
+	{
+		switch (msg)
+		{
+		case WM_SIZE:
+		{
+			const Vec2u16 client_area_dimensions = {
+				static_cast<uint16_t>(GET_X_LPARAM(lParam)),
+				static_cast<uint16_t>(GET_Y_LPARAM(lParam))
+			};
+
+			this->m_isMinimized = (client_area_dimensions.x == 0 && client_area_dimensions.y == 0);
+
+			for (auto& functor : this->m_onResizeFunctors)
+				functor(client_area_dimensions);
+		}
+
+		return 0;
+		case WM_DESTROY:
+			this->Destroy();
+
+			return 0;
+		}
+
+		// Dispatch Message To Peripheral Devices
+		if (reinterpret_cast<WindowsMouse*>(this->m_pMouse)->__HandleMessage(msg, wParam, lParam)) return 0;
+		if (reinterpret_cast<WindowsKeyboard*>(this->m_pKeyboard)->__HandleMessage(msg, wParam, lParam)) return 0;
+
+		// Otherwise Let Windows Handle The Message
+		return DefWindowProc(this->m_handle, msg, wParam, lParam);
+	}
+
+	virtual void SetWindowSize(const uint16_t width, const uint16_t height) override
+	{
+		SetWindowPos(this->m_handle, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOOWNERZORDER);
+	}
+
+	virtual void SetClientSize(const uint16_t width, const uint16_t height) override
+	{
+		const uint16_t topBottomWindowPadding = this->GetWindowHeight() - this->GetClientHeight();
+		const uint16_t leftRightWindowPadding = this->GetWindowWidth() - this->GetClientWidth();
+
+		this->SetWindowSize(width + leftRightWindowPadding, height + topBottomWindowPadding);
+	}
+
+	virtual void SetTitle(const char* title) const noexcept override
+	{
+		SetWindowTextA(this->m_handle, title);
+	}
+
+	virtual void SetIcon(const char* pathname) override
+	{
+		const HICON hIcon = (HICON)LoadImageA(NULL, pathname, IMAGE_ICON, 0, 0, LR_LOADFROMFILE);
+
+		if (hIcon == NULL)
+		{
+#ifdef __WEISS_SHOW_DEBUG_ERRORS
+			MESSAGE_BOX_ERROR("Could Not Load Icon");
+#endif // __WEISS_SHOW_DEBUG_ERRORS
+
+			throw IconLoadingException();
+		}
+
+		SendMessage(this->m_handle, WM_SETICON, ICON_BIG, (LPARAM)hIcon);
+	}
+
+	virtual void Update() override
+	{
+		reinterpret_cast<WindowsMouse*>(this->m_pMouse)->__OnWindowUpdateBegin();
+		reinterpret_cast<WindowsKeyboard*>(this->m_pKeyboard)->__OnWindowUpdateBegin();
+
+		MSG msg;
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE) > 0)
+		{
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+
+		reinterpret_cast<WindowsMouse*>(this->m_pMouse)->__OnWindowUpdateEnd();
+		reinterpret_cast<WindowsKeyboard*>(this->m_pKeyboard)->__OnWindowUpdateEnd();
+
+		std::cout << this->GetMouse().IsLeftButtonDown() << '\n';
+	}
+
+	void Destroy() noexcept
+	{
+		this->m_isRunning = !DestroyWindow(this->m_handle);
+	}
+
+	~WindowsWindow() { this->Destroy(); }
+	};
 
 LRESULT CALLBACK WindowProcessMessages(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-	#ifdef _WIN64
-		Window* window = (Window*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
-	#else
-		Window* window = (Window*)GetWindowLong(hwnd, GWLP_USERDATA);
-	#endif
+#ifdef _WIN64
+
+	WindowsWindow* window = (WindowsWindow*)GetWindowLongPtr(hwnd, GWLP_USERDATA);
+
+#else
+
+	WindowsWindow* window = (WindowsWindow*)GetWindowLong(hwnd, GWLP_USERDATA);
+
+#endif
 
 	if (window != NULL)
 		return window->HandleMessage(msg, wParam, lParam);
 
 	return DefWindowProc(hwnd, msg, wParam, lParam);
 }
+
+Window* Window::Create(const WindowDescriptor& descriptor)
+{
+	return new WindowsWindow(descriptor);
+}
+
+#endif // __WEISS__OS_WINDOWS
+
 
 constexpr const size_t WEISS_CLIENT_SOCKET_RECEIVE_BUFFER_SIZE = 1024u;
 constexpr const size_t WEISS_NO_RESOURCE_INDEX                 = std::numeric_limits<size_t>::max();
@@ -1766,7 +1989,7 @@ private:
         scd.SampleDesc.Quality = 0;
         scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         scd.BufferCount = 1;
-        scd.OutputWindow = window->GetHandle();
+        scd.OutputWindow = reinterpret_cast<WindowsWindow*>(window)->GetHandle();
         scd.Windowed = TRUE;
         scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
         scd.Flags = 0;
@@ -2463,7 +2686,7 @@ public:
 
 	void InitializeWeiss(const EngineDescriptor& desc)
     {
-        this->m_window = &Window::Create(desc.windowDesc);
+        this->m_window = Window::Create(desc.windowDesc);
 
         this->InitializeHighLevelRenderer(desc.highLevelRendererDesc, this->m_window);
     }
@@ -2471,10 +2694,10 @@ public:
 	void CaptureCursor()
     {
         // Clip Cursor
-        const RECT windowRect = this->GetWindow().GetWindowRectangle();
-        const RECT clientRect = this->GetWindow().GetClientRectangle();
+        const Rect windowRect = this->GetWindow().GetWindowRectangle();
+        const Rect clientRect = this->GetWindow().GetClientRectangle();
 
-        RECT boundingRect = windowRect;
+        Rect boundingRect = windowRect;
 
         boundingRect.top += (windowRect.bottom - windowRect.top) - clientRect.bottom + 10; // padding
         boundingRect.left += 10; // padding
@@ -2489,12 +2712,14 @@ public:
 
 	void PlayWavFile(const char* filename)
     {
+#ifdef __WEISS__OS_WINDOWS
         if (!PlaySoundA(filename, NULL, SND_ASYNC | SND_FILENAME))
         {
     #ifdef __WEISS_SHOW_DEBUG_ERRORS
             MESSAGE_BOX_ERROR("Could Not Play Sound From File");
     #endif // __WEISS_SHOW_DEBUG_ERRORS
         }
+#endif
     }
 
 	[[nodiscard]] DataFromMeshFile LoadDataFromMeshFile(const char* filename)
@@ -2584,15 +2809,17 @@ private:
 public:
 	ClientSocket()
     {
+#ifdef __WEISS__OS_WINDOWS
         WSADATA wsaData;
         WSAStartup(MAKEWORD(2, 0), &wsaData);
+#endif
     }
 
 	~ClientSocket() { this->Disconnect(); }
 
 	void Connect(const char* host, const unsigned int port) 
     {
-        SOCKADDR_IN sockAddr;
+		sockaddr_in sockAddr;
         sockAddr.sin_addr.s_addr = inet_addr(host);
         sockAddr.sin_family = AF_INET;
         sockAddr.sin_port = htons(port);
@@ -2608,7 +2835,7 @@ public:
             throw ClientSocketCreationException(ClientSocketCreationExceptionErrorType::CREATION_FAILED);
         }
 
-        if (connect(this->m_socket, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
+        if (connect(this->m_socket, (sockaddr*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
         {
     #ifdef __WEISS_SHOW_DEBUG_ERRORS
             MESSAGE_BOX_ERROR("[CLIENT SOCKET] Unable To Connect To Server Socket");
@@ -2655,7 +2882,10 @@ public:
         this->m_socket = INVALID_SOCKET;
 
         closesocket(this->m_socket);
-        WSACleanup();
+        
+#ifdef __WEISS__OS_WINDOWS
+		WSACleanup();
+#endif
     }
 };
 
@@ -2690,8 +2920,10 @@ private:
 public:
 	ServerSocket()
     {
+#ifdef __WEISS__OS_WINDOWS
         WSADATA wsaData;
         WSAStartup(MAKEWORD(2, 0), &wsaData);
+#endif
     }
 
 	~ServerSocket() { this->Disconnect(); }
@@ -2709,12 +2941,12 @@ public:
             throw ServerSocketCreationException(ServerSocketCreationExceptionErrorType::CREATION_FAILED);
         }
 
-        SOCKADDR_IN sockAddr;
+        sockaddr_in sockAddr;
         sockAddr.sin_addr.s_addr = INADDR_ANY;
         sockAddr.sin_family = AF_INET;
         sockAddr.sin_port = htons(5555);
 
-        if (bind(this->m_socket, (SOCKADDR*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
+        if (bind(this->m_socket, (sockaddr*)&sockAddr, sizeof(sockAddr)) == SOCKET_ERROR)
         {
     #ifdef __WEISS_SHOW_DEBUG_ERRORS
             MESSAGE_BOX_ERROR("[SERVER SOCKET] Could Not Bind Socket");
@@ -2735,7 +2967,7 @@ public:
 
 	[[nodiscard]] int Accept() noexcept
     {
-        SOCKADDR_IN clientAddr;
+        sockaddr_in clientAddr;
         int clientAddrSize = 0;
 
         const SOCKET client = accept(this->m_socket, (SOCKADDR*)&clientAddr, &clientAddrSize);
@@ -2787,8 +3019,31 @@ public:
         this->m_socket = INVALID_SOCKET;
 
         closesocket(this->m_socket);
+
+#ifdef __WEISS__OS_WINDOWS
         WSACleanup();
-    }
+#endif
+	}
 };
 
 #endif
+
+/*
+
+██          ██    ██████████████      ██████████      ██████████████    ██████████████
+██          ██    ██                      ██          ██                ██
+██          ██    ██                      ██          ██                ██
+██    ██    ██    ██████████████          ██          ██████████████    ██████████████
+██    ██    ██    ██                      ██                      ██                ██
+██  ██  ██  ██    ██                      ██                      ██                ██
+  ██      ██      ██████████████      ██████████      ██████████████    ██████████████
+
+██████████████    ██          ██    ██████████████      ██████████      ██          ██    ██████████████
+██                ████        ██    ██                      ██          ████        ██    ██
+██                ██  ██      ██    ██                      ██          ██  ██      ██    ██
+██████████████    ██    ██    ██    ██    ██████            ██          ██    ██    ██    ██████████████
+██                ██      ██  ██    ██          ██          ██          ██      ██  ██    ██
+██                ██        ████    ██          ██          ██          ██        ████    ██
+██████████████    ██          ██    ████████████        ██████████      ██          ██    ██████████████
+
+*/
