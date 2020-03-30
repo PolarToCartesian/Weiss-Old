@@ -99,11 +99,6 @@
 
 #pragma comment(lib, "vulkan-1.lib")
 
-// Opengl Includes
-#include <glad/glad.h>
-
-#pragma comment(lib, "opengl32.lib")
-
 // Standard C++17 Library Includes
 #include <list>
 #include <array>

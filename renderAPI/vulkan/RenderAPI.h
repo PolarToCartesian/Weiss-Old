@@ -17,14 +17,9 @@ public:
 
 	virtual void InitRenderAPI(Window* pWindow) override;
 
-	virtual void Draw(const PrimitiveTopology& topology, const size_t nVertices) override;
-
-	virtual void DrawIndexed(const PrimitiveTopology& topology, const size_t nIndices) override;
+	virtual void Draw(const Drawable& drawable, const size_t nVertices) = 0;
 
 	virtual void SwapBuffers() override;
 
-	// Defined Later
-	virtual VertexShader* CreateVertexShader(const char* sourceFilename, const std::vector<ShaderInputElement>& sies) override;
-
-	virtual PixelShader* CreatePixelShader(const char* sourceFilename) override;
+	virtual size_t CreateShaderPair(const char* vsFilename, const std::vector<ShaderInputElement>& sies, const char* psFilename, const PrimitiveTopology& topology = PrimitiveTopology::TRIANGLES) override;
 };

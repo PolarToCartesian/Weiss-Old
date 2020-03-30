@@ -5,7 +5,7 @@ int main()
 	ENABLE_CONSOLE();
 
 	Window* pWindow = Window::Create();
-	RenderAPI* renderAPI = RenderAPI::Create(RenderAPIName::VULKAN);
+	RenderAPI* renderAPI = RenderAPI::Create(RenderAPIName::DIRECTX11);
 	renderAPI->InitRenderAPI(pWindow);
 
 	while (pWindow->IsRunning())

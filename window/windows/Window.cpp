@@ -7,7 +7,7 @@ WindowsWindow::WindowsWindow(const WindowDescriptor& descriptor)
 	WNDCLASSA wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSA));
 
-	wc.style = CS_HREDRAW | CS_VREDRAW;
+	wc.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
 	wc.lpfnWndProc = WindowProcessMessages;
 	wc.hInstance = GetModuleHandle(NULL);
 	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);

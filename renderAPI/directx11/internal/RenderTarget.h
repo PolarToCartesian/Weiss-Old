@@ -23,6 +23,8 @@ public:
 			throw std::runtime_error("Could Not Create RenderTargetView");
 	}
 
+	[[nodiscard]] Microsoft::WRL::ComPtr<ID3D11RenderTargetView>& GetRenderTarget() noexcept { return this->m_pRenderTarget; }
+
 	void SetCurrent() const noexcept
 	{
 		this->m_pDevice->GetDeviceContext()->OMSetRenderTargets(1u, this->m_pRenderTarget.GetAddressOf(), NULL);

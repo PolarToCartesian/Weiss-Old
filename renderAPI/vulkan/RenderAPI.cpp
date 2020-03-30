@@ -10,28 +10,23 @@ void VulkanRenderAPI::InitRenderAPI(Window* pWindow)
 	this->m_pSwapChain = std::make_shared<VulkanSwapChain>(*this->m_pDevice, *this->m_pSurface);
 }
 
-void VulkanRenderAPI::Draw(const PrimitiveTopology& topology, const size_t nVertices)
-{
-
-}
-
-void VulkanRenderAPI::DrawIndexed(const PrimitiveTopology& topology, const size_t nIndices)
+void VulkanRenderAPI::Draw(const Drawable& drawable, const size_t nVertices)
 {
 
 }
 
 void VulkanRenderAPI::SwapBuffers()
 {
-
+	
 }
 
-// Defined Later
-VertexShader* VulkanRenderAPI::CreateVertexShader(const char* sourceFilename, const std::vector<ShaderInputElement>& sies)
+size_t VulkanRenderAPI::CreateShaderPair(const char* vsFilename, const std::vector<ShaderInputElement>& sies, const char* psFilename, const PrimitiveTopology& topology)
 {
-	return nullptr;
-}
+	this->m_shaderPairs.push_back({
+		nullptr,
+		nullptr,
+		topology
+	});
 
-PixelShader* VulkanRenderAPI::CreatePixelShader(const char* sourceFilename)
-{
-	return nullptr;
+	return this->m_shaderPairs.size() - 1u;
 }
